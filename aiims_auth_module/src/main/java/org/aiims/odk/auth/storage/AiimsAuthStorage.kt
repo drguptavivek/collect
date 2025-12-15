@@ -271,4 +271,32 @@ class AiimsAuthStorage private constructor(
             "pinLocked" to secureStorage.isPinLocked()
         )
     }
+
+    // ===== Methods =====
+
+    /**
+     * Clear all sensitive authentication data
+     */
+    fun clearSensitiveData() {
+        // Clear secure storage (tokens, PINs, etc.)
+        secureStorage.clearSensitiveData()
+
+        // Clear authentication state
+        isAuthenticated = false
+        userId = null
+        userEmail = null
+        userName = null
+        userRole = null
+        partnerId = null
+        partnerName = null
+        pinHash = null
+        pinSalt = null
+        pinAttempts = 0
+        lastPinAttempt = null
+        biometricEnabled = false
+        biometricKeyAlias = null
+        lastAuthTimestamp = 0
+        syncPendingCount = 0
+        lastSyncTimestamp = 0
+    }
 }
