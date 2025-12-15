@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Margins & Padding -->
+    <dimen name="margin_small">8dp</dimen>
+    <dimen name="margin_medium">16dp</dimen>
+    <dimen name="margin_large">24dp</dimen>
+    <dimen name="margin_xlarge">32dp</dimen>
+    <dimen name="margin_xxlarge">48dp</dimen>
+
+    <dimen name="padding_small">8dp</dimen>
+    <dimen name="padding_medium">16dp</dimen>
+    <dimen name="padding_large">24dp</dimen>
+    <dimen name="padding_xlarge">32dp</dimen>
+
+    <!-- Logo & Icon Sizes -->
+    <dimen name="logo_size">120dp</dimen>
+    <dimen name="logo_size_large">200dp</dimen>
+    <dimen name="icon_size">24dp</dimen>
+    <dimen name="icon_size_large">48dp</dimen>
+
+    <!-- Button Heights -->
+    <dimen name="button_height">48dp</dimen>
+    <dimen name="button_height_large">56dp</dimen>
+
+    <!-- Text Field Heights -->
+    <dimen name="textfield_height">56dp</dimen>
+
+    <!-- Card Elevation -->
+    <dimen name="card_elevation">4dp</dimen>
+    <dimen name="card_elevation_large">8dp</dimen>
+
+    <!-- Corner Radius -->
+    <dimen name="corner_radius_small">4dp</dimen>
+    <dimen name="corner_radius_medium">8dp</dimen>
+    <dimen name="corner_radius_large">16dp</dimen>
+
+    <!-- Stroke Width -->
+    <dimen name="stroke_width">1dp</dimen>
+    <dimen name="stroke_width_thick">2dp</dimen>
+
+    <!-- Spacing for PIN Input -->
+    <dimen name="pin_box_size">48dp</dimen>
+    <dimen name="pin_box_spacing">8dp</dimen>
+
+    <!-- Bottom Sheet Settings -->
+    <dimen name="bottom_sheet_corner_radius">16dp</dimen>
+    <dimen name="bottom_sheetpeek_height">64dp</dimen>
+
+    <!-- List Item Heights -->
+    <dimen name="list_item_height">64dp</dimen>
+    <dimen name="list_item_height_dense">48dp</dimen>
+</resources>

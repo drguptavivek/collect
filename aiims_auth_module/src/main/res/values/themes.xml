@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base AIIMS theme -->
+    <style name="Theme.AiimsAuth" parent="Theme.Material3.DayNight">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/aiims_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/aiims_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/aiims_on_primary_container</item>
+
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/aiims_secondary</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">@color/aiims_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/aiims_on_secondary_container</item>
+
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/aiims_primary_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Navigation bar -->
+        <item name="android:navigationBarColor">@color/aiims_primary</item>
+
+        <!-- Typography -->
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.Aiims.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.Aiims.HeadlineMedium</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Aiims.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Aiims.BodyMedium</item>
+
+        <!-- Buttons -->
+        <item name="materialButtonStyle">@style/Widget.Aiims.Button</item>
+        <item name="materialButtonTextButtonStyle">@style/Widget.Aiims.Button.TextButton</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.Aiims.Button.OutlinedButton</item>
+
+        <!-- Text fields -->
+        <item name="textInputStyle">@style/Widget.Aiims.TextInputLayout.OutlinedBox</item>
+    </style>
+
+    <!-- Theme for activities without action bar -->
+    <style name="Theme.AiimsAuth.NoActionBar" parent="Theme.AiimsAuth">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <!-- Theme for settings screen -->
+    <style name="Theme.AiimsAuth.Settings" parent="Theme.AiimsAuth">
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.v14.Material</item>
+    </style>
+</resources>
