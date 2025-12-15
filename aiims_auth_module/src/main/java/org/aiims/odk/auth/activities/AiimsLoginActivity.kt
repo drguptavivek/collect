@@ -53,6 +53,19 @@ class AiimsLoginActivity : AppCompatActivity() {
             setPadding(50, 100, 50, 50)
         }
 
+        // AIIMS Logo
+        val logoImageView = android.widget.ImageView(this).apply {
+            setImageResource(org.aiims.odk.auth.R.drawable.aiims_logo)
+            adjustViewBounds = true
+            setPadding(0, 0, 0, 40)
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = android.view.Gravity.CENTER
+            }
+        }
+
         // Title
         val title = android.widget.TextView(this).apply {
             text = "AIIMS ODK Collect"
@@ -77,18 +90,7 @@ class AiimsLoginActivity : AppCompatActivity() {
             setPadding(0, 0, 0, 20)
         }
 
-        // API URL
-        val urlHint = android.widget.TextView(this).apply {
-            text = "Server URL:"
-            textSize = 16f
-            setPadding(0, 10, 0, 8)
-        }
 
-        urlField = EditText(this).apply {
-            hint = "http://localhost:5174/api"
-            inputType = android.text.InputType.TYPE_TEXT_VARIATION_URI
-            setText("http://localhost:5174/api") // Default URL
-        }
 
         // Email
         val emailHint = android.widget.TextView(this).apply {
@@ -124,16 +126,31 @@ class AiimsLoginActivity : AppCompatActivity() {
             }
         }
 
+
+        // API URL
+        val urlHint = android.widget.TextView(this).apply {
+            text = "Server URL:"
+            textSize = 16f
+            setPadding(0, 10, 0, 8)
+        }
+
+        urlField = EditText(this).apply {
+            hint = "http://localhost:5175/api/"
+            inputType = android.text.InputType.TYPE_TEXT_VARIATION_URI
+            setText("http://localhost:5175/api/") // Default URL
+        }
+
         // Add all views to layout
+        layout.addView(logoImageView)
         layout.addView(title)
         layout.addView(subtitle)
-        layout.addView(urlHint)
-        layout.addView(urlField)
         layout.addView(emailHint)
         layout.addView(emailField)
         layout.addView(passwordHint)
         layout.addView(passwordField)
         layout.addView(loginButton)
+        layout.addView(urlHint)
+        layout.addView(urlField)
         layout.addView(progressBar, 0) // Insert progress bar at the beginning
 
         setContentView(layout)
