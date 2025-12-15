@@ -1,41 +1,49 @@
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
-    id 'kotlin-kapt'
-    id 'dagger.hilt.android.plugin'
 }
 
 android {
     namespace 'org.aiims.odk.auth'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
-        minSdk 23
-        targetSdk 34
+        minSdk 21
+        targetSdk 36
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
+        buildConfigField "boolean", "DEBUG", "true"
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField "boolean", "DEBUG", "false"
         }
     }
 
+    buildFeatures {
+        buildConfig true
+        viewBinding true
+        dataBinding true
+    }
+
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
 
-    buildFeatures {
-        viewBinding true
-        dataBinding true
+    // Use Java toolchain to ensure consistent JVM version
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
     }
 
     packagingOptions {
@@ -64,9 +72,9 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment-ktx:2.7.6'
     implementation 'androidx.navigation:navigation-ui-ktx:2.7.6'
 
-    // Dependency Injection
-    implementation 'com.google.dagger:hilt-android:2.48.1'
-    kapt 'com.google.dagger:hilt-compiler:2.48.1'
+    // Dependency Injection (commented out for now)
+    // implementation 'com.google.dagger:hilt-android:2.48.1'
+    // kapt 'com.google.dagger:hilt-compiler:2.48.1'
 
     // Networking
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
@@ -95,9 +103,4 @@ dependencies {
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
-}
-
-// Allow references to generated code
-kapt {
-    correctErrorTypes true
 }

@@ -274,6 +274,7 @@ dependencies {
     implementation project(':db')
     implementation project(':open-rosa')
     implementation project(':mobile-device-management')
+    implementation project(':aiims_auth_module')
 
     if (getSecrets().getProperty('MAPBOX_DOWNLOADS_TOKEN', '') != '') {
         implementation project(':mapbox')
@@ -314,6 +315,10 @@ dependencies {
     implementation libs.timber
     implementation libs.slf4jApi
     implementation libs.slf4jTimber
+
+    // Hilt dependencies (commented out for now)
+    // implementation libs.hiltAndroid
+    // ksp libs.hiltCompiler
 
     implementation libs.zxingAndroidEmbedded
 

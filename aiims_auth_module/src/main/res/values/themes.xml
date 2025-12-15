@@ -29,7 +29,6 @@
 
         <!-- Buttons -->
         <item name="materialButtonStyle">@style/Widget.Aiims.Button</item>
-        <item name="materialButtonTextButtonStyle">@style/Widget.Aiims.Button.TextButton</item>
         <item name="materialButtonOutlinedStyle">@style/Widget.Aiims.Button.OutlinedButton</item>
 
         <!-- Text fields -->

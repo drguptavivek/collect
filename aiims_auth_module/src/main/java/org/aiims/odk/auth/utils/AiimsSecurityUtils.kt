@@ -20,8 +20,6 @@ import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Security utilities for PIN hashing, encryption, and biometric authentication.
@@ -29,12 +27,24 @@ import javax.inject.Singleton
  * Provides secure cryptographic operations for PIN storage, data encryption,
  * and biometric key management using Android Keystore.
  */
-@Singleton
-class AiimsSecurityUtils @Inject constructor(
+class AiimsSecurityUtils private constructor(
     private val context: Context
 ) {
 
     companion object {
+        @Volatile
+        private var INSTANCE: AiimsSecurityUtils? = null
+
+        fun getInstance(context: Context): AiimsSecurityUtils {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: createInstance(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+
+        private fun createInstance(context: Context): AiimsSecurityUtils {
+            return AiimsSecurityUtils(context)
+        }
+
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
         private const val AES_CIPHER_TRANSFORMATION = "AES/GCM/NoPadding"
         private const val PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256"
@@ -212,14 +222,12 @@ class AiimsSecurityUtils @Inject constructor(
             keyStore.setEntry(
                 alias,
                 KeyStore.SecretKeyEntry(key),
-                KeyProtection.Builder(spec).build()
+                null
             )
 
             true
         } catch (e: Exception) {
-            if (AiimsFeatureFlag.isDebugEnabled(context)) {
-                android.util.Log.e(AiimsConstants.TAG_AUTH, "Failed to store key in keystore", e)
-            }
+            android.util.Log.e(AiimsConstants.TAG_AUTH, "Failed to store key in keystore", e)
             false
         }
     }
@@ -238,9 +246,7 @@ class AiimsSecurityUtils @Inject constructor(
             val entry = keyStore.getEntry(alias, null) as? KeyStore.SecretKeyEntry
             entry?.secretKey
         } catch (e: Exception) {
-            if (AiimsFeatureFlag.isDebugEnabled(context)) {
-                android.util.Log.e(AiimsConstants.TAG_AUTH, "Failed to get key from keystore", e)
-            }
+            android.util.Log.e(AiimsConstants.TAG_AUTH, "Failed to get key from keystore", e)
             null
         }
     }

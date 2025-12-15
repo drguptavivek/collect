@@ -1,8 +1,7 @@
 package org.aiims.odk.auth.storage
 
+import android.content.Context
 import org.aiims.odk.auth.api.User
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Main authentication storage interface that wraps secure and regular storage.
@@ -10,10 +9,25 @@ import javax.inject.Singleton
  * Provides a unified interface for storing and retrieving authentication data,
  * abstracting away the distinction between secure and regular storage.
  */
-@Singleton
-class AiimsAuthStorage @Inject constructor(
+class AiimsAuthStorage private constructor(
     private val secureStorage: AiimsSecureStorage
 ) {
+
+    companion object {
+        @Volatile
+        private var INSTANCE: AiimsAuthStorage? = null
+
+        fun getInstance(context: Context): AiimsAuthStorage {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: createInstance(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+
+        private fun createInstance(context: Context): AiimsAuthStorage {
+            val secureStorage = AiimsSecureStorage.getInstance(context)
+            return AiimsAuthStorage(secureStorage)
+        }
+    }
 
     // ===== Authentication State =====
     var isAuthenticated: Boolean
@@ -29,95 +43,95 @@ class AiimsAuthStorage @Inject constructor(
     // ===== Device Tokens =====
     var deviceToken: String
         get() = secureStorage.deviceToken
-        set(value) = secureStorage.deviceToken = value
+        set(value) { secureStorage.deviceToken = value }
 
     var refreshToken: String
         get() = secureStorage.refreshToken
-        set(value) = secureStorage.refreshToken = value
+        set(value) { secureStorage.refreshToken = value }
 
     var tokenExpiry: Long?
         get() = secureStorage.tokenExpiry
-        set(value) = secureStorage.tokenExpiry = value
+        set(value) { secureStorage.tokenExpiry = value }
 
     // ===== User Information =====
     var userId: String?
         get() = secureStorage.userId
-        set(value) = secureStorage.userId = value
+        set(value) { secureStorage.userId = value }
 
     var userEmail: String?
         get() = secureStorage.userEmail
-        set(value) = secureStorage.userEmail = value
+        set(value) { secureStorage.userEmail = value }
 
     var userName: String?
         get() = secureStorage.userName
-        set(value) = secureStorage.userName = value
+        set(value) { secureStorage.userName = value }
 
     var userRole: String?
         get() = secureStorage.userRole
-        set(value) = secureStorage.userRole = value
+        set(value) { secureStorage.userRole = value }
 
     var partnerId: String?
         get() = secureStorage.partnerId
-        set(value) = secureStorage.partnerId = value
+        set(value) { secureStorage.partnerId = value }
 
     var partnerName: String?
         get() = secureStorage.partnerName
-        set(value) = secureStorage.partnerName = value
+        set(value) { secureStorage.partnerName = value }
 
     // ===== PIN Security =====
     var pinHash: String?
         get() = secureStorage.pinHash
-        set(value) = secureStorage.pinHash = value
+        set(value) { secureStorage.pinHash = value }
 
     var pinSalt: String?
         get() = secureStorage.pinSalt
-        set(value) = secureStorage.pinSalt = value
+        set(value) { secureStorage.pinSalt = value }
 
     var pinAttempts: Int
         get() = secureStorage.pinAttempts
-        set(value) = secureStorage.pinAttempts = value
+        set(value) { secureStorage.pinAttempts = value }
 
     var lastPinAttempt: Long?
         get() = secureStorage.lastPinAttempt
-        set(value) = secureStorage.lastPinAttempt = value
+        set(value) { secureStorage.lastPinAttempt = value }
 
     var biometricEnabled: Boolean
         get() = secureStorage.biometricEnabled
-        set(value) = secureStorage.biometricEnabled = value
+        set(value) { secureStorage.biometricEnabled = value }
 
     var biometricKeyAlias: String?
         get() = secureStorage.biometricKeyAlias
-        set(value) = secureStorage.biometricKeyAlias = value
+        set(value) { secureStorage.biometricKeyAlias = value }
 
     // ===== API Configuration =====
     var apiUrl: String
         get() = secureStorage.apiUrl
-        set(value) = secureStorage.apiUrl = value
+        set(value) { secureStorage.apiUrl = value }
 
     var deviceId: String
         get() = secureStorage.deviceId
-        set(value) = secureStorage.deviceId = value
+        set(value) { secureStorage.deviceId = value }
 
     // ===== Settings =====
     var offlinePeriodDays: Int
         get() = secureStorage.offlinePeriodDays
-        set(value) = secureStorage.offlinePeriodDays = value
+        set(value) { secureStorage.offlinePeriodDays = value }
 
     var autoLogoutMinutes: Int
         get() = secureStorage.autoLogoutMinutes
-        set(value) = secureStorage.autoLogoutMinutes = value
+        set(value) { secureStorage.autoLogoutMinutes = value }
 
     var lastAuthTimestamp: Long
         get() = secureStorage.lastAuthTimestamp
-        set(value) = secureStorage.lastAuthTimestamp = value
+        set(value) { secureStorage.lastAuthTimestamp = value }
 
     var lastSyncTimestamp: Long
         get() = secureStorage.lastSyncTimestamp
-        set(value) = secureStorage.lastSyncTimestamp = value
+        set(value) { secureStorage.lastSyncTimestamp = value }
 
     var syncPendingCount: Int
         get() = secureStorage.syncPendingCount
-        set(value) = secureStorage.syncPendingCount = value
+        set(value) { secureStorage.syncPendingCount = value }
 
     // ===== High-Level Operations =====
 

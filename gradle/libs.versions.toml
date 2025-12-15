@@ -71,6 +71,8 @@ dagger = { group = "com.google.dagger", name = "dagger", version.ref = "dagger" 
 daggerCompiler = { group = "com.google.dagger", name = "dagger-compiler", version.ref = "dagger" }
 daggerAndroid = { group = "com.google.dagger", name = "dagger-android", version.ref = "dagger" }
 daggerAndroidProcessor = { group = "com.google.dagger", name = "dagger-android-processor", version.ref = "dagger" }
+hiltAndroid = { group = "com.google.dagger", name = "hilt-android", version.ref = "dagger" }
+hiltCompiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "dagger" }
 kotlinxCoroutinesAndroid = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version = "1.10.2" }
 kotlinxCoroutinesTest = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version = "1.10.2" }
 armen101AudioRecorderView = { group = "com.github.Armen101", name = "AudioRecordView", version = "1.0.5" }
@@ -129,3 +131,5 @@ safeargsKotlin = { id = "androidx.navigation.safeargs.kotlin" }
 safeargs = { id = "androidx.navigation.safeargs" }
 ossLicenses = { id = "com.google.android.gms.oss-licenses-plugin" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+hiltAndroid = { id = "com.google.dagger.hilt.android", version.ref = "dagger" }
+ksp = { id = "com.google.devtools.ksp", version = "2.2.20-1.0.29" }

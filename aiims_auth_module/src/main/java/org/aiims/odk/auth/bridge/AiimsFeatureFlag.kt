@@ -93,8 +93,8 @@ object AiimsFeatureFlag {
         return mapOf(
             "enabled" to isEnabled(context),
             "debug" to isDebugEnabled(context),
-            "version" to BuildConfig.VERSION_NAME,
-            "buildType" to BuildConfig.BUILD_TYPE,
+            "version" to "1.0.0",
+            "buildType" to "debug",
             "timestamp" to System.currentTimeMillis()
         )
     }

@@ -5,8 +5,6 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import org.aiims.odk.auth.utils.AiimsConstants
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * Secure storage implementation using EncryptedSharedPreferences.
@@ -15,10 +13,24 @@ import javax.inject.Singleton
  * PINs, and API URLs using Android's EncryptedSharedPreferences with
  * AES-256-GCM encryption.
  */
-@Singleton
-class AiimsSecureStorage @Inject constructor(
+class AiimsSecureStorage private constructor(
     private val context: Context
 ) {
+
+    companion object {
+        @Volatile
+        private var INSTANCE: AiimsSecureStorage? = null
+
+        fun getInstance(context: Context): AiimsSecureStorage {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: createInstance(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+
+        private fun createInstance(context: Context): AiimsSecureStorage {
+            return AiimsSecureStorage(context)
+        }
+    }
 
     // Master key for encryption
     private val masterKey: MasterKey by lazy {
