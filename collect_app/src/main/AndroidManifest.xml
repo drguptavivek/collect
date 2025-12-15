@@ -107,11 +107,6 @@ the specific language governing permissions and limitations under the License.
             android:name=".mainmenu.MainMenuActivity"
             android:theme="@style/Theme.Collect.SplashScreen"
             android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
 
         <activity android:name="org.odk.collect.android.activities.CrashHandlerActivity" />
@@ -330,6 +325,30 @@ the specific language governing permissions and limitations under the License.
             </intent-filter>
         </activity>
         <activity android:name="org.odk.collect.android.formhierarchy.FormHierarchyFragmentHostActivity" />
+
+        <!-- AIIMS Launcher (enabled when auth feature flag is true) -->
+        <activity-alias
+            android:name=".AiimsLauncher"
+            android:targetActivity="org.aiims.odk.auth.activities.AiimsLoginActivity"
+            android:exported="true"
+            android:enabled="@bool/aiims_auth_enabled">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Original ODK Launcher (fallback when auth is disabled) -->
+        <activity-alias
+            android:name=".OdkLauncher"
+            android:targetActivity="org.odk.collect.android.mainmenu.MainMenuActivity"
+            android:exported="true"
+            android:enabled="@bool/odk_launcher_enabled">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
     </application>
 
     <queries>
