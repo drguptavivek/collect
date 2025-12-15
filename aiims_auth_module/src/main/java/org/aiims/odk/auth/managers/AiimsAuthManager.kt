@@ -10,8 +10,9 @@ import org.aiims.odk.auth.api.*
 /**
  * Simplified auth manager for build
  */
-class AiimsAuthManager private constructor() {
-    private val simpleAuthClient = SimpleAuthClient()
+class AiimsAuthManager private constructor(
+    private val context: Context
+) {
 
     companion object {
         @Volatile
@@ -19,7 +20,7 @@ class AiimsAuthManager private constructor() {
 
         fun getInstance(context: Context): AiimsAuthManager {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: AiimsAuthManager().also { INSTANCE = it }
+                INSTANCE ?: AiimsAuthManager(context.applicationContext).also { INSTANCE = it }
             }
         }
     }
@@ -43,8 +44,9 @@ class AiimsAuthManager private constructor() {
             _isLoading.value = true
             _errorMessage.value = null
 
-            // Simple login with no storage operations
-            val result = simpleAuthClient.login(email, password)
+            // Use real authentication client
+            val realAuthClient = RealAuthClient.getInstance(context, apiUrl)
+            val result = realAuthClient.login(email, password)
 
             when (result) {
                 is AuthResult.Success -> {
@@ -54,6 +56,7 @@ class AiimsAuthManager private constructor() {
                 }
                 is AuthResult.RequiresPin -> {
                     _authState.value = AuthState.REQUIRES_PIN
+                    _currentUser.value = result.user
                     result
                 }
                 else -> {
