@@ -12,11 +12,7 @@
     <!-- Device ID for authentication -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
-    <application
-        android:label="@string/aiims_app_name"
-        android:icon="@drawable/aiims_logo"
-        android:roundIcon="@drawable/aiims_logo"
-        android:theme="@style/Theme.AiimsAuth">
+    <application>
         <!-- AIIMS Login Activity - Entry point for authentication -->
         <activity
             android:name=".activities.AiimsLoginActivity"

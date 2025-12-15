@@ -37,7 +37,7 @@
     <color name="pin_background">#F0F0F0</color>
     <color name="pin_border">#CCCCCC</color>
     <color name="pin_border_focused">#005D8B</color>
-    <color name="pin_text">#333333</item>
+    <color name="pin_text">#333333</color>
 
     <!-- Biometric Colors -->
     <color name="biometric_icon">#005D8B</color>
