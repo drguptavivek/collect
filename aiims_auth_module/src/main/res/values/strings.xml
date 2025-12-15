@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">AIIMS ODK Collect</string>
+    <string name="aiims_app_name">AIIMS ODK Collect</string>
+
+    <!-- Authentication Labels -->
+    <string name="aiims_login">Login</string>
+    <string name="aiims_logout">Logout</string>
+    <string name="aiims_email">Email</string>
+    <string name="aiims_password">Password</string>
+    <string name="aiims_pin">PIN</string>
+    <string name="aiims_confirm_pin">Confirm PIN</string>
+    <string name="aiims_forgot_pin">Forgot PIN?</string>
+    <string name="aiims_settings">Authentication Settings</string>
+
+    <!-- Messages -->
+    <string name="aiims_login_success">Login successful</string>
+    <string name="aiims_login_failed">Login failed. Please try again.</string>
+    <string name="aiims_pin_success">PIN verified</string>
+    <string name="aiims_pin_incorrect">Incorrect PIN</string>
+    <string name="aiims_pin_set">PIN set successfully</string>
+    <string name="aiims_session_expired">Session expired. Please login again.</string>
+
+    <!-- Settings -->
+    <string name="aiims_api_url">API URL</string>
+    <string name="aiims_offline_period">Offline Access Period</string>
+    <string name="aiims_auto_logout">Auto-logout Timeout</string>
+    <string name="aiims_biometric">Use Biometric</string>
+
+    <!-- User Information -->
+    <string name="aiims_user_info">User Information</string>
+    <string name="aiims_user_email">Email</string>
+    <string name="aiims_user_role">Role</string>
+    <string name="aiims_partner">Partner</string>
+    <string name="aiims_last_login">Last Login</string>
+
+    <!-- Buttons -->
+    <string name="aiims_button_login">Login</string>
+    <string name="aiims_button_verify">Verify PIN</string>
+    <string name="aiims_button_setup">Set PIN</string>
+    <string name="aiims_button_change">Change PIN</string>
+    <string name="aiims_button_cancel">Cancel</string>
+    <string name="aiims_button_ok">OK</string>
+    <string name="aiims_button_save">Save</string>
+
+    <!-- Errors -->
+    <string name="aiims_error_network">Network error. Please check your connection.</string>
+    <string name="aiims_error_invalid_credentials">Invalid email or password.</string>
+    <string name="aiims_error_pin_locked">PIN locked. Try again tomorrow.</string>
+    <string name="aiims_error_server">Server error. Please try again later.</string>
+
+    <!-- PIN Setup -->
+    <string name="aiims_pin_create_title">Create PIN</string>
+    <string name="aiims_pin_create_message">Create a 4-6 digit PIN for quick access</string>
+    <string name="aiims_pin_confirm_title">Confirm PIN</string>
+    <string name="aiims_pin_confirm_message">Re-enter your PIN to confirm</string>
+    <string name="aiims_pin_mismatch">PINs do not match</string>
+    <string name="aiims_pin_weak">PIN is too simple. Use different digits.</string>
+
+    <!-- Biometric -->
+    <string name="aiims_biometric_title">AIIMS Authentication</string>
+    <string name="aiims_biometric_subtitle">Use your fingerprint to authenticate</string>
+    <string name="aiims_biometric_negative">Cancel</string>
+
+    <!-- Offline Status -->
+    <string name="aiims_offline_banner">Working offline</string>
+    <string name="aiims_sync_pending">Data will sync when online</string>
+    <string name="aiims_last_sync">Last sync: %s</string>
+</resources>

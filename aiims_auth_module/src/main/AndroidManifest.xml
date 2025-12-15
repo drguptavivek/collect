@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Network permissions for API calls -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Biometric authentication permission -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+
+    <!-- Device ID for authentication -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
+    <application
+        android:label="@string/aiims_app_name"
+        android:icon="@drawable/aiims_logo"
+        android:roundIcon="@drawable/aiims_logo"
+        android:theme="@style/Theme.AiimsAuth">
+        <!-- AIIMS Login Activity - Entry point for authentication -->
+        <activity
+            android:name=".activities.AiimsLoginActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
+            android:windowSoftInputMode="adjustResize"
+            android:screenOrientation="portrait"
+            android:launchMode="singleTop">
+
+            <!-- Deep linking for authentication -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="aiims-auth" />
+            </intent-filter>
+        </activity>
+
+        <!-- PIN Entry Activity - For returning users -->
+        <activity
+            android:name=".activities.AiimsPinActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
+            android:windowSoftInputMode="adjustResize"
+            android:screenOrientation="portrait"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
+
+        <!-- PIN Setup Activity - For new users creating PIN -->
+        <activity
+            android:name=".activities.AiimsPinSetupActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
+            android:windowSoftInputMode="adjustResize"
+            android:screenOrientation="portrait" />
+
+        <!-- PIN Setup Confirmation Activity -->
+        <activity
+            android:name=".activities.AiimsPinSetupConfirmActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
+            android:windowSoftInputMode="adjustResize"
+            android:screenOrientation="portrait" />
+
+        <!-- Forgot PIN Activity - Requires full re-authentication -->
+        <activity
+            android:name=".activities.AiimsForgotPinActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
+            android:windowSoftInputMode="adjustResize"
+            android:screenOrientation="portrait" />
+
+        <!-- Settings Activity - User profile and app settings -->
+        <activity
+            android:name=".activities.AiimsSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Material3.DayNight"
+            android:parentActivityName=".activities.AiimsPinActivity"
+            android:screenOrientation="portrait" />
+
+        <!-- Base Activity for shared authentication functionality -->
+        <activity
+            android:name=".activities.AiimsBaseActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+
+    </application>
+</manifest>
