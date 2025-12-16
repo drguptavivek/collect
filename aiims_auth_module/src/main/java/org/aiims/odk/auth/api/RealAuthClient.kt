@@ -178,12 +178,25 @@ class RealAuthClient private constructor(
      * Generate or retrieve device ID
      */
     private fun generateDeviceId(): String {
-        val prefs = context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE)
-        var deviceId = prefs.getString("device_id", null)
+        val aiimsPrefs = context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE)
+        val collectMetaPrefs = context.getSharedPreferences("meta", Context.MODE_PRIVATE)
+
+        // Prefer the existing Collect install ID (shown as Device ID in ODK settings)
+        val existingCollectId = collectMetaPrefs.getString("metadata_installid", null)
+
+        var deviceId = aiimsPrefs.getString("device_id", null) ?: existingCollectId
 
         if (deviceId == null) {
-            deviceId = UUID.randomUUID().toString()
-            prefs.edit().putString("device_id", deviceId).apply()
+            // Generate the same shape as Collect: "collect:" + 16-char random string
+            val randomSuffix = org.odk.collect.shared.strings.RandomString.randomString(16)
+            deviceId = "collect:$randomSuffix"
+
+            // Persist to both meta (so ODK shows it) and our local cache
+            collectMetaPrefs.edit().putString("metadata_installid", deviceId).apply()
+            aiimsPrefs.edit().putString("device_id", deviceId).apply()
+        } else {
+            // Ensure our cache stores it for consistency
+            aiimsPrefs.edit().putString("device_id", deviceId).apply()
         }
 
         return deviceId
