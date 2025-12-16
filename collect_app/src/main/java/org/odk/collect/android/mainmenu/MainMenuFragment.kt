@@ -163,6 +163,14 @@ class MainMenuFragment(
             return true
         }
 
+        if (item.itemId == org.odk.collect.android.R.id.auth_settings) {
+            // Launch AuthSettingsActivity
+            val intent = Intent()
+            intent.setClass(requireContext(), org.aiims.odk.auth.activities.AuthSettingsActivity::class.java)
+            startActivity(intent)
+            return true
+        }
+
         return super.onOptionsItemSelected(item)
     }
 

@@ -73,6 +73,13 @@
             android:parentActivityName=".activities.AiimsPinActivity"
             android:screenOrientation="portrait" />
 
+        <!-- Auth Settings Activity - Shows user details, token, logout, etc. -->
+        <activity
+            android:name=".activities.AuthSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Material3.DayNight"
+            android:screenOrientation="portrait" />
+
         <!-- Base Activity for shared authentication functionality -->
         <activity
             android:name=".activities.AiimsBaseActivity"
