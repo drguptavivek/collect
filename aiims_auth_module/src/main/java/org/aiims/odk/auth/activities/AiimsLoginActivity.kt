@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.aiims.odk.auth.api.AuthResult
 import org.aiims.odk.auth.managers.AiimsAuthManager
+import org.aiims.odk.auth.utils.TokenRevocationManager
 
 /**
  * AIIMS Login Activity
@@ -31,6 +32,11 @@ class AiimsLoginActivity : AppCompatActivity() {
 
         // Initialize auth manager
         authManager = AiimsAuthManager.getInstance(this)
+
+        // Try to process any pending token revocations when app is opened
+        lifecycleScope.launch {
+            TokenRevocationManager.processPending(this@AiimsLoginActivity)
+        }
 
         // Check authentication state
         lifecycleScope.launch {

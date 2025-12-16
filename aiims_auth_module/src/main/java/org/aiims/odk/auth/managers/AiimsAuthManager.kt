@@ -2,11 +2,13 @@ package org.aiims.odk.auth.managers
 
 import android.content.Context
 import android.content.SharedPreferences
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.aiims.odk.auth.api.*
+import org.aiims.odk.auth.utils.TokenRevocationManager
 import org.json.JSONObject
 
 /**
@@ -24,6 +26,9 @@ class AiimsAuthManager private constructor(
         private const val KEY_USER_DATA = "user_data"
         private const val KEY_AUTH_TOKEN = "auth_token"
         private const val KEY_EXPIRES_AT = "expires_at"
+        private const val KEY_LAST_API_URL = "last_api_url"
+        private const val KEY_LAST_LOGOUT_REASON = "last_logout_reason"
+        private const val KEY_LAST_LOGOUT_AT = "last_logout_at"
 
         fun getInstance(context: Context): AiimsAuthManager {
             return INSTANCE ?: synchronized(this) {
@@ -52,6 +57,7 @@ class AiimsAuthManager private constructor(
         return try {
             _isLoading.value = true
             _errorMessage.value = null
+            persistApiUrl(apiUrl)
 
             // Use real authentication client
             val realAuthClient = RealAuthClient.getInstance(context, apiUrl)
@@ -62,7 +68,7 @@ class AiimsAuthManager private constructor(
                     _authState.value = AuthState.LOGGED_IN
                     _currentUser.value = result.user
                     // Persist the auth state
-                    persistAuthState(AuthState.LOGGED_IN, result.user, null, null)
+                    persistAuthState(AuthState.LOGGED_IN, result.user, result.token, result.expiresAt)
                     result
                 }
                 is AuthResult.RequiresPin -> {
@@ -99,15 +105,23 @@ class AiimsAuthManager private constructor(
             android.util.Log.d("AiimsAuthManager", "Retrieved auth state: $stateString, PIN set: ${pinManager.isPinSet()}")
             when (stateString) {
                 "LOGGED_IN" -> {
-                    // Check if PIN is set, if yes and token expired, we should still allow PIN entry
                     if (pinManager.isPinSet()) {
-                        android.util.Log.d("AiimsAuthManager", "PIN exists, state: LOGGED_IN")
-                        AuthState.LOGGED_IN
-                    } else if (!isTokenExpired()) {
+                        return if (isTokenExpired()) {
+                            android.util.Log.d("AiimsAuthManager", "Token expired, PIN present; logging out")
+                            markLogoutForRevocation(LogoutReason.TOKEN_EXPIRED)
+                            AuthState.LOGGED_OUT
+                        } else {
+                            android.util.Log.d("AiimsAuthManager", "PIN exists, state: LOGGED_IN")
+                            AuthState.LOGGED_IN
+                        }
+                    }
+
+                    if (!isTokenExpired()) {
                         android.util.Log.d("AiimsAuthManager", "Token valid, state: LOGGED_IN")
                         AuthState.LOGGED_IN
                     } else {
                         android.util.Log.d("AiimsAuthManager", "Token expired and no PIN, state: LOGGED_OUT")
+                        markLogoutForRevocation(LogoutReason.TOKEN_EXPIRED)
                         AuthState.LOGGED_OUT
                     }
                 }
@@ -171,6 +185,8 @@ class AiimsAuthManager private constructor(
     fun persistAuthState(state: AuthState, user: org.aiims.odk.auth.api.User?, token: String?, expiresAt: String?) {
         prefs.edit().apply {
             putString(KEY_AUTH_STATE, state.name)
+            token?.takeIf { it.isNotBlank() }?.let { putString(KEY_AUTH_TOKEN, it) }
+            expiresAt?.takeIf { it.isNotBlank() }?.let { putString(KEY_EXPIRES_AT, it) }
 
             user?.let {
                 val userJson = JSONObject().apply {
@@ -185,9 +201,6 @@ class AiimsAuthManager private constructor(
                 }.toString()
                 putString(KEY_USER_DATA, userJson)
             }
-
-            token?.let { putString(KEY_AUTH_TOKEN, it) }
-            expiresAt?.let { putString(KEY_EXPIRES_AT, it) }
 
             apply()
         }
@@ -217,22 +230,32 @@ class AiimsAuthManager private constructor(
     fun getCurrentAuthState(): AuthState = _authState.value
 
     suspend fun logout() {
-        // Clear persisted data
-        prefs.edit().clear().apply()
-
-        // Clear PIN data
-        org.aiims.odk.auth.utils.PinManager.getInstance(context).clearPin()
-
-        _authState.value = AuthState.LOGGED_OUT
-        _currentUser.value = null
-        _isLoading.value = false
+        handleLogout(LogoutReason.USER_LOGOUT, clearPin = true)
     }
 
     /**
      * Logout due to failed PIN attempts - preserves PIN for next login
      */
     fun logoutDueToFailedPin() {
-        // Only clear auth state and tokens, preserve PIN
+        handleLogout(LogoutReason.FAILED_PIN, clearPin = false)
+        android.util.Log.d("AiimsAuthManager", "Logged out due to failed PIN, PIN preserved")
+    }
+
+    private fun persistApiUrl(apiUrl: String) {
+        prefs.edit().apply {
+            putString(KEY_LAST_API_URL, apiUrl)
+            apply()
+        }
+    }
+
+    private fun getStoredApiUrl(): String = prefs.getString(KEY_LAST_API_URL, "") ?: ""
+
+    private fun getDeviceId(): String = prefs.getString("device_id", "") ?: ""
+
+    private fun handleLogout(reason: LogoutReason, clearPin: Boolean) {
+        markLogoutForRevocation(reason)
+
+        // Remove only auth-related fields to preserve pending revocation data and device id
         prefs.edit().apply {
             remove(KEY_AUTH_STATE)
             remove(KEY_AUTH_TOKEN)
@@ -241,10 +264,31 @@ class AiimsAuthManager private constructor(
             apply()
         }
 
+        if (clearPin) {
+            org.aiims.odk.auth.utils.PinManager.getInstance(context).clearPin()
+        }
+
         _authState.value = AuthState.LOGGED_OUT
         _currentUser.value = null
         _isLoading.value = false
-        android.util.Log.d("AiimsAuthManager", "Logged out due to failed PIN, PIN preserved")
+    }
+
+    private fun markLogoutForRevocation(reason: LogoutReason) {
+        // Record when and why logout happened
+        prefs.edit().apply {
+            putString(KEY_LAST_LOGOUT_REASON, reason.name)
+            putLong(KEY_LAST_LOGOUT_AT, System.currentTimeMillis())
+            apply()
+        }
+
+        val tokenId = prefs.getString(KEY_AUTH_TOKEN, null)?.takeIf { it.isNotBlank() } ?: return
+        val apiUrl = getStoredApiUrl()
+        if (apiUrl.isBlank()) return
+
+        TokenRevocationManager.markPending(context, tokenId, apiUrl, tokenId, reason.name)
+        scope.launch(Dispatchers.IO) {
+            TokenRevocationManager.processPending(context)
+        }
     }
 }
 
@@ -257,4 +301,11 @@ enum class AuthState {
     LOGGED_OUT,
     REQUIRES_PIN,
     ERROR
+}
+
+enum class LogoutReason {
+    USER_LOGOUT,
+    FAILED_PIN,
+    TOKEN_EXPIRED,
+    TIMEOUT
 }

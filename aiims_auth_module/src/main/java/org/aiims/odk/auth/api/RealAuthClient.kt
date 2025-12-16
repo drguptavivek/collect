@@ -40,10 +40,15 @@ class RealAuthClient private constructor(
     companion object {
         @Volatile
         private var INSTANCE: RealAuthClient? = null
+        @Volatile
+        private var lastBaseUrl: String? = null
 
         fun getInstance(context: Context, apiUrl: String): RealAuthClient {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: RealAuthClient(context, apiUrl).also { INSTANCE = it }
+            return INSTANCE?.takeIf { lastBaseUrl == apiUrl } ?: synchronized(this) {
+                INSTANCE?.takeIf { lastBaseUrl == apiUrl } ?: RealAuthClient(context, apiUrl).also {
+                    INSTANCE = it
+                    lastBaseUrl = apiUrl
+                }
             }
         }
     }
@@ -107,7 +112,11 @@ class RealAuthClient private constructor(
                                 )
                             } else {
                                 Log.d("AiimsAuthClient", "Login complete without PIN")
-                                AuthResult.Success(user)
+                                AuthResult.Success(
+                                    user = user,
+                                    token = loginResponse.deviceToken ?: "",
+                                    expiresAt = loginResponse.expiresAt ?: ""
+                                )
                             }
                         } else {
                             Log.e("AiimsAuthClient", "No user data in response")
@@ -133,6 +142,34 @@ class RealAuthClient private constructor(
                 // Handle network errors
                 Log.e("AiimsAuthClient", "Login exception: ${e.message}", e)
                 AuthResult.Error("Network error: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Revoke device token by ID. If authToken is provided, send it as Bearer header.
+     */
+    suspend fun revokeDeviceToken(tokenId: String, authToken: String?): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val header = if (!authToken.isNullOrBlank()) "Bearer $authToken" else null
+                val response = getApiService().revokeDeviceToken(tokenId, header)
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.success == true) {
+                        Log.d("AiimsAuthClient", "Device token revoked: $tokenId")
+                        true
+                    } else {
+                        Log.e("AiimsAuthClient", "Revoke failed: ${body?.error ?: body?.message}")
+                        false
+                    }
+                } else {
+                    Log.e("AiimsAuthClient", "Revoke HTTP error ${response.code()}")
+                    false
+                }
+            } catch (e: Exception) {
+                Log.e("AiimsAuthClient", "Revoke exception: ${e.message}", e)
+                false
             }
         }
     }
