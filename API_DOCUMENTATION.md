@@ -515,9 +515,20 @@ List device tokens for current user.
 
 Revoke a specific device token.
 
-**Purpose**: Remove access for lost/stolen devices
-**Authentication**: Web Session
-**URL Parameters**: `id` - Device token UUID
+**Purpose**: Remove access for lost/stolen devices (also used by Android logout)
+**Authentication**: Device Token (Bearer) preferred; if the token is expired, you can pass the raw device token as `[id]` and the server will still revoke it after signature verification.
+**URL Parameters**: `id` - Device token UUID *or* the raw device token string (JWT)
+
+#### Request (with valid bearer)
+```
+POST /api/device-tokens/{tokenId}/revoke
+Authorization: Bearer <device_token>
+```
+
+#### Request (fallback when bearer is expired)
+```
+POST /api/device-tokens/{raw_device_token}/revoke
+```
 
 #### Response (200 OK)
 ```json
