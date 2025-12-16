@@ -87,21 +87,33 @@ class AiimsAuthManager private constructor(
     private fun getPersistedAuthState(): AuthState {
         return try {
             val stateString = prefs.getString(KEY_AUTH_STATE, null)
-            android.util.Log.d("AiimsAuthManager", "Retrieved auth state: $stateString")
+            val pinManager = org.aiims.odk.auth.utils.PinManager.getInstance(context)
+            android.util.Log.d("AiimsAuthManager", "Retrieved auth state: $stateString, PIN set: ${pinManager.isPinSet()}")
             when (stateString) {
                 "LOGGED_IN" -> {
-                    // Only consider logged in if token is not expired
-                    if (!isTokenExpired()) {
+                    // Check if PIN is set, if yes and token expired, we should still allow PIN entry
+                    if (pinManager.isPinSet()) {
+                        android.util.Log.d("AiimsAuthManager", "PIN exists, state: LOGGED_IN")
+                        AuthState.LOGGED_IN
+                    } else if (!isTokenExpired()) {
                         android.util.Log.d("AiimsAuthManager", "Token valid, state: LOGGED_IN")
                         AuthState.LOGGED_IN
                     } else {
-                        android.util.Log.d("AiimsAuthManager", "Token expired, state: LOGGED_OUT")
+                        android.util.Log.d("AiimsAuthManager", "Token expired and no PIN, state: LOGGED_OUT")
                         AuthState.LOGGED_OUT
                     }
                 }
                 "REQUIRES_PIN" -> {
-                    android.util.Log.d("AiimsAuthManager", "State: REQUIRES_PIN")
-                    AuthState.REQUIRES_PIN
+                    // If PIN is already set, we should show PIN entry, not setup
+                    if (pinManager.isPinSet()) {
+                        android.util.Log.d("AiimsAuthManager", "PIN already set, changing state to LOGGED_IN")
+                        // Update the persisted state
+                        persistAuthStateWithoutClearing(AuthState.LOGGED_IN)
+                        AuthState.LOGGED_IN
+                    } else {
+                        android.util.Log.d("AiimsAuthManager", "State: REQUIRES_PIN")
+                        AuthState.REQUIRES_PIN
+                    }
                 }
                 else -> {
                     android.util.Log.d("AiimsAuthManager", "State: LOGGED_OUT (default)")
@@ -185,6 +197,9 @@ class AiimsAuthManager private constructor(
     suspend fun logout() {
         // Clear persisted data
         prefs.edit().clear().apply()
+
+        // Clear PIN data
+        org.aiims.odk.auth.utils.PinManager.getInstance(context).clearPin()
 
         _authState.value = AuthState.LOGGED_OUT
         _currentUser.value = null

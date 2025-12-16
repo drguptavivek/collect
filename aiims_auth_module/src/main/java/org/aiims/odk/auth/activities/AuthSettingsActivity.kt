@@ -165,12 +165,10 @@ class AuthSettingsActivity : AppCompatActivity() {
     }
 
     private fun changePin() {
-        // TODO: Implement Change PIN functionality
-        android.widget.Toast.makeText(
-            this,
-            "Change PIN feature coming soon",
-            android.widget.Toast.LENGTH_SHORT
-        ).show()
+        // Launch Change PIN activity
+        val intent = Intent()
+        intent.setClass(this@AuthSettingsActivity, org.aiims.odk.auth.activities.ChangePinActivity::class.java)
+        startActivity(intent)
     }
 
     private fun logout() {
