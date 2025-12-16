@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.aiims.odk.auth.managers.AiimsAuthManager
+import org.aiims.odk.auth.utils.PinManager
 
 /**
  * PIN Entry Activity
@@ -20,15 +21,27 @@ import org.aiims.odk.auth.managers.AiimsAuthManager
 class PinEntryActivity : AppCompatActivity() {
 
     private lateinit var authManager: AiimsAuthManager
+    private lateinit var pinManager: PinManager
     private lateinit var pinField: EditText
     private lateinit var enterButton: Button
     private lateinit var progressBar: ProgressBar
+    private lateinit var userTextView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize auth manager
+        // Initialize auth manager and pin manager
         authManager = AiimsAuthManager.getInstance(this)
+        pinManager = PinManager.getInstance(this)
+
+        // Check if PIN is set, if not go to login
+        if (!pinManager.isPinSet()) {
+            finish()
+            val intent = Intent()
+            intent.setClass(this@PinEntryActivity, org.aiims.odk.auth.activities.AiimsLoginActivity::class.java)
+            startActivity(intent)
+            return
+        }
 
         // Check if user is already logged in
         lifecycleScope.launch {
@@ -63,6 +76,15 @@ class PinEntryActivity : AppCompatActivity() {
             text = "Enter your 4-digit PIN to continue"
             textSize = 16f
             setTextColor(android.graphics.Color.GRAY)
+            setPadding(0, 0, 0, 20)
+            gravity = android.view.Gravity.CENTER
+        }
+
+        // User info
+        userTextView = TextView(this).apply {
+            text = "Welcome back"
+            textSize = 16f
+            setTextColor(android.graphics.Color.DKGRAY)
             setPadding(0, 0, 0, 40)
             gravity = android.view.Gravity.CENTER
         }
@@ -112,6 +134,7 @@ class PinEntryActivity : AppCompatActivity() {
         // Add all views to layout
         layout.addView(title)
         layout.addView(subtitle)
+        layout.addView(userTextView)
         layout.addView(pinHint)
         layout.addView(pinField)
         layout.addView(enterButton)
@@ -119,6 +142,24 @@ class PinEntryActivity : AppCompatActivity() {
         layout.addView(progressBar, 0) // Insert progress bar at the beginning
 
         setContentView(layout)
+
+        // Load user data
+        loadUserData()
+    }
+
+    private fun loadUserData() {
+        lifecycleScope.launch {
+            authManager.currentUser.collect { user ->
+                user?.let {
+                    val welcomeText = if (it.name.isNotEmpty()) {
+                        "Welcome back,\n${it.name}"
+                    } else {
+                        "Welcome back,\n${it.email}"
+                    }
+                    userTextView.text = welcomeText
+                }
+            }
+        }
     }
 
     private fun attemptPinEntry() {
@@ -141,22 +182,45 @@ class PinEntryActivity : AppCompatActivity() {
         // Show loading state
         setLoading(true)
 
-        // For now, accept any 4-digit PIN (in production, verify against stored PIN)
+        // Verify PIN against stored PIN
         lifecycleScope.launch {
-            // Simulate PIN verification
+            // Simulate network delay
             kotlinx.coroutines.delay(500)
 
             setLoading(false)
 
-            // For demo purposes, accept any PIN
-            Toast.makeText(
-                this@PinEntryActivity,
-                "PIN verified successfully",
-                Toast.LENGTH_SHORT
-            ).show()
+            if (pinManager.isMaxAttemptsReached()) {
+                Toast.makeText(
+                    this@PinEntryActivity,
+                    "Too many failed attempts. Please login again.",
+                    Toast.LENGTH_LONG
+                ).show()
 
-            // Navigate to main app
-            navigateToMain()
+                // Clear session and go to login
+                authManager.logout()
+                pinManager.clearPin()
+                return@launch
+            }
+
+            if (pinManager.verifyPin(pin)) {
+                Toast.makeText(
+                    this@PinEntryActivity,
+                    "PIN verified successfully",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                // Navigate to main app
+                navigateToMain()
+            } else {
+                val attemptsLeft = 3 - pinManager.getFailedAttempts()
+                Toast.makeText(
+                    this@PinEntryActivity,
+                    "Incorrect PIN. $attemptsLeft attempts remaining.",
+                    Toast.LENGTH_LONG
+                ).show()
+                pinField.text.clear()
+                pinField.requestFocus()
+            }
         }
     }
 

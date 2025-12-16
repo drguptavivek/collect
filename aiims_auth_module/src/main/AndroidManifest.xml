@@ -80,6 +80,14 @@
             android:theme="@style/Theme.Material3.DayNight"
             android:screenOrientation="portrait" />
 
+        <!-- Change PIN Activity - Allows users to change their PIN -->
+        <activity
+            android:name=".activities.ChangePinActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
+            android:windowSoftInputMode="adjustResize"
+            android:screenOrientation="portrait" />
+
         <!-- Base Activity for shared authentication functionality -->
         <activity
             android:name=".activities.AiimsBaseActivity"

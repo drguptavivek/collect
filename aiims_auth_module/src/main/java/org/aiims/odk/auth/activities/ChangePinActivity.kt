@@ -11,27 +11,23 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import org.aiims.odk.auth.api.AuthResult
 import org.aiims.odk.auth.managers.AiimsAuthManager
 import org.aiims.odk.auth.utils.PinManager
 
 /**
- * PIN Setup Activity
- * Required after initial login for two-factor authentication
+ * Change PIN Activity
+ * Allows users to change their existing 4-digit PIN
  */
-class SetupPinActivity : AppCompatActivity() {
+class ChangePinActivity : AppCompatActivity() {
 
     private lateinit var authManager: AiimsAuthManager
     private lateinit var pinManager: PinManager
-    private lateinit var pinField: EditText
+    private lateinit var currentPinField: EditText
+    private lateinit var newPinField: EditText
     private lateinit var confirmPinField: EditText
-    private lateinit var setupButton: Button
+    private lateinit var changeButton: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var userTextView: TextView
-
-    // Store the authentication token from login
-    private var authToken: String = ""
-    private var expiresAt: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,19 +36,15 @@ class SetupPinActivity : AppCompatActivity() {
         authManager = AiimsAuthManager.getInstance(this)
         pinManager = PinManager.getInstance(this)
 
-        // Get token data from intent
-        authToken = intent.getStringExtra("authToken") ?: ""
-        expiresAt = intent.getStringExtra("expiresAt") ?: ""
-
         // Create layout
         val layout = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(50, 100, 50, 50)
+            setPadding(50, 80, 50, 50)
         }
 
         // Title
         val title = TextView(this).apply {
-            text = "Setup PIN"
+            text = "Change PIN"
             textSize = 28f
             setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(0, 0, 0, 20)
@@ -61,7 +53,7 @@ class SetupPinActivity : AppCompatActivity() {
 
         // Subtitle
         val subtitle = TextView(this).apply {
-            text = "Create a 4-digit PIN for quick access"
+            text = "Update your 4-digit PIN for quick access"
             textSize = 16f
             setTextColor(android.graphics.Color.GRAY)
             setPadding(0, 0, 0, 20)
@@ -83,23 +75,37 @@ class SetupPinActivity : AppCompatActivity() {
             setPadding(0, 0, 0, 20)
         }
 
-        // PIN field
-        val pinHint = TextView(this).apply {
-            text = "Enter PIN (4 digits):"
+        // Current PIN field
+        val currentPinHint = TextView(this).apply {
+            text = "Current PIN:"
             textSize = 16f
             setPadding(0, 20, 0, 8)
         }
 
-        pinField = EditText(this).apply {
+        currentPinField = EditText(this).apply {
+            hint = "••••"
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            // Set max length via filters
+            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
+        }
+
+        // New PIN field
+        val newPinHint = TextView(this).apply {
+            text = "New PIN (4 digits):"
+            textSize = 16f
+            setPadding(0, 20, 0, 8)
+        }
+
+        newPinField = EditText(this).apply {
             hint = "1234"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
             // Set max length via filters
             filters = arrayOf(android.text.InputFilter.LengthFilter(4))
         }
 
-        // Confirm PIN field
+        // Confirm new PIN field
         val confirmPinHint = TextView(this).apply {
-            text = "Confirm PIN:"
+            text = "Confirm New PIN:"
             textSize = 16f
             setPadding(0, 20, 0, 8)
         }
@@ -111,13 +117,25 @@ class SetupPinActivity : AppCompatActivity() {
             filters = arrayOf(android.text.InputFilter.LengthFilter(4))
         }
 
-        // Setup Button
-        setupButton = Button(this).apply {
-            text = "Setup PIN"
+        // Change PIN Button
+        changeButton = Button(this).apply {
+            text = "Change PIN"
             textSize = 18f
             setPadding(0, 30, 0, 30)
             setOnClickListener {
-                attemptPinSetup()
+                attemptChangePin()
+            }
+        }
+
+        // Cancel Button
+        val cancelButton = Button(this).apply {
+            text = "Cancel"
+            textSize = 16f
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            setTextColor(android.graphics.Color.GRAY)
+            setPadding(0, 10, 0, 10)
+            setOnClickListener {
+                finish()
             }
         }
 
@@ -125,17 +143,23 @@ class SetupPinActivity : AppCompatActivity() {
         layout.addView(title)
         layout.addView(subtitle)
         layout.addView(userTextView)
-        layout.addView(pinHint)
-        layout.addView(pinField)
+        layout.addView(progressBar)
+        layout.addView(currentPinHint)
+        layout.addView(currentPinField)
+        layout.addView(newPinHint)
+        layout.addView(newPinField)
         layout.addView(confirmPinHint)
         layout.addView(confirmPinField)
-        layout.addView(setupButton)
-        layout.addView(progressBar, 0) // Insert progress bar at the beginning
+        layout.addView(changeButton)
+        layout.addView(cancelButton)
 
         setContentView(layout)
 
         // Load user data
         loadUserData()
+
+        // Focus on current PIN field
+        currentPinField.requestFocus()
     }
 
     private fun loadUserData() {
@@ -143,9 +167,9 @@ class SetupPinActivity : AppCompatActivity() {
             authManager.currentUser.collect { user ->
                 user?.let {
                     val welcomeText = if (it.name.isNotEmpty()) {
-                        "Welcome,\n${it.name}"
+                        "Hello,\n${it.name}"
                     } else {
-                        "Welcome,\n${it.email}"
+                        "Hello,\n${it.email}"
                     }
                     userTextView.text = welcomeText
                 }
@@ -153,30 +177,46 @@ class SetupPinActivity : AppCompatActivity() {
         }
     }
 
-    private fun attemptPinSetup() {
-        val pin = pinField.text.toString().trim()
+    private fun attemptChangePin() {
+        val currentPin = currentPinField.text.toString().trim()
+        val newPin = newPinField.text.toString().trim()
         val confirmPin = confirmPinField.text.toString().trim()
 
         // Validation
         when {
-            pin.isEmpty() -> {
-                pinField.error = "PIN is required"
-                pinField.requestFocus()
+            currentPin.isEmpty() -> {
+                currentPinField.error = "Current PIN is required"
+                currentPinField.requestFocus()
                 return
             }
-            pin.length != 4 -> {
-                pinField.error = "PIN must be 4 digits"
-                pinField.requestFocus()
+            currentPin.length != 4 -> {
+                currentPinField.error = "PIN must be 4 digits"
+                currentPinField.requestFocus()
+                return
+            }
+            newPin.isEmpty() -> {
+                newPinField.error = "New PIN is required"
+                newPinField.requestFocus()
+                return
+            }
+            newPin.length != 4 -> {
+                newPinField.error = "PIN must be 4 digits"
+                newPinField.requestFocus()
                 return
             }
             confirmPin.isEmpty() -> {
-                confirmPinField.error = "Please confirm your PIN"
+                confirmPinField.error = "Please confirm your new PIN"
                 confirmPinField.requestFocus()
                 return
             }
-            pin != confirmPin -> {
-                confirmPinField.error = "PINs do not match"
+            confirmPin != newPin -> {
+                confirmPinField.error = "New PINs do not match"
                 confirmPinField.requestFocus()
+                return
+            }
+            newPin == currentPin -> {
+                newPinField.error = "New PIN must be different from current PIN"
+                newPinField.requestFocus()
                 return
             }
         }
@@ -184,45 +224,45 @@ class SetupPinActivity : AppCompatActivity() {
         // Show loading state
         setLoading(true)
 
-        // For now, simulate PIN setup (in production, this would call the backend API)
+        // Verify current PIN and change to new PIN
         lifecycleScope.launch {
-            // Simulate API call
-            kotlinx.coroutines.delay(500)
+            // Simulate network delay
+            kotlinx.coroutines.delay(1000)
 
             setLoading(false)
 
-            // Save the PIN
-            pinManager.savePin(pin)
+            // Verify current PIN
+            if (!pinManager.verifyPin(currentPin)) {
+                Toast.makeText(
+                    this@ChangePinActivity,
+                    "Current PIN is incorrect",
+                    Toast.LENGTH_LONG
+                ).show()
+                currentPinField.text.clear()
+                currentPinField.requestFocus()
+                return@launch
+            }
 
-            // Update auth state to LOGGED_IN now that PIN is set
-            // Keep existing user data and tokens, just update the state
-            android.util.Log.d("SetupPinActivity", "PIN setup complete, setting state to LOGGED_IN")
-            authManager.persistAuthStateWithoutClearing(org.aiims.odk.auth.managers.AuthState.LOGGED_IN)
+            // Save the new PIN
+            pinManager.savePin(newPin)
 
             Toast.makeText(
-                this@SetupPinActivity,
-                "PIN setup successful!",
+                this@ChangePinActivity,
+                "PIN changed successfully!",
                 Toast.LENGTH_SHORT
             ).show()
 
-            // Navigate to main app
-            navigateToMain()
+            // Return to AuthSettings
+            finish()
         }
     }
 
-    private fun navigateToMain() {
-        // Launch main ODK activity
-        val intent = Intent()
-        intent.setClassName("org.odk.collect.android", "org.odk.collect.android.mainmenu.MainMenuActivity")
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-        finish()
-    }
-
+    
     private fun setLoading(loading: Boolean) {
         progressBar.visibility = if (loading) View.VISIBLE else View.GONE
-        setupButton.isEnabled = !loading
-        pinField.isEnabled = !loading
+        changeButton.isEnabled = !loading
+        currentPinField.isEnabled = !loading
+        newPinField.isEnabled = !loading
         confirmPinField.isEnabled = !loading
     }
 }
