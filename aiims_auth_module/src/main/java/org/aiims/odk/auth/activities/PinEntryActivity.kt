@@ -196,9 +196,8 @@ class PinEntryActivity : AppCompatActivity() {
                     Toast.LENGTH_LONG
                 ).show()
 
-                // Clear session and go to login
-                authManager.logout()
-                pinManager.clearPin()
+                // Clear session but preserve PIN
+                authManager.logoutDueToFailedPin()
                 return@launch
             }
 
@@ -225,16 +224,14 @@ class PinEntryActivity : AppCompatActivity() {
     }
 
     private fun forgotPin() {
-        // For demo purposes, clear the session and go to login
+        // Clear the session but preserve PIN
         Toast.makeText(
             this,
             "Session cleared. Please login again.",
             Toast.LENGTH_LONG
         ).show()
 
-        lifecycleScope.launch {
-            authManager.logout()
-        }
+        authManager.logoutDueToFailedPin()
     }
 
     private fun navigateToMain() {

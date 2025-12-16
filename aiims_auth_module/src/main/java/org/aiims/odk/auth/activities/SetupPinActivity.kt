@@ -195,9 +195,8 @@ class SetupPinActivity : AppCompatActivity() {
             pinManager.savePin(pin)
 
             // Update auth state to LOGGED_IN now that PIN is set
-            // Keep existing user data and tokens, just update the state
             android.util.Log.d("SetupPinActivity", "PIN setup complete, setting state to LOGGED_IN")
-            authManager.persistAuthStateWithoutClearing(org.aiims.odk.auth.managers.AuthState.LOGGED_IN)
+            authManager.updateAuthState(org.aiims.odk.auth.managers.AuthState.LOGGED_IN)
 
             Toast.makeText(
                 this@SetupPinActivity,
