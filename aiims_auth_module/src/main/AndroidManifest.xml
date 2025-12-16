@@ -33,7 +33,7 @@
 
         <!-- PIN Entry Activity - For returning users -->
         <activity
-            android:name=".activities.AiimsPinActivity"
+            android:name=".activities.PinEntryActivity"
             android:exported="false"
             android:theme="@style/Theme.Material3.DayNight.NoActionBar"
             android:windowSoftInputMode="adjustResize"
