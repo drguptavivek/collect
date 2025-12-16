@@ -86,6 +86,27 @@ class AuthSettingsActivity : AppCompatActivity() {
             android.widget.Toast.makeText(this@AuthSettingsActivity, "Token copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
         }
 
+        // Device ID Section
+        val deviceIdTitle = TextView(this).apply {
+            text = "Device ID"
+            textSize = 18f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(0, 20, 0, 16)
+        }
+
+        val deviceIdText = TextView(this).apply {
+            textSize = 14f
+            typeface = android.graphics.Typeface.MONOSPACE
+            setPadding(0, 0, 0, 24)
+        }
+
+        deviceIdText.setOnClickListener {
+            val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newPlainText("Device ID", deviceIdText.text.toString())
+            clipboard.setPrimaryClip(clip)
+            android.widget.Toast.makeText(this@AuthSettingsActivity, "Device ID copied", android.widget.Toast.LENGTH_SHORT).show()
+        }
+
         // Change PIN Button
         val changePinButton = Button(this).apply {
             text = "Change PIN"
@@ -126,6 +147,8 @@ class AuthSettingsActivity : AppCompatActivity() {
         container.addView(userDetailsText)
         container.addView(tokenTitle)
         container.addView(tokenText)
+        container.addView(deviceIdTitle)
+        container.addView(deviceIdText)
         container.addView(changePinButton)
         container.addView(logoutButton)
         container.addView(backButton)
@@ -135,10 +158,10 @@ class AuthSettingsActivity : AppCompatActivity() {
         setContentView(layout)
 
         // Load user data
-        loadUserData(userDetailsText, tokenText)
+        loadUserData(userDetailsText, tokenText, deviceIdText)
     }
 
-    private fun loadUserData(userDetailsText: TextView, tokenText: TextView) {
+    private fun loadUserData(userDetailsText: TextView, tokenText: TextView, deviceIdText: TextView) {
         lifecycleScope.launch {
             authManager.currentUser.collect { user ->
                 user?.let {
@@ -162,6 +185,11 @@ class AuthSettingsActivity : AppCompatActivity() {
 
         // Add hint about tap to copy
         tokenText.append("\n\n(Tap to copy to clipboard)")
+
+        // Device ID comes from Collect meta prefs
+        val deviceId = getSharedPreferences("meta", MODE_PRIVATE).getString("metadata_installid", "No device ID found")
+        deviceIdText.text = deviceId ?: "No device ID found"
+        deviceIdText.append("\n\n(Tap to copy to clipboard)")
     }
 
     private fun changePin() {
