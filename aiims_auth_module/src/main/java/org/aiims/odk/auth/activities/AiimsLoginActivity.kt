@@ -32,17 +32,31 @@ class AiimsLoginActivity : AppCompatActivity() {
         // Initialize auth manager
         authManager = AiimsAuthManager.getInstance(this)
 
-        // Check if already authenticated
+        // Check authentication state
         lifecycleScope.launch {
             authManager.authState.collect { state ->
-                if (state == org.aiims.odk.auth.managers.AuthState.LOGGED_IN) {
-                    // User is already logged in, check if PIN is set
-                    // For now, assume PIN is not set and show PIN setup
-                    Toast.makeText(this@AiimsLoginActivity, "Already logged in! Setting up PIN...", Toast.LENGTH_SHORT).show()
-                    val intent = Intent()
-                    intent.setClass(this@AiimsLoginActivity, org.aiims.odk.auth.activities.SetupPinActivity::class.java)
-                    startActivity(intent)
-                    finish()
+                when (state) {
+                    org.aiims.odk.auth.managers.AuthState.LOGGED_IN -> {
+                        // User is already logged in, ask for PIN
+                        val intent = Intent()
+                        intent.setClass(this@AiimsLoginActivity, org.aiims.odk.auth.activities.PinEntryActivity::class.java)
+                        startActivity(intent)
+                        finish()
+                    }
+                    org.aiims.odk.auth.managers.AuthState.REQUIRES_PIN -> {
+                        // User logged in but needs to set up PIN
+                        Toast.makeText(this@AiimsLoginActivity, "Please set up your PIN", Toast.LENGTH_SHORT).show()
+                        val intent = Intent()
+                        intent.setClass(this@AiimsLoginActivity, org.aiims.odk.auth.activities.SetupPinActivity::class.java)
+                        startActivity(intent)
+                        finish()
+                    }
+                    org.aiims.odk.auth.managers.AuthState.LOGGED_OUT -> {
+                        // Show login screen (default behavior)
+                    }
+                    else -> {
+                        // Show login screen (default behavior)
+                    }
                 }
             }
         }
@@ -246,5 +260,14 @@ class AiimsLoginActivity : AppCompatActivity() {
         emailField.isEnabled = !loading
         passwordField.isEnabled = !loading
         urlField.isEnabled = !loading
+    }
+
+    private fun navigateToMain() {
+        // Launch main ODK activity
+        val intent = Intent()
+        intent.setClassName("org.odk.collect.android", "org.odk.collect.android.mainmenu.MainMenuActivity")
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 }

@@ -11,24 +11,18 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import org.aiims.odk.auth.api.AuthResult
 import org.aiims.odk.auth.managers.AiimsAuthManager
 
 /**
- * PIN Setup Activity
- * Required after initial login for two-factor authentication
+ * PIN Entry Activity
+ * For returning users who have already set up a PIN
  */
-class SetupPinActivity : AppCompatActivity() {
+class PinEntryActivity : AppCompatActivity() {
 
     private lateinit var authManager: AiimsAuthManager
     private lateinit var pinField: EditText
-    private lateinit var confirmPinField: EditText
-    private lateinit var setupButton: Button
+    private lateinit var enterButton: Button
     private lateinit var progressBar: ProgressBar
-
-    // Store the authentication token from login
-    private var authToken: String = ""
-    private var expiresAt: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,19 +30,28 @@ class SetupPinActivity : AppCompatActivity() {
         // Initialize auth manager
         authManager = AiimsAuthManager.getInstance(this)
 
-        // Get token data from intent
-        authToken = intent.getStringExtra("authToken") ?: ""
-        expiresAt = intent.getStringExtra("expiresAt") ?: ""
+        // Check if user is already logged in
+        lifecycleScope.launch {
+            authManager.authState.collect { state ->
+                if (state == org.aiims.odk.auth.managers.AuthState.LOGGED_OUT) {
+                    // User logged out, go to login
+                    finish()
+                    val intent = Intent()
+                    intent.setClass(this@PinEntryActivity, org.aiims.odk.auth.activities.AiimsLoginActivity::class.java)
+                    startActivity(intent)
+                }
+            }
+        }
 
         // Create layout
         val layout = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(50, 100, 50, 50)
+            setPadding(50, 150, 50, 50)
         }
 
         // Title
         val title = TextView(this).apply {
-            text = "Setup PIN"
+            text = "Enter PIN"
             textSize = 28f
             setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(0, 0, 0, 20)
@@ -57,7 +60,7 @@ class SetupPinActivity : AppCompatActivity() {
 
         // Subtitle
         val subtitle = TextView(this).apply {
-            text = "Create a 4-digit PIN for quick access"
+            text = "Enter your 4-digit PIN to continue"
             textSize = 16f
             setTextColor(android.graphics.Color.GRAY)
             setPadding(0, 0, 0, 40)
@@ -72,51 +75,37 @@ class SetupPinActivity : AppCompatActivity() {
 
         // PIN field
         val pinHint = TextView(this).apply {
-            text = "Enter PIN (4 digits):"
+            text = "PIN:"
             textSize = 16f
             setPadding(0, 20, 0, 8)
         }
 
         pinField = EditText(this).apply {
-            hint = "1234"
+            hint = "••••"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
             // Set max length via filters
             filters = arrayOf(android.text.InputFilter.LengthFilter(4))
         }
 
-        // Confirm PIN field
-        val confirmPinHint = TextView(this).apply {
-            text = "Confirm PIN:"
-            textSize = 16f
-            setPadding(0, 20, 0, 8)
-        }
-
-        confirmPinField = EditText(this).apply {
-            hint = "1234"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            // Set max length via filters
-            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
-        }
-
-        // Setup Button
-        setupButton = Button(this).apply {
-            text = "Setup PIN"
+        // Enter Button
+        enterButton = Button(this).apply {
+            text = "Enter"
             textSize = 18f
             setPadding(0, 30, 0, 30)
             setOnClickListener {
-                attemptPinSetup()
+                attemptPinEntry()
             }
         }
 
-        // Skip button (optional - can be removed if PIN is mandatory)
-        val skipButton = Button(this).apply {
-            text = "Skip for now"
+        // Forgot PIN
+        val forgotPinButton = Button(this).apply {
+            text = "Forgot PIN?"
             textSize = 14f
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            setTextColor(android.graphics.Color.GRAY)
+            setTextColor(android.graphics.Color.BLUE)
             setPadding(0, 10, 0, 10)
             setOnClickListener {
-                skipPinSetup()
+                forgotPin()
             }
         }
 
@@ -125,18 +114,15 @@ class SetupPinActivity : AppCompatActivity() {
         layout.addView(subtitle)
         layout.addView(pinHint)
         layout.addView(pinField)
-        layout.addView(confirmPinHint)
-        layout.addView(confirmPinField)
-        layout.addView(setupButton)
-        layout.addView(skipButton)
+        layout.addView(enterButton)
+        layout.addView(forgotPinButton)
         layout.addView(progressBar, 0) // Insert progress bar at the beginning
 
         setContentView(layout)
     }
 
-    private fun attemptPinSetup() {
+    private fun attemptPinEntry() {
         val pin = pinField.text.toString().trim()
-        val confirmPin = confirmPinField.text.toString().trim()
 
         // Validation
         when {
@@ -150,36 +136,22 @@ class SetupPinActivity : AppCompatActivity() {
                 pinField.requestFocus()
                 return
             }
-            confirmPin.isEmpty() -> {
-                confirmPinField.error = "Please confirm your PIN"
-                confirmPinField.requestFocus()
-                return
-            }
-            pin != confirmPin -> {
-                confirmPinField.error = "PINs do not match"
-                confirmPinField.requestFocus()
-                return
-            }
         }
 
         // Show loading state
         setLoading(true)
 
-        // For now, simulate PIN setup (in production, this would call the backend API)
+        // For now, accept any 4-digit PIN (in production, verify against stored PIN)
         lifecycleScope.launch {
-            // Simulate API call
+            // Simulate PIN verification
             kotlinx.coroutines.delay(500)
 
             setLoading(false)
 
-            // Update auth state to LOGGED_IN now that PIN is set
-            // Keep existing user data and tokens, just update the state
-            android.util.Log.d("SetupPinActivity", "PIN setup complete, setting state to LOGGED_IN")
-            authManager.persistAuthStateWithoutClearing(org.aiims.odk.auth.managers.AuthState.LOGGED_IN)
-
+            // For demo purposes, accept any PIN
             Toast.makeText(
-                this@SetupPinActivity,
-                "PIN setup successful!",
+                this@PinEntryActivity,
+                "PIN verified successfully",
                 Toast.LENGTH_SHORT
             ).show()
 
@@ -188,13 +160,17 @@ class SetupPinActivity : AppCompatActivity() {
         }
     }
 
-    private fun skipPinSetup() {
+    private fun forgotPin() {
+        // For demo purposes, clear the session and go to login
         Toast.makeText(
             this,
-            "PIN setup skipped. You can set it up later in settings.",
+            "Session cleared. Please login again.",
             Toast.LENGTH_LONG
         ).show()
-        navigateToMain()
+
+        lifecycleScope.launch {
+            authManager.logout()
+        }
     }
 
     private fun navigateToMain() {
@@ -208,8 +184,7 @@ class SetupPinActivity : AppCompatActivity() {
 
     private fun setLoading(loading: Boolean) {
         progressBar.visibility = if (loading) View.VISIBLE else View.GONE
-        setupButton.isEnabled = !loading
+        enterButton.isEnabled = !loading
         pinField.isEnabled = !loading
-        confirmPinField.isEnabled = !loading
     }
 }
