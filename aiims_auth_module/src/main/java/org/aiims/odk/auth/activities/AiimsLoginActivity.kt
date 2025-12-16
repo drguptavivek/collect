@@ -36,11 +36,11 @@ class AiimsLoginActivity : AppCompatActivity() {
         lifecycleScope.launch {
             authManager.authState.collect { state ->
                 if (state == org.aiims.odk.auth.managers.AuthState.LOGGED_IN) {
-                    // User is already logged in, go to main menu
-                    Toast.makeText(this@AiimsLoginActivity, "Already logged in!", Toast.LENGTH_SHORT).show()
+                    // User is already logged in, check if PIN is set
+                    // For now, assume PIN is not set and show PIN setup
+                    Toast.makeText(this@AiimsLoginActivity, "Already logged in! Setting up PIN...", Toast.LENGTH_SHORT).show()
                     val intent = Intent()
-                    intent.setClassName("org.odk.collect.android", "org.odk.collect.android.mainmenu.MainMenuActivity")
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    intent.setClass(this@AiimsLoginActivity, org.aiims.odk.auth.activities.SetupPinActivity::class.java)
                     startActivity(intent)
                     finish()
                 }
@@ -220,17 +220,11 @@ class AiimsLoginActivity : AppCompatActivity() {
                         ).show()
                     }
                     is AuthResult.RequiresPin -> {
-                        // TODO: Navigate to PIN setup/activity
-                        Toast.makeText(
-                            this@AiimsLoginActivity,
-                            "PIN setup required (not implemented yet)",
-                            Toast.LENGTH_LONG
-                        ).show()
-
-                        // For now, go to main menu
+                        // Navigate to PIN setup
                         val intent = Intent()
-                        intent.setClassName("org.odk.collect.android", "org.odk.collect.android.mainmenu.MainMenuActivity")
-                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        intent.setClass(this@AiimsLoginActivity, org.aiims.odk.auth.activities.SetupPinActivity::class.java)
+                        intent.putExtra("authToken", result.token)
+                        intent.putExtra("expiresAt", result.expiresAt)
                         startActivity(intent)
                         finish()
                     }
