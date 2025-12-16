@@ -23,6 +23,7 @@ import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.aiims.odk.auth.utils.AiimsAppLock;
 import org.jetbrains.annotations.NotNull;
 import org.odk.collect.android.dynamicpreload.ExternalDataManager;
 import org.odk.collect.android.injection.DaggerUtils;
@@ -37,6 +38,7 @@ import org.odk.collect.android.injection.config.DaggerAppDependencyComponent;
 import org.odk.collect.android.utilities.CollectStrictMode;
 import org.odk.collect.android.utilities.FormsRepositoryProvider;
 import org.odk.collect.android.utilities.LocaleHelper;
+import org.odk.collect.android.R;
 import org.odk.collect.androidshared.data.AppState;
 import org.odk.collect.androidshared.data.StateStore;
 import org.odk.collect.androidshared.system.ExternalFilesUtils;
@@ -157,6 +159,10 @@ public class Collect extends Application implements
                     fixGoogleBug154855417();
                     CollectStrictMode.enable();
                     MlKitBarcodeScannerViewFactory.init(this);
+
+                    if (getResources().getBoolean(R.bool.aiims_auth_enabled)) {
+                        registerActivityLifecycleCallbacks(new AiimsAppLock(this));
+                    }
                 }
         );
     }

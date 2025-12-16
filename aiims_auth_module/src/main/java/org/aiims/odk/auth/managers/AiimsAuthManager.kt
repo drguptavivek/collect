@@ -66,10 +66,18 @@ class AiimsAuthManager private constructor(
                     result
                 }
                 is AuthResult.RequiresPin -> {
-                    _authState.value = AuthState.REQUIRES_PIN
-                    _currentUser.value = result.user
-                    // Persist that PIN is required
-                    persistAuthState(AuthState.REQUIRES_PIN, result.user, result.token, result.expiresAt)
+                    val pinManager = org.aiims.odk.auth.utils.PinManager.getInstance(context)
+                    if (pinManager.isPinSet()) {
+                        // PIN already exists, user can enter it
+                        _authState.value = AuthState.LOGGED_IN
+                        _currentUser.value = result.user
+                        persistAuthState(AuthState.LOGGED_IN, result.user, result.token, result.expiresAt)
+                    } else {
+                        // PIN needs to be set up
+                        _authState.value = AuthState.REQUIRES_PIN
+                        _currentUser.value = result.user
+                        persistAuthState(AuthState.REQUIRES_PIN, result.user, result.token, result.expiresAt)
+                    }
                     result
                 }
                 else -> {
@@ -194,6 +202,20 @@ class AiimsAuthManager private constructor(
         android.util.Log.d("AiimsAuthManager", "Updated auth state to: ${state.name} without clearing existing data")
     }
 
+    /**
+     * Updates the in-memory auth state and persists it.
+     * Use this after initialization to keep flows and storage in sync.
+     */
+    fun updateAuthState(state: AuthState) {
+        _authState.value = state
+        persistAuthStateWithoutClearing(state)
+    }
+
+    /**
+     * Returns the current in-memory auth state.
+     */
+    fun getCurrentAuthState(): AuthState = _authState.value
+
     suspend fun logout() {
         // Clear persisted data
         prefs.edit().clear().apply()
@@ -204,6 +226,25 @@ class AiimsAuthManager private constructor(
         _authState.value = AuthState.LOGGED_OUT
         _currentUser.value = null
         _isLoading.value = false
+    }
+
+    /**
+     * Logout due to failed PIN attempts - preserves PIN for next login
+     */
+    fun logoutDueToFailedPin() {
+        // Only clear auth state and tokens, preserve PIN
+        prefs.edit().apply {
+            remove(KEY_AUTH_STATE)
+            remove(KEY_AUTH_TOKEN)
+            remove(KEY_EXPIRES_AT)
+            remove(KEY_USER_DATA)
+            apply()
+        }
+
+        _authState.value = AuthState.LOGGED_OUT
+        _currentUser.value = null
+        _isLoading.value = false
+        android.util.Log.d("AiimsAuthManager", "Logged out due to failed PIN, PIN preserved")
     }
 }
 
