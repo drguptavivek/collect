@@ -2,48 +2,61 @@ package org.aiims.odk.auth.managers
 
 import android.content.Context
 import android.content.SharedPreferences
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.*
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.aiims.odk.auth.api.*
-import org.aiims.odk.auth.utils.TokenRevocationManager
+import kotlinx.coroutines.launch
+import org.aiims.odk.auth.api.AuthResult
+import org.aiims.odk.auth.api.RealAuthClient
+import org.aiims.odk.auth.api.User
+import org.aiims.odk.auth.utils.AiimsProjectUtils
 import org.json.JSONObject
 
 /**
- * Simplified auth manager for build
+ * Authentication Manager for Central Backend.
+ * Supports Multi-Project Isolation.
  */
 class AiimsAuthManager private constructor(
-    private val context: Context
+    private val context: Context,
+    private val projectCleaner: ProjectCleaner
 ) {
 
     companion object {
         @Volatile
         private var INSTANCE: AiimsAuthManager? = null
         private const val PREFS_NAME = "aiims_auth_prefs"
-        private const val KEY_AUTH_STATE = "auth_state"
-        private const val KEY_USER_DATA = "user_data"
-        private const val KEY_AUTH_TOKEN = "auth_token"
-        private const val KEY_EXPIRES_AT = "expires_at"
-        private const val KEY_LAST_API_URL = "last_api_url"
-        private const val KEY_LAST_LOGOUT_REASON = "last_logout_reason"
-        private const val KEY_LAST_LOGOUT_AT = "last_logout_at"
 
+        // Global keys
+        private const val KEY_ACTIVE_PROJECT_ID = "active_project_id"
+
+        @JvmStatic
         fun getInstance(context: Context): AiimsAuthManager {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: AiimsAuthManager(context.applicationContext).also { INSTANCE = it }
+                INSTANCE ?: throw IllegalStateException("AiimsAuthManager must be initialized with ProjectCleaner first")
+            }
+        }
+
+        @JvmStatic
+        fun init(context: Context, projectCleaner: ProjectCleaner): AiimsAuthManager {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: AiimsAuthManager(context.applicationContext, projectCleaner).also { INSTANCE = it }
             }
         }
     }
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    private val _authState = MutableStateFlow(getPersistedAuthState())
+
+    // Reactive state for the *Active* Project
+    private val _authState = MutableStateFlow(AuthState.INITIAL)
     val authState: Flow<AuthState> = _authState.asStateFlow()
 
-    private val _currentUser = MutableStateFlow<org.aiims.odk.auth.api.User?>(getPersistedUser())
-    val currentUser: Flow<org.aiims.odk.auth.api.User?> = _currentUser.asStateFlow()
+    private val _currentUser = MutableStateFlow<User?>(null)
+    val currentUser: Flow<User?> = _currentUser.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: Flow<Boolean> = _isLoading.asStateFlow()
@@ -51,44 +64,78 @@ class AiimsAuthManager private constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: Flow<String?> = _errorMessage.asStateFlow()
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    // Current active project context
+    private var activeProjectId: String? = null
 
-    suspend fun login(email: String, password: String, apiUrl: String): AuthResult {
+    init {
+        // Restore last active project or default state
+        activeProjectId = prefs.getString(KEY_ACTIVE_PROJECT_ID, null)
+        refreshState()
+    }
+
+    /**
+     * Sets the active project context.
+     * Use this when the app switches projects or detects the current project.
+     */
+    fun setActiveProject(projectId: String?) {
+        if (activeProjectId != projectId) {
+            activeProjectId = projectId
+            prefs.edit().putString(KEY_ACTIVE_PROJECT_ID, projectId).apply()
+            refreshState()
+        }
+    }
+
+    /**
+     * Refresh in-memory flows based on the Active Project's persisted state.
+     */
+    private fun refreshState() {
+        if (activeProjectId == null) {
+            _authState.value = AuthState.LOGGED_OUT // Or INITIAL
+            _currentUser.value = null
+            return
+        }
+        val pid = activeProjectId!!
+        val token = getPersistedToken(pid)
+        val user = getPersistedUser(pid)
+        val expiresAt = getPersistedExpiresAt(pid)
+
+        if (token != null && user != null && !isTokenExpired(expiresAt)) {
+            _authState.value = AuthState.LOGGED_IN
+            _currentUser.value = user
+        } else {
+            _authState.value = AuthState.LOGGED_OUT
+            _currentUser.value = null
+        }
+    }
+
+    /**
+     * Login for a specific project.
+     */
+    suspend fun login(projectId: String, username: String, password: String, apiUrl: String): AuthResult {
         return try {
             _isLoading.value = true
             _errorMessage.value = null
-            persistApiUrl(apiUrl)
 
             // Use real authentication client
-            val realAuthClient = RealAuthClient.getInstance(context, apiUrl)
-            val result = realAuthClient.login(email, password)
+            val client = RealAuthClient.getInstance(context, apiUrl)
+            val result = client.login(projectId, username, password)
 
             when (result) {
                 is AuthResult.Success -> {
-                    _authState.value = AuthState.LOGGED_IN
-                    _currentUser.value = result.user
-                    // Persist the auth state
-                    persistAuthState(AuthState.LOGGED_IN, result.user, result.token, result.expiresAt)
-                    result
-                }
-                is AuthResult.RequiresPin -> {
-                    val pinManager = org.aiims.odk.auth.utils.PinManager.getInstance(context)
-                    if (pinManager.isPinSet()) {
-                        // PIN already exists, user can enter it
-                        _authState.value = AuthState.LOGGED_IN
-                        _currentUser.value = result.user
-                        persistAuthState(AuthState.LOGGED_IN, result.user, result.token, result.expiresAt)
-                    } else {
-                        // PIN needs to be set up
-                        _authState.value = AuthState.REQUIRES_PIN
-                        _currentUser.value = result.user
-                        persistAuthState(AuthState.REQUIRES_PIN, result.user, result.token, result.expiresAt)
+                    // Persist for this project
+                    persistSession(projectId, result.user, result.token, result.expiresAt, apiUrl)
+                    
+                    // If this matches the active project, update state immediately
+                    if (activeProjectId == projectId) {
+                        refreshState()
                     }
                     result
                 }
-                else -> {
+                is AuthResult.Error -> {
+                    _errorMessage.value = result.message
                     result
                 }
+                else -> result
             }
         } catch (e: Exception) {
             _errorMessage.value = e.message
@@ -98,214 +145,152 @@ class AiimsAuthManager private constructor(
         }
     }
 
-    private fun getPersistedAuthState(): AuthState {
-        return try {
-            val stateString = prefs.getString(KEY_AUTH_STATE, null)
-            val pinManager = org.aiims.odk.auth.utils.PinManager.getInstance(context)
-            android.util.Log.d("AiimsAuthManager", "Retrieved auth state: $stateString, PIN set: ${pinManager.isPinSet()}")
-            when (stateString) {
-                "LOGGED_IN" -> {
-                    if (pinManager.isPinSet()) {
-                        return if (isTokenExpired()) {
-                            android.util.Log.d("AiimsAuthManager", "Token expired, PIN present; logging out")
-                            markLogoutForRevocation(LogoutReason.TOKEN_EXPIRED)
-                            AuthState.LOGGED_OUT
-                        } else {
-                            android.util.Log.d("AiimsAuthManager", "PIN exists, state: LOGGED_IN")
-                            AuthState.LOGGED_IN
-                        }
-                    }
+    /**
+     * Logout for the Active Project.
+     */
+    suspend fun logout() {
+        val pid = activeProjectId ?: return
+        logoutProject(pid)
+    }
 
-                    if (!isTokenExpired()) {
-                        android.util.Log.d("AiimsAuthManager", "Token valid, state: LOGGED_IN")
-                        AuthState.LOGGED_IN
-                    } else {
-                        android.util.Log.d("AiimsAuthManager", "Token expired and no PIN, state: LOGGED_OUT")
-                        markLogoutForRevocation(LogoutReason.TOKEN_EXPIRED)
-                        AuthState.LOGGED_OUT
-                    }
-                }
-                "REQUIRES_PIN" -> {
-                    // If PIN is already set, we should show PIN entry, not setup
-                    if (pinManager.isPinSet()) {
-                        android.util.Log.d("AiimsAuthManager", "PIN already set, changing state to LOGGED_IN")
-                        // Update the persisted state
-                        persistAuthStateWithoutClearing(AuthState.LOGGED_IN)
-                        AuthState.LOGGED_IN
-                    } else {
-                        android.util.Log.d("AiimsAuthManager", "State: REQUIRES_PIN")
-                        AuthState.REQUIRES_PIN
-                    }
-                }
-                else -> {
-                    android.util.Log.d("AiimsAuthManager", "State: LOGGED_OUT (default)")
-                    AuthState.LOGGED_OUT
-                }
+    /**
+     * Logout logic for a specific project.
+     */
+    private suspend fun logoutProject(projectId: String) {
+        val token = getPersistedToken(projectId)
+        val user = getPersistedUser(projectId)
+        val apiUrl = getApiUrlForProject(projectId) // We might need to store API URL per project too
+
+        // Revoke if possible
+        if (token != null && user != null && !apiUrl.isNullOrBlank()) {
+             try {
+                 val client = RealAuthClient.getInstance(context, apiUrl)
+                 client.revokeSession(projectId, user.id, token)
+             } catch (e: Exception) {
+                 // Best effort
+             }
+        }
+
+        // Clear persistence
+        clearSession(projectId)
+
+        // Clear ODK forms and instances for this project (Isolation)
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            android.util.Log.d("AiimsAuth", "Attempting to clear project data for: $projectId")
+            try {
+                projectCleaner.clearProjectData(projectId)
+                android.util.Log.d("AiimsAuth", "Finished clearing project data for: $projectId")
+            } catch (e: Exception) {
+                android.util.Log.e("AiimsAuth", "Failed to clear project data", e)
             }
-        } catch (e: Exception) {
-            android.util.Log.e("AiimsAuthManager", "Error getting persisted auth state", e)
-            AuthState.LOGGED_OUT
+        }
+        
+        // Clear local PIN
+        org.aiims.odk.auth.utils.PinManager.getInstance(context).clearPin()
+
+        if (activeProjectId == projectId) {
+            refreshState()
         }
     }
 
-    private fun getPersistedUser(): org.aiims.odk.auth.api.User? {
+    private fun persistSession(projectId: String, user: User, token: String, expiresAt: String, apiUrl: String) {
+        prefs.edit().apply {
+            putString(keyToken(projectId), token)
+            putString(keyExpiresAt(projectId), expiresAt)
+            putString(keyApiUrl(projectId), apiUrl)
+            
+            val userJson = JSONObject().apply {
+                put("id", user.id)
+                put("username", user.username)
+                put("projectId", user.projectId)
+                put("expiresAt", user.expiresAt)
+                // Legacy fields
+                put("name", user.name)
+                put("role", user.role)
+            }.toString()
+            putString(keyUser(projectId), userJson)
+            
+            apply()
+        }
+    }
+
+    private fun clearSession(projectId: String) {
+        prefs.edit().apply {
+            remove(keyToken(projectId))
+            remove(keyUser(projectId))
+            remove(keyExpiresAt(projectId))
+            remove(keyApiUrl(projectId))
+            apply()
+        }
+    }
+
+    // --- Helpers for Persistence keys ---
+    private fun keyToken(pid: String) = "auth_token_$pid"
+    private fun keyUser(pid: String) = "user_data_$pid"
+    private fun keyExpiresAt(pid: String) = "expires_at_$pid"
+    private fun keyApiUrl(pid: String) = "api_url_$pid"
+
+    // --- Retrieval ---
+    private fun getPersistedToken(pid: String): String? = prefs.getString(keyToken(pid), null)
+    private fun getPersistedExpiresAt(pid: String): String? = prefs.getString(keyExpiresAt(pid), null)
+    private fun getApiUrlForProject(pid: String): String? = prefs.getString(keyApiUrl(pid), null)
+
+    private fun getPersistedUser(pid: String): User? {
+        val jsonStr = prefs.getString(keyUser(pid), null) ?: return null
         return try {
-            val userJson = prefs.getString(KEY_USER_DATA, null)
-            if (userJson != null) {
-                val json = JSONObject(userJson)
-                org.aiims.odk.auth.api.User(
-                    id = json.getString("id"),
-                    email = json.getString("email"),
-                    name = json.getString("name"),
-                    role = json.getString("role"),
-                    partnerId = json.optString("partnerId", null),
-                    partnerName = json.optString("partnerName", null),
-                    phoneNumber = null,
-                    isActive = json.optBoolean("isActive", true),
-                    dateActiveTill = json.optString("dateActiveTill", null)
-                )
-            } else null
+            val json = JSONObject(jsonStr)
+            User(
+                id = json.getString("id"),
+                username = json.getString("username"),
+                projectId = json.getString("projectId"),
+                expiresAt = json.optString("expiresAt", null),
+                name = json.optString("name", json.getString("username")),
+                role = json.optString("role", "App User")
+            )
         } catch (e: Exception) {
             null
         }
     }
 
-    private fun isTokenExpired(): Boolean {
+    private fun isTokenExpired(expiresAt: String?): Boolean {
+        if (expiresAt == null) return true
         return try {
-            val expiresAt = prefs.getString(KEY_EXPIRES_AT, null)
-            if (expiresAt == null) return true
-
-            val expiryTime = org.aiims.odk.auth.utils.ApiDateFormat.parse(expiresAt)?.time ?: 0L
-            System.currentTimeMillis() >= expiryTime
+             val expiryTime = org.aiims.odk.auth.utils.ApiDateFormat.parse(expiresAt)?.time ?: 0L
+             System.currentTimeMillis() >= expiryTime
         } catch (e: Exception) {
-            true
+            true 
         }
     }
-
-    fun persistAuthState(state: AuthState, user: org.aiims.odk.auth.api.User?, token: String?, expiresAt: String?) {
-        prefs.edit().apply {
-            putString(KEY_AUTH_STATE, state.name)
-            token?.takeIf { it.isNotBlank() }?.let { putString(KEY_AUTH_TOKEN, it) }
-            expiresAt?.takeIf { it.isNotBlank() }?.let { putString(KEY_EXPIRES_AT, it) }
-
-            user?.let {
-                val userJson = JSONObject().apply {
-                    put("id", it.id)
-                    put("email", it.email)
-                    put("name", it.name)
-                    put("role", it.role)
-                    it.partnerId?.let { put("partnerId", it) }
-                    it.partnerName?.let { put("partnerName", it) }
-                    put("isActive", it.isActive)
-                    it.dateActiveTill?.let { put("dateActiveTill", it) }
-                }.toString()
-                putString(KEY_USER_DATA, userJson)
-            }
-
-            apply()
-        }
-    }
-
-    fun persistAuthStateWithoutClearing(state: AuthState) {
-        // Only update the auth state, keep existing user data and tokens
-        prefs.edit().apply {
-            putString(KEY_AUTH_STATE, state.name)
-            apply()
-        }
-        android.util.Log.d("AiimsAuthManager", "Updated auth state to: ${state.name} without clearing existing data")
-    }
-
-    /**
-     * Updates the in-memory auth state and persists it.
-     * Use this after initialization to keep flows and storage in sync.
-     */
+    
+    // --- Legacy / Compatibility ---
+    fun getCurrentAuthState(): AuthState = _authState.value
+    
     fun updateAuthState(state: AuthState) {
         _authState.value = state
-        persistAuthStateWithoutClearing(state)
+        // In new flow, state is derived from persistence, but we allow transient updates
     }
 
-    /**
-     * Returns the current in-memory auth state.
-     */
-    fun getCurrentAuthState(): AuthState = _authState.value
-
-    suspend fun logout() {
-        handleLogout(LogoutReason.USER_LOGOUT, clearPin = true)
-    }
-
-    /**
-     * Logout due to failed PIN attempts - preserves PIN for next login
-     */
     fun logoutDueToFailedPin() {
-        handleLogout(LogoutReason.FAILED_PIN, clearPin = false)
-        android.util.Log.d("AiimsAuthManager", "Logged out due to failed PIN, PIN preserved")
-    }
-
-    private fun persistApiUrl(apiUrl: String) {
-        prefs.edit().apply {
-            putString(KEY_LAST_API_URL, apiUrl)
-            apply()
+        // For local PIN failure, we just logout
+        scope.launch {
+            logout()
         }
     }
 
-    private fun getStoredApiUrl(): String = prefs.getString(KEY_LAST_API_URL, "") ?: ""
-
-    private fun getDeviceId(): String = prefs.getString("device_id", "") ?: ""
-
-    private fun handleLogout(reason: LogoutReason, clearPin: Boolean) {
-        markLogoutForRevocation(reason)
-
-        // Remove only auth-related fields to preserve pending revocation data and device id
-        prefs.edit().apply {
-            remove(KEY_AUTH_STATE)
-            remove(KEY_AUTH_TOKEN)
-            remove(KEY_EXPIRES_AT)
-            remove(KEY_USER_DATA)
-            apply()
-        }
-
-        if (clearPin) {
-            org.aiims.odk.auth.utils.PinManager.getInstance(context).clearPin()
-        }
-
-        _authState.value = AuthState.LOGGED_OUT
-        _currentUser.value = null
-        _isLoading.value = false
-    }
-
-    private fun markLogoutForRevocation(reason: LogoutReason) {
-        // Record when and why logout happened
-        prefs.edit().apply {
-            putString(KEY_LAST_LOGOUT_REASON, reason.name)
-            putLong(KEY_LAST_LOGOUT_AT, System.currentTimeMillis())
-            apply()
-        }
-
-        val tokenId = prefs.getString(KEY_AUTH_TOKEN, null)?.takeIf { it.isNotBlank() } ?: return
-        val apiUrl = getStoredApiUrl()
-        if (apiUrl.isBlank()) return
-
-        TokenRevocationManager.markPending(context, tokenId, apiUrl, tokenId, reason.name)
-        scope.launch(Dispatchers.IO) {
-            TokenRevocationManager.processPending(context)
-        }
+    /**
+     * Get the token for the currently active project.
+     * Used for UI display in Settings.
+     */
+    fun getActiveProjectToken(): String? {
+        val pid = activeProjectId ?: return null
+        return getPersistedToken(pid)
     }
 }
 
-/**
- * Authentication states
- */
 enum class AuthState {
     INITIAL,
     LOGGED_IN,
     LOGGED_OUT,
-    REQUIRES_PIN,
+    // REQUIRES_PIN - Removed, now Local only
     ERROR
-}
-
-enum class LogoutReason {
-    USER_LOGOUT,
-    FAILED_PIN,
-    TOKEN_EXPIRED,
-    TIMEOUT
 }

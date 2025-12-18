@@ -9,15 +9,22 @@ import retrofit2.http.Path
 /**
  * Retrofit API interface for authentication
  */
+/**
+ * Retrofit API interface for authentication (Central Backend)
+ */
 interface AuthApiService {
 
-    @POST("auth/login")
-    suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
+    @POST("projects/{projectId}/app-users/login")
+    suspend fun login(
+        @Path("projectId") projectId: String,
+        @Body request: LoginRequest
+    ): Response<LoginResponse>
 
-    @POST("device-tokens/{id}/revoke")
-    suspend fun revokeDeviceToken(
-        @Path("id") tokenId: String,
-        @Header("Authorization") authHeader: String? = null
+    @POST("projects/{projectId}/app-users/{id}/revoke")
+    suspend fun revokeSession(
+        @Path("projectId") projectId: String,
+        @Path("id") userId: String,
+        @Header("Authorization") authHeader: String
     ): Response<RevokeResponse>
 }
 
@@ -25,39 +32,21 @@ interface AuthApiService {
  * Login request body
  */
 data class LoginRequest(
-    val email: String,
-    val password: String,
-    val deviceId: String,
-    val deviceInfo: String
+    val username: String,
+    val password: String
 )
 
 /**
  * Login response body
  */
 data class LoginResponse(
-    val success: Boolean,
-    val user: UserData? = null,
-    val deviceToken: String? = null,
-    val expiresAt: String? = null,
-    val requiresPinSetup: Boolean? = false,
-    val message: String? = null,
-    val error: String? = null
+    val token: String,
+    val projectId: Int,
+    val expiresAt: String,
+    val id: Int // App User ID
 )
 
 data class RevokeResponse(
-    val success: Boolean,
-    val message: String? = null,
-    val error: String? = null
+    val success: Boolean
 )
 
-/**
- * User data from API response
- */
-data class UserData(
-    val id: String,
-    val email: String,
-    val role: String,
-    val partnerId: String? = null,
-    val partnerName: String? = null,
-    val name: String
-)

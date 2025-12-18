@@ -302,4 +302,6 @@ interface AppDependencyComponent {
     fun webPageService(): WebPageService
 
     fun uniqueIdGenerator(): UniqueIdGenerator
+
+    fun projectCleaner(): org.aiims.odk.auth.managers.ProjectCleaner
 }

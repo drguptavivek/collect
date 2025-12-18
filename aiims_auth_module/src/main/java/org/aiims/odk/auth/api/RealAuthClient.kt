@@ -22,11 +22,87 @@ class RealAuthClient private constructor(
         // Lazy initialization of Retrofit
         private fun getRetrofit(): Retrofit {
             return retrofit ?: synchronized(this) {
+                // Check if we need an unsafe client (for local emulator/LAN testing against self-signed certs)
+                val clientBuilder = okhttp3.OkHttpClient.Builder()
+                
+                if (shouldUseUnsafeClient(apiUrl)) {
+                    configureUnsafeClient(clientBuilder)
+                }
+
+                // Sanitize URL: Remove project path if present, as ApiService adds it
+                // e.g. https://server/v1/projects/1 -> https://server/v1/
+                var sanitizedUrl = apiUrl
+                // Ensure we strip off the specific project path but keep the base (usually v1/)
+                if (sanitizedUrl.contains("/projects/")) {
+                    sanitizedUrl = sanitizedUrl.substringBefore("/projects/") + "/"
+                }
+                // Retrofit requires base URL to end with /
+                if (!sanitizedUrl.endsWith("/")) {
+                    sanitizedUrl += "/"
+                }
+
                 retrofit ?: Retrofit.Builder()
-                    .baseUrl(apiUrl)
+                    .baseUrl(sanitizedUrl)
+                    .client(clientBuilder.build())
                     .addConverterFactory(GsonConverterFactory.create())
                     .build()
                     .also { retrofit = it }
+            }
+        }
+
+        private fun shouldUseUnsafeClient(url: String): Boolean {
+            val lowerUrl = url.lowercase()
+            return lowerUrl.contains("localhost") || 
+                   lowerUrl.contains("127.0.0.1") ||
+                   lowerUrl.contains("10.0.2.") ||   // Covers 10.0.2.2 and subnet
+                   lowerUrl.contains("192.168.") ||  // Covers 192.168.0.0/16
+                   lowerUrl.contains("central-dev") ||
+                   lowerUrl.contains("central.dev") ||
+                   lowerUrl.contains("central.local")
+        }
+
+        private fun configureUnsafeClient(builder: okhttp3.OkHttpClient.Builder) {
+            try {
+                // Create a trust manager that does not validate certificate chains
+                val trustAllCerts = arrayOf<javax.net.ssl.TrustManager>(object : javax.net.ssl.X509TrustManager {
+                    override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                    override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                    override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
+                })
+
+                // Install the all-trusting trust manager
+                val sslContext = javax.net.ssl.SSLContext.getInstance("SSL")
+                sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+
+                // Create an ssl socket factory with our all-trusting manager
+                val sslSocketFactory = sslContext.socketFactory
+
+                builder.sslSocketFactory(sslSocketFactory, trustAllCerts[0] as javax.net.ssl.X509TrustManager)
+                builder.hostnameVerifier { _, _ -> true }
+                
+                // Force HTTP/1.1 to avoid HTTP 421 (Misdirected Request) errors common with HTTP/2 + Self Signed/Local IPs
+                builder.protocols(java.util.Collections.singletonList(okhttp3.Protocol.HTTP_1_1))
+
+                // Custom DNS: Map 'central-dev' and 'central.dev' to 10.0.2.2 (Simulator Localhost)
+                // This allows us to use the hostname (satisfying Nginx SNI/Host headers) but route to the host machine
+                builder.dns(object : okhttp3.Dns {
+                    override fun lookup(hostname: String): List<java.net.InetAddress> {
+                        if (hostname.equals("central-dev", ignoreCase = true) || 
+                            hostname.equals("central.dev", ignoreCase = true) ||
+                            hostname.equals("central.local", ignoreCase = true)) {
+                            try {
+                                return java.util.Collections.singletonList(java.net.InetAddress.getByName("10.0.2.2"))
+                            } catch (e: Exception) {
+                                Log.w("RealAuthClient", "Custom DNS resolution failed for $hostname")
+                            }
+                        }
+                        return okhttp3.Dns.SYSTEM.lookup(hostname)
+                    }
+                })
+                
+                Log.w("RealAuthClient", "UNSAFE SSL: Enabled for $apiUrl (Mapped central-dev -> 10.0.2.2)")
+            } catch (e: Exception) {
+                Log.e("RealAuthClient", "Error creating unsafe client", e)
             }
         }
 
@@ -56,90 +132,61 @@ class RealAuthClient private constructor(
     /**
      * Login to the real API
      */
-    suspend fun login(email: String, password: String): AuthResult {
+    /**
+     * Login to the Central Backend API
+     */
+    suspend fun login(projectId: String, username: String, password: String): AuthResult {
         return withContext(Dispatchers.IO) {
             try {
-                Log.d("AiimsAuthClient", "Attempting login for email: ${email.lowercase().trim()}")
-
-                // Generate device info
-                val deviceId = generateDeviceId()
-                val deviceInfo = generateDeviceInfo()
-
-                Log.d("AiimsAuthClient", "Device ID: $deviceId")
-                Log.d("AiimsAuthClient", "Device Info: $deviceInfo")
+                Log.d("AiimsAuthClient", "Attempting login for user: $username on project: $projectId")
 
                 // Create login request
                 val request = LoginRequest(
-                    email = email.lowercase().trim(),
-                    password = password,
-                    deviceId = deviceId,
-                    deviceInfo = deviceInfo
+                    username = username,
+                    password = password
                 )
 
                 Log.d("AiimsAuthClient", "Making API call to ${getApiService()}")
                 // Make API call
-                val response = getApiService().login(request)
+                val response = getApiService().login(projectId, request)
 
                 Log.d("AiimsAuthClient", "Response code: ${response.code()}")
 
                 if (response.isSuccessful) {
-                    Log.d("AiimsAuthClient", "Response successful")
-                    val loginResponse = response.body()
+                    val body = response.body()
+                    if (body != null) {
+                        Log.d("AiimsAuthClient", "Login successful")
+                        
+                        // Construct User object from response + input
+                        val user = User(
+                            id = body.id.toString(),
+                            username = username,
+                            projectId = body.projectId.toString(),
+                            expiresAt = body.expiresAt
+                        )
 
-                    if (loginResponse?.success == true) {
-                        Log.d("AiimsAuthClient", "Login successful, user data received")
-                        val userData = loginResponse.user
-                        if (userData != null) {
-                            Log.d("AiimsAuthClient", "User: ${userData.name}, Role: ${userData.role}")
-                            val user = User(
-                                id = userData.id,
-                                email = userData.email,
-                                name = userData.name,
-                                role = userData.role,
-                                partnerId = userData.partnerId,
-                                partnerName = userData.partnerName,
-                                phoneNumber = null,
-                                isActive = true,
-                                dateActiveTill = null
-                            )
-
-                            if (loginResponse.requiresPinSetup == true) {
-                                Log.d("AiimsAuthClient", "PIN setup required")
-                                AuthResult.RequiresPin(
-                                    user = user,
-                                    token = loginResponse.deviceToken ?: "",
-                                    expiresAt = loginResponse.expiresAt ?: ""
-                                )
-                            } else {
-                                Log.d("AiimsAuthClient", "Login complete without PIN")
-                                AuthResult.Success(
-                                    user = user,
-                                    token = loginResponse.deviceToken ?: "",
-                                    expiresAt = loginResponse.expiresAt ?: ""
-                                )
-                            }
-                        } else {
-                            Log.e("AiimsAuthClient", "No user data in response")
-                            AuthResult.Error("No user data received")
-                        }
+                        AuthResult.Success(
+                            user = user,
+                            token = body.token,
+                            expiresAt = body.expiresAt
+                        )
                     } else {
-                        Log.e("AiimsAuthClient", "Login failed: ${loginResponse?.error ?: loginResponse?.message}")
-                        AuthResult.Error(loginResponse?.error ?: loginResponse?.message ?: "Login failed")
+                        Log.e("AiimsAuthClient", "Empty response body")
+                        AuthResult.Error("Empty response from server")
                     }
                 } else {
                     // Handle HTTP errors
                     Log.e("AiimsAuthClient", "HTTP Error: ${response.code()}")
                     when (response.code()) {
-                        400 -> AuthResult.Error("Invalid request: Missing required fields")
+                        400 -> AuthResult.Error("Invalid request")
                         401 -> AuthResult.Error("Invalid credentials")
                         403 -> AuthResult.Error("Access forbidden")
-                        404 -> AuthResult.Error("API endpoint not found")
-                        500 -> AuthResult.Error("Server error. Please try again later")
+                        404 -> AuthResult.Error("Project or User not found")
+                        500 -> AuthResult.Error("Server error")
                         else -> AuthResult.Error("Login failed: HTTP ${response.code()}")
                     }
                 }
             } catch (e: Exception) {
-                // Handle network errors
                 Log.e("AiimsAuthClient", "Login exception: ${e.message}", e)
                 AuthResult.Error("Network error: ${e.message}")
             }
@@ -149,18 +196,21 @@ class RealAuthClient private constructor(
     /**
      * Revoke device token by ID. If authToken is provided, send it as Bearer header.
      */
-    suspend fun revokeDeviceToken(tokenId: String, authToken: String?): Boolean {
+    /**
+     * Revoke session by ID.
+     */
+    suspend fun revokeSession(projectId: String, userId: String, authToken: String): Boolean {
         return withContext(Dispatchers.IO) {
             try {
-                val header = if (!authToken.isNullOrBlank()) "Bearer $authToken" else null
-                val response = getApiService().revokeDeviceToken(tokenId, header)
+                val header = "Bearer $authToken"
+                val response = getApiService().revokeSession(projectId, userId, header)
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body?.success == true) {
-                        Log.d("AiimsAuthClient", "Device token revoked: $tokenId")
+                        Log.d("AiimsAuthClient", "Session revoked: $userId")
                         true
                     } else {
-                        Log.e("AiimsAuthClient", "Revoke failed: ${body?.error ?: body?.message}")
+                        Log.e("AiimsAuthClient", "Revoke failed")
                         false
                     }
                 } else {
