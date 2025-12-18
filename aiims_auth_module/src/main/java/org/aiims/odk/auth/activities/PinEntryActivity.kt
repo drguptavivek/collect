@@ -248,4 +248,9 @@ class PinEntryActivity : AppCompatActivity() {
         enterButton.isEnabled = !loading
         pinField.isEnabled = !loading
     }
+
+    override fun onBackPressed() {
+        // Prevent backing out of the PIN screen. Minimize the app instead.
+        moveTaskToBack(true)
+    }
 }

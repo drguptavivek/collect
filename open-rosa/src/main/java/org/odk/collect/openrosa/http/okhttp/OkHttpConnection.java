@@ -45,15 +45,24 @@ public class OkHttpConnection implements OpenRosaHttpInterface {
     @NonNull
     private final String userAgent;
 
-    public OkHttpConnection(@Nullable String cacheDir, @NonNull FileToContentTypeMapper fileToContentTypeMapper, @NonNull String userAgent) {
-        this.clientFactory = new OkHttpOpenRosaServerClientProvider(cacheDir);
+    public OkHttpConnection(@Nullable String cacheDir, @NonNull FileToContentTypeMapper fileToContentTypeMapper,
+            @NonNull String userAgent, boolean isDebug, TokenProvider tokenProvider) {
+        this.clientFactory = new OkHttpOpenRosaServerClientProvider(cacheDir, isDebug, tokenProvider);
         this.fileToContentTypeMapper = fileToContentTypeMapper;
         this.userAgent = userAgent;
     }
 
+    // Maintain backward compatibility for other modules if necessary, defaulting to
+    // false (safe)
+    public OkHttpConnection(@Nullable String cacheDir, @NonNull FileToContentTypeMapper fileToContentTypeMapper,
+            @NonNull String userAgent) {
+        this(cacheDir, fileToContentTypeMapper, userAgent, false, () -> null);
+    }
+
     @NonNull
     @Override
-    public HttpGetResult executeGetRequest(@NonNull URI uri, @Nullable String contentType, @Nullable HttpCredentialsInterface credentials) throws Exception {
+    public HttpGetResult executeGetRequest(@NonNull URI uri, @Nullable String contentType,
+            @Nullable HttpCredentialsInterface credentials) throws Exception {
         OpenRosaServerClient httpClient = clientFactory.get(uri.getScheme(), userAgent, credentials);
         Request request = new Request.Builder()
                 .url(uri.toURL())
@@ -113,7 +122,8 @@ public class OkHttpConnection implements OpenRosaHttpInterface {
 
     @NonNull
     @Override
-    public HttpHeadResult executeHeadRequest(@NonNull URI uri, @Nullable HttpCredentialsInterface credentials) throws Exception {
+    public HttpHeadResult executeHeadRequest(@NonNull URI uri, @Nullable HttpCredentialsInterface credentials)
+            throws Exception {
         OpenRosaServerClient httpClient = clientFactory.get(uri.getScheme(), userAgent, credentials);
         Request request = new Request.Builder()
                 .url(uri.toURL())
@@ -137,7 +147,9 @@ public class OkHttpConnection implements OpenRosaHttpInterface {
 
     @NonNull
     @Override
-    public HttpPostResult uploadSubmissionAndFiles(@NonNull File submissionFile, @NonNull List<File> fileList, @NonNull URI uri, @Nullable HttpCredentialsInterface credentials, @NonNull long contentLength) throws Exception {
+    public HttpPostResult uploadSubmissionAndFiles(@NonNull File submissionFile, @NonNull List<File> fileList,
+            @NonNull URI uri, @Nullable HttpCredentialsInterface credentials, @NonNull long contentLength)
+            throws Exception {
         HttpPostResult postResult = null;
 
         boolean first = true;
@@ -152,7 +164,8 @@ public class OkHttpConnection implements OpenRosaHttpInterface {
 
             MultipartBody.Builder multipartBuilder = new MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
-                    .addPart(MultipartBody.Part.createFormData("xml_submission_file", submissionFile.getName(), requestBody));
+                    .addPart(MultipartBody.Part.createFormData("xml_submission_file", submissionFile.getName(),
+                            requestBody));
 
             Timber.i("added xml_submission_file: %s", submissionFile.getName());
             byteCount += submissionFile.length();
@@ -163,15 +176,16 @@ public class OkHttpConnection implements OpenRosaHttpInterface {
                 String contentType = fileToContentTypeMapper.map(file.getName());
 
                 RequestBody fileRequestBody = RequestBody.create(MediaType.parse(contentType), file);
-                multipartBuilder.addPart(MultipartBody.Part.createFormData(file.getName(), file.getName(), fileRequestBody));
+                multipartBuilder
+                        .addPart(MultipartBody.Part.createFormData(file.getName(), file.getName(), fileRequestBody));
 
                 byteCount += file.length();
                 Timber.i("added file of type '%s' %s", contentType, file.getName());
 
                 // we've added at least one attachment to the request...
                 if (fileIndex + 1 < fileList.size()) {
-                    if ((fileIndex - lastFileIndex + 1 > 100) || (byteCount + fileList.get(fileIndex + 1).length()
-                            > contentLength)) {
+                    if ((fileIndex - lastFileIndex + 1 > 100)
+                            || (byteCount + fileList.get(fileIndex + 1).length() > contentLength)) {
                         // the next file would exceed the 10MB threshold...
                         Timber.i("Extremely long post is being split into multiple posts");
                         multipartBuilder.addPart(MultipartBody.Part.createFormData("*isIncomplete*", "yes"));
@@ -195,7 +209,8 @@ public class OkHttpConnection implements OpenRosaHttpInterface {
     }
 
     @NonNull
-    private HttpPostResult executePostRequest(@NonNull URI uri, @Nullable HttpCredentialsInterface credentials, MultipartBody multipartBody) throws Exception {
+    private HttpPostResult executePostRequest(@NonNull URI uri, @Nullable HttpCredentialsInterface credentials,
+            MultipartBody multipartBody) throws Exception {
         OpenRosaServerClient httpClient = clientFactory.get(uri.getScheme(), userAgent, credentials);
         HttpPostResult postResult;
         Request request = new Request.Builder()
@@ -222,7 +237,7 @@ public class OkHttpConnection implements OpenRosaHttpInterface {
      * Utility to ensure that the entity stream of a response is drained of
      * bytes.
      * Apparently some servers require that we manually read all data from the
-     * stream to allow its re-use.  Please add more details or bug ID here if
+     * stream to allow its re-use. Please add more details or bug ID here if
      * you know them.
      */
     private void discardEntityBytes(Response response) {

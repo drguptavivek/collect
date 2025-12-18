@@ -127,9 +127,11 @@ public class Collect extends Application implements
     private DrawDependencyComponent drawDependencyComponent;
 
     /**
-     * @deprecated we shouldn't have to reference a static singleton of the application. Code doing this
-     * should either have a {@link Context} instance passed to it (or have any references removed if
-     * possible).
+     * @deprecated we shouldn't have to reference a static singleton of the
+     *             application. Code doing this
+     *             should either have a {@link Context} instance passed to it (or
+     *             have any references removed if
+     *             possible).
      */
     @Deprecated
     public static Collect getInstance() {
@@ -160,11 +162,13 @@ public class Collect extends Application implements
                     CollectStrictMode.enable();
                     MlKitBarcodeScannerViewFactory.init(this);
 
+                    // Initialize Auth Manager with Project Cleaner
+                    org.aiims.odk.auth.managers.AiimsAuthManager.init(this, applicationComponent.projectCleaner());
+
                     if (getResources().getBoolean(R.bool.aiims_auth_enabled)) {
                         registerActivityLifecycleCallbacks(new AiimsAppLock(this));
                     }
-                }
-        );
+                });
     }
 
     private void setupDagger() {
@@ -217,7 +221,7 @@ public class Collect extends Application implements
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
 
-        //noinspection deprecation
+        // noinspection deprecation
         defaultSysLanguage = newConfig.locale.getLanguage();
     }
 
@@ -232,14 +236,16 @@ public class Collect extends Application implements
     }
 
     /**
-     * Gets a unique, privacy-preserving identifier for a form based on its id and version.
+     * Gets a unique, privacy-preserving identifier for a form based on its id and
+     * version.
      *
      * @param formId      id of a form
      * @param formVersion version of a form
      * @return md5 hash of the form title, a space, the form ID
      */
     public static String getFormIdentifierHash(String formId, String formVersion) {
-        Form form = new FormsRepositoryProvider(Collect.getInstance()).create().getLatestByFormIdAndVersion(formId, formVersion);
+        Form form = new FormsRepositoryProvider(Collect.getInstance()).create().getLatestByFormIdAndVersion(formId,
+                formVersion);
 
         String formTitle = form != null ? form.getDisplayName() : "";
 
@@ -269,7 +275,8 @@ public class Collect extends Application implements
     @Override
     public Locale getLocale() {
         if (this.applicationComponent != null) {
-            return LocaleHelper.getLocale(applicationComponent.settingsProvider().getUnprotectedSettings().getString(ProjectKeys.KEY_APP_LANGUAGE));
+            return LocaleHelper.getLocale(applicationComponent.settingsProvider().getUnprotectedSettings()
+                    .getString(ProjectKeys.KEY_APP_LANGUAGE));
         } else {
             return getResources().getConfiguration().locale;
         }
@@ -321,7 +328,8 @@ public class Collect extends Application implements
                         @NonNull
                         @Override
                         public EntitiesRepository providesEntitiesRepository() {
-                            String projectId = applicationComponent.currentProjectProvider().requireCurrentProject().getUuid();
+                            String projectId = applicationComponent.currentProjectProvider().requireCurrentProject()
+                                    .getUuid();
                             return applicationComponent.entitiesRepositoryProvider().create(projectId);
                         }
 

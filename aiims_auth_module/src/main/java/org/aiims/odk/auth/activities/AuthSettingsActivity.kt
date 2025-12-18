@@ -178,9 +178,8 @@ class AuthSettingsActivity : AppCompatActivity() {
             }
         }
 
-        // Get device token from SharedPreferences
-        val prefs = getSharedPreferences("aiims_auth_prefs", MODE_PRIVATE)
-        val token = prefs.getString("auth_token", "No token found")
+        // Get device token from Auth Manager
+        val token = authManager.getActiveProjectToken() ?: "No token found"
         tokenText.text = token
 
         // Add hint about tap to copy

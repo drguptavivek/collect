@@ -53,10 +53,12 @@ android {
 }
 
 dependencies {
-    // ODK Collect dependencies (minimal)
+    // ODK Collect dependencies
     implementation project(':androidshared')
     implementation project(':shared')
     implementation project(':material')
+    implementation project(':projects')
+    implementation project(':settings')
 
     // Core Android
     implementation 'androidx.core:core-ktx:1.12.0'

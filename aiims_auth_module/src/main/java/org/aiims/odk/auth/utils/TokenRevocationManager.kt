@@ -14,7 +14,8 @@ import org.aiims.odk.auth.api.RealAuthClient
 object TokenRevocationManager {
 
     private const val PREFS_NAME = "aiims_auth_prefs"
-    private const val KEY_PENDING_TOKEN_ID = "pending_revoke_token_id"
+    private const val KEY_PENDING_PROJECT_ID = "pending_revoke_project_id"
+    private const val KEY_PENDING_USER_ID = "pending_revoke_user_id"
     private const val KEY_PENDING_AUTH_TOKEN = "pending_revoke_auth_token"
     private const val KEY_PENDING_API_URL = "pending_revoke_api_url"
     private const val KEY_PENDING_REASON = "pending_revoke_reason"
@@ -22,40 +23,44 @@ object TokenRevocationManager {
 
     fun markPending(
         context: Context,
-        tokenId: String,
+        projectId: String,
+        userId: String,
         apiUrl: String,
         authToken: String?,
         reason: String
     ) {
-        if (tokenId.isBlank() || apiUrl.isBlank()) return
+        if (projectId.isBlank() || userId.isBlank() || apiUrl.isBlank()) return
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().apply {
-            putString(KEY_PENDING_TOKEN_ID, tokenId)
+            putString(KEY_PENDING_PROJECT_ID, projectId)
+            putString(KEY_PENDING_USER_ID, userId)
             putString(KEY_PENDING_AUTH_TOKEN, authToken)
             putString(KEY_PENDING_API_URL, apiUrl)
             putString(KEY_PENDING_REASON, reason)
             putLong(KEY_PENDING_AT, System.currentTimeMillis())
             apply()
         }
-        Log.d("TokenRevocation", "Marked token $tokenId for revocation (reason=$reason)")
+        Log.d("TokenRevocation", "Marked session for user $userId (project $projectId) for revocation")
     }
 
     suspend fun processPending(context: Context): Boolean {
         return withContext(Dispatchers.IO) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            val tokenId = prefs.getString(KEY_PENDING_TOKEN_ID, null) ?: return@withContext false
+            val projectId = prefs.getString(KEY_PENDING_PROJECT_ID, null) ?: return@withContext false
+            val userId = prefs.getString(KEY_PENDING_USER_ID, null) ?: return@withContext false
             val apiUrl = prefs.getString(KEY_PENDING_API_URL, null) ?: return@withContext false
-            val authToken = prefs.getString(KEY_PENDING_AUTH_TOKEN, null)
+            val authToken = prefs.getString(KEY_PENDING_AUTH_TOKEN, null) ?: ""
 
             if (!isNetworkAvailable(context)) {
                 Log.d("TokenRevocation", "Network unavailable; will retry later")
                 return@withContext false
             }
 
-            val success = RealAuthClient.getInstance(context, apiUrl).revokeDeviceToken(tokenId, authToken)
+            val success = RealAuthClient.getInstance(context, apiUrl).revokeSession(projectId, userId, authToken)
             if (success) {
                 prefs.edit().apply {
-                    remove(KEY_PENDING_TOKEN_ID)
+                    remove(KEY_PENDING_PROJECT_ID)
+                    remove(KEY_PENDING_USER_ID)
                     remove(KEY_PENDING_AUTH_TOKEN)
                     remove(KEY_PENDING_API_URL)
                     remove(KEY_PENDING_REASON)
