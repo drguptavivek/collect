@@ -86,8 +86,10 @@ object ToastUtils {
     ) {
         if (Build.VERSION.SDK_INT < 30) {
             hideLastToast()
+            @Suppress("DEPRECATION")
             lastToast = Toast.makeText(activity.applicationContext, message, duration)
             try {
+                @Suppress("DEPRECATION")
                 val group = lastToast.view as ViewGroup?
                 val messageTextView = group!!.getChildAt(0) as TextView
                 messageTextView.textSize = 21f

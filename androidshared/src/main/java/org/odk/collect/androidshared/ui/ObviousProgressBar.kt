@@ -13,7 +13,7 @@ class ObviousProgressBar(
     context: Context,
     attrs: AttributeSet?
 ) : LinearProgressIndicator(context, attrs) {
-    private val handler = Handler()
+    private val handler = Handler(android.os.Looper.getMainLooper())
     private var shownAt: Long? = null
 
     init {

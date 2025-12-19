@@ -29,6 +29,7 @@ import java.io.ObjectOutputStream;
 
 import timber.log.Timber;
 
+@SuppressWarnings("deprecation")
 public class SaveFormIndexTask extends AsyncTask<Void, Void, String> {
 
     private final SaveFormIndexListener listener;

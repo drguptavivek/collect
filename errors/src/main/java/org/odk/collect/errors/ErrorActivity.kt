@@ -25,7 +25,12 @@ class ErrorActivity : LocalizedActivity() {
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         findViewById<Toolbar>(org.odk.collect.androidshared.R.id.toolbar).setNavigationOnClickListener { finish() }
 
-        val failures = intent.getSerializableExtra(EXTRA_ERRORS) as? List<ErrorItem>
+        val failures = if (android.os.Build.VERSION.SDK_INT >= 33) {
+            intent.getSerializableExtra(EXTRA_ERRORS, java.util.ArrayList::class.java) as? List<ErrorItem>
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getSerializableExtra(EXTRA_ERRORS) as? List<ErrorItem>
+        }
         if (failures != null) {
             findViewById<RecyclerView>(R.id.errors).apply {
                 adapter = ErrorAdapter(failures)

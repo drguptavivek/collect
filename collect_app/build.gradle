@@ -341,7 +341,7 @@ dependencies {
 
     // Dagger Android:
     implementation libs.daggerAndroid
-    annotationProcessor libs.daggerAndroidProcessor
+    kapt libs.daggerAndroidProcessor
 
     implementation libs.armen101AudioRecorderView
 
@@ -421,3 +421,10 @@ apply plugin: 'com.google.gms.google-services'
 // Must be after google-services to prevent build failure
 // https://stackoverflow.com/a/67995305
 apply plugin: 'com.google.firebase.crashlytics'
+
+// Fix for OSS Licenses plugin race condition with Gradle 9
+tasks.configureEach { task ->
+    if (task.name == 'selfSignedReleaseOssLicensesCleanUp') {
+        task.dependsOn 'selfSignedReleaseOssDependencyTask'
+    }
+}
