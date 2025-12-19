@@ -122,6 +122,9 @@ class AiimsAuthManager private constructor(
 
             when (result) {
                 is AuthResult.Success -> {
+                    // Check if user changed -> Clear PIN
+                    checkAndClearPinIfUserChanged(projectId, result.user)
+
                     // Persist for this project
                     persistSession(projectId, result.user, result.token, result.expiresAt, apiUrl)
                     
@@ -142,6 +145,14 @@ class AiimsAuthManager private constructor(
             AuthResult.Error(e.message ?: "Login failed")
         } finally {
             _isLoading.value = false
+        }
+    }
+
+    private fun checkAndClearPinIfUserChanged(projectId: String, newUser: User) {
+        val oldUser = getPersistedUser(projectId)
+        if (oldUser != null && oldUser.id != newUser.id) {
+             android.util.Log.d("AiimsAuthManager", "User changed from ${oldUser.id} to ${newUser.id}. Clearing PIN.")
+             org.aiims.odk.auth.utils.PinManager.getInstance(context).clearPin()
         }
     }
 

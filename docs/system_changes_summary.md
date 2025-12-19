@@ -226,6 +226,16 @@ sequenceDiagram
 
 ---
 
+**4. PIN Security Refinements**
+*   **Re-Login Safety**:
+    *   **Issue**: If a session expired, a *different* user could log in and inherit the *previous* user's PIN.
+    *   **Fix**: Modified `AiimsAuthManager.login()` to compare `oldUser.id` vs `newUser.id`. If they differ, `PinManager.clearPin()` is called automatically.
+*   **Max Attempts Policy**:
+    *   **Prior Behavior**: 4th attempt triggered logout.
+    *   **Refined Behavior**: On the **3rd failed attempt**, the app **immediately** wipes the Session and the PIN (`logoutDueToFailedPin`), forcing a full re-login. Comments in `PinEntryActivity` were fixed to reflect this "Wipe" behavior.
+
+---
+
 ## 5. Summary of Why
 *   **Why did forms fail to download?**
     *   ODK default behavior uses Basic Auth (User/Pass). Your backend expects Bearer Token. We injected the Bearer token.
