@@ -217,7 +217,6 @@ import timber.log.Timber;
  * @author Thomas Smyth, Sassafras Tech Collective (tom@sassafrastech.com; constraint behavior
  * option)
  */
-@SuppressWarnings("deprecation")
 public class FormFillingActivity extends LocalizedActivity implements CollectComposeThemeProvider, AnimationListener,
         FormLoaderListener, AdvanceToNextListener, SwipeHandler.OnSwipeListener,
         SavepointListener, NumberPickerDialog.NumberPickerListener,
@@ -772,7 +771,7 @@ public class FormFillingActivity extends LocalizedActivity implements CollectCom
             if (!allowMovingBackwards) {
                 FormController formController = getFormController();
                 if (formController != null) {
-                    new SaveFormIndexTask(this, formController.getFormIndex(), formController.getInstanceFile()).execute();
+                    new SaveFormIndexTask(this, formController.getFormIndex(), formController.getInstanceFile()).execute(scheduler);
                 }
             }
         } catch (Exception e) {

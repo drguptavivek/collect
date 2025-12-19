@@ -16,8 +16,6 @@
 
 package org.odk.collect.android.tasks;
 
-import android.os.AsyncTask;
-
 import org.javarosa.core.model.FormIndex;
 import org.odk.collect.android.javarosawrapper.FormController;
 
@@ -29,8 +27,7 @@ import java.io.ObjectOutputStream;
 
 import timber.log.Timber;
 
-@SuppressWarnings("deprecation")
-public class SaveFormIndexTask extends AsyncTask<Void, Void, String> {
+public class SaveFormIndexTask {
 
     private final SaveFormIndexListener listener;
     private final FormIndex formIndex;
@@ -46,8 +43,11 @@ public class SaveFormIndexTask extends AsyncTask<Void, Void, String> {
         this.instanceFile = instanceFile;
     }
 
-    @Override
-    protected String doInBackground(Void... params) {
+    public void execute(org.odk.collect.async.Scheduler scheduler) {
+        scheduler.immediate(this::doWork, this::onFinished);
+    }
+
+    private String doWork() {
         long start = System.currentTimeMillis();
 
         try {
@@ -65,10 +65,7 @@ public class SaveFormIndexTask extends AsyncTask<Void, Void, String> {
         }
     }
 
-    @Override
-    protected void onPostExecute(String errorMessage) {
-        super.onPostExecute(errorMessage);
-
+    private void onFinished(String errorMessage) {
         if (listener != null && errorMessage != null) {
             listener.onSaveFormIndexError(errorMessage);
         }
