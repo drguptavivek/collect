@@ -214,6 +214,18 @@ sequenceDiagram
 
 ---
 
+**3. Release Build Login Crash ("Network Error")**
+*   **Issue**: Release APK crashed on login with "Network error" and `ClassCastException: java.lang.Class cannot be cast to java.lang.reflect.ParameterizedType`.
+*   **Root Cause 1**: `aiims_auth_module` lacked `consumer-rules.pro`, causing ProGuard/R8 to obfuscate data models (`User`, `LoginResponse`), breaking Gson deserialization.
+*   **Root Cause 2**: R8 stripped generic type information from Kotlin Coroutines `suspend` function `Continuation` parameters (e.g., `Continuation<Response<LoginResponse>>` -> `Continuation`), causing Retrofit to crash when inspecting the return type.
+*   **Fix**:
+    *   Updated `collect_app/proguard-rules.txt` to explicitly keep:
+        *   `org.aiims.odk.auth.api.**` (classes and members).
+        *   `kotlin.coroutines.Continuation` (to preserve suspend function signatures).
+        *   Retrofit/OkHttp classes and critical attributes (`Signature`, etc.).
+
+---
+
 ## 5. Summary of Why
 *   **Why did forms fail to download?**
     *   ODK default behavior uses Basic Auth (User/Pass). Your backend expects Bearer Token. We injected the Bearer token.
@@ -223,3 +235,5 @@ sequenceDiagram
     *   We were saving to the wrong Preference file. We switched to `general_prefs` which ODK reads from.
 *   **Why did forms persist after logout?**
     *   We were targeting the wrong directory (wrong ID type) and the OS was stopping the disk operation (Main Thread violation).
+*   **Why did the Release APK crash on login?**
+    *   Code shrinking (ProGuard/R8) removed necessary metadata (class names, generic types) that Gson and Retrofit rely on to parse server responses. We added "Keep Rules" to protect that code.
