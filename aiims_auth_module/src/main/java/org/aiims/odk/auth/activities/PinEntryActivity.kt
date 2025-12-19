@@ -196,7 +196,7 @@ class PinEntryActivity : AppCompatActivity() {
                     Toast.LENGTH_LONG
                 ).show()
 
-                // Clear session but preserve PIN
+                // Clear session AND PIN
                 authManager.logoutDueToFailedPin()
                 return@launch
             }
@@ -211,14 +211,23 @@ class PinEntryActivity : AppCompatActivity() {
                 // Navigate to main app
                 navigateToMain()
             } else {
-                val attemptsLeft = 3 - pinManager.getFailedAttempts()
-                Toast.makeText(
-                    this@PinEntryActivity,
-                    "Incorrect PIN. $attemptsLeft attempts remaining.",
-                    Toast.LENGTH_LONG
-                ).show()
-                pinField.text.clear()
-                pinField.requestFocus()
+                if (pinManager.isMaxAttemptsReached()) {
+                    Toast.makeText(
+                        this@PinEntryActivity,
+                        "Max attempts reached. Logging out...",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    authManager.logoutDueToFailedPin()
+                } else {
+                    val attemptsLeft = 3 - pinManager.getFailedAttempts()
+                    Toast.makeText(
+                        this@PinEntryActivity,
+                        "Incorrect PIN. $attemptsLeft attempts remaining.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    pinField.text.clear()
+                    pinField.requestFocus()
+                }
             }
         }
     }

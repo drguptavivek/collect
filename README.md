@@ -1,4 +1,39 @@
-# ODK Collect
+# ODK Collect (AIIMS Auth Customization)
+
+> [!IMPORTANT]
+> **This is a customized fork of ODK Collect.**
+> It diverges from the official "master" branch to support **Custom Authentication** (Bearer Tokens), **Local Networking** (Emulator DNS), and **Strict Data Isolation** (Project Cleanup).
+
+### Key Divergences & Rationale
+
+1.  **AIIMS Authentication Module**: 
+    *   **Rationale**: The official app uses Basic Auth. Our backend requires short-lived **Bearer Tokens** (JWT) and a custom login flow (`/projects/{id}/app-users/login`).
+    *   **Change**: Added `aiims_auth_module` to intercept the startup flow, handle login, and inject tokens into the ODK Core via `TokenProvider`.
+
+2.  **Network Interception**:
+    *   **Rationale**: To support standard ODK OpenRosa calls (`/formList`, `/submission`) against our custom backend.
+    *   **Change**: Injected an OkHttp Interceptor in `OkHttpOpenRosaServerClientProvider` that adds `Authorization: Bearer <token>` to all requests.
+
+3.  **Local Development Support**:
+    *   **Rationale**: The Android Emulator cannot reach `central.local` by default.
+    *   **Change**: Added DNS mapping (`central.local -> 10.0.2.2`) and SSL bypass for Debug builds.
+
+4.  **PIN Security & Session Lock**:
+    *   **Rationale**: Improved physical security for shared devices.
+    *   **Change**: Implemented a `PinManager` and lifecycle callbacks to lock the app immediately when it goes to the background.
+    *   **Behavior**:
+        *   **Local PIN**: Setup required after login.
+        *   **Re-Login**: Same user keeps PIN; **Different user** forces PIN reset.
+        *   **Max Attempts**: **3 failed attempts** immediately clears the Session AND the PIN (Logout).
+
+5.  **Data Isolation**:
+    *   **Rationale**: Prevent users from seeing each other's blank forms on shared devices.
+    *   **Change**: Implemented `ProjectCleaner` to wipe blank forms (but keep instances) on logout.
+
+---
+
+# ODK Collect (Official)
+
 
 ![Platform](https://img.shields.io/badge/platform-Android-blue.svg)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
