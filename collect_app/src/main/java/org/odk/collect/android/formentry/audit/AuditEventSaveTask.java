@@ -18,6 +18,7 @@ import static org.odk.collect.android.formentry.audit.AuditEventCSVLine.toCSVLin
 /**
  * Background task for appending events to the event log
  */
+@SuppressWarnings("deprecation")
 public class AuditEventSaveTask extends AsyncTask<AuditEvent, Void, Void> {
     private final @NonNull
     File file;

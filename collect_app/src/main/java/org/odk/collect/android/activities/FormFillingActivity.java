@@ -217,6 +217,7 @@ import timber.log.Timber;
  * @author Thomas Smyth, Sassafras Tech Collective (tom@sassafrastech.com; constraint behavior
  * option)
  */
+@SuppressWarnings("deprecation")
 public class FormFillingActivity extends LocalizedActivity implements CollectComposeThemeProvider, AnimationListener,
         FormLoaderListener, AdvanceToNextListener, SwipeHandler.OnSwipeListener,
         SavepointListener, NumberPickerDialog.NumberPickerListener,

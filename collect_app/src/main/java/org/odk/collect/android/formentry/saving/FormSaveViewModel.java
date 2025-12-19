@@ -514,6 +514,7 @@ public class FormSaveViewModel extends ViewModel implements MaterialProgressDial
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static class SaveTask extends AsyncTask<Void, String, SaveToDiskResult> {
 
         private final SaveRequest saveRequest;

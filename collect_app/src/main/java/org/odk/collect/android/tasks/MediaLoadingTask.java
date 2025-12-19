@@ -21,6 +21,7 @@ import java.lang.ref.WeakReference;
 
 import javax.inject.Inject;
 
+@SuppressWarnings("deprecation")
 public class MediaLoadingTask extends AsyncTask<Uri, Void, File> {
 
     private final File instanceFile;

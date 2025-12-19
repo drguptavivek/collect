@@ -50,6 +50,7 @@ import javax.inject.Inject;
  * @deprecated Server form list should be retrieved from {@link FormsDataService}
  */
 @Deprecated
+@SuppressWarnings("deprecation")
 public class DownloadFormListTask extends AsyncTask<Void, String, Pair<List<ServerFormDetails>, FormSourceException>> {
 
     private final FormsRepository formsRepository;
