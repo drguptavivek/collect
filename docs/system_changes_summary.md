@@ -247,3 +247,18 @@ sequenceDiagram
     *   We were targeting the wrong directory (wrong ID type) and the OS was stopping the disk operation (Main Thread violation).
 *   **Why did the Release APK crash on login?**
     *   Code shrinking (ProGuard/R8) removed necessary metadata (class names, generic types) that Gson and Retrofit rely on to parse server responses. We added "Keep Rules" to protect that code.
+
+---
+
+**5. Gradle & Build System Modernization** (Added 2025-12-19)
+*   **Objective**: Upgrade build system to current standards (Gradle 9.2.1), fix build race conditions, and resolve architectural warnings.
+*   **Gradle Upgrade**:
+    *   **Wrapper**: Upgraded `gradle-wrapper.properties` to version **9.2.1-all**.
+    *   **Libraries**: Updated `targetSdk` to **36** (Android 16).
+*   **Critical Build Fixes**:
+    *   **OSS Licenses Race Condition**: Fixed a task dependency failure in `assembleSelfSignedRelease` where `ossLicensesCleanUp` ran before dependencies were ready. Added `mustRunAfter` constraint in `collect_app/build.gradle`.
+    *   **Jetifier Removal**: Disabled Jetifier (`android.enableJetifier=false`) and removed experimental ignorelist to clean up build warnings and improve build speed.
+    *   **JVM Target**: Migrated deprecated `kotlinOptions.jvmTarget` syntax to the modern `compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }` DSL across all Kotlin modules.
+*   **Architecture Refactoring**:
+    *   **`AsyncTask` to `Scheduler`**: Refactored `SaveFormIndexTask.java`. This legacy task used the deprecated `AsyncTask` API. It was rewritten to use the ODK `Scheduler` interface (`immediate` execution with Supplier/Consumer pattern), removing the `AsyncTask` inheritance entirely.
+    *   **Kapt Migration**: fully migrated `annotationProcessor` configuration to `kapt` for `daggerAndroidProcessor`, resolving Gradle 10 incompatibility warnings.
