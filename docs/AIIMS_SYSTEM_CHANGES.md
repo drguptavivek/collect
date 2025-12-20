@@ -19,17 +19,18 @@ The login process has been intercepted to Authenticate against a custom backend,
 ```mermaid
 graph TD
     A[Launch App] --> B{Is Logged In?}
-    B -- Yes --> C{Is PIN Set?}
+    B -- Yes --> C{"Is PIN Set?"}
     B -- No --> D[AiimsLoginActivity]
     D --> E[User Enters Credentials]
     E --> F[Auth via RealAuthClient]
-    F -- Success (Bearer Token) --> G[Save Token to SharedPreferences]
-    G --> H[Create ODK Project (general_prefs)]
+    F -- "Success (Bearer Token)" --> G[Save Token to SharedPreferences]
+    G --> H["Create ODK Project (general_prefs)"]
     H --> C
     C -- Yes --> I[Main Menu]
     C -- No --> J[SetupPinActivity]
     J --> K[User Sets PIN]
     K --> I
+```
 
 ### B. PIN Security & App Resume Flow
 The app monitors its foreground state to lock the session when minimized.
@@ -44,7 +45,7 @@ graph TD
     F --> G[Launch PinEntryActivity]
     G --> H{User Enters PIN}
     H -- Success --> A
-    H -- Back Pressed --> I[Minimize App (Prevent Bypass)]
+    H -- Back Pressed --> I["Minimize App (Prevent Bypass)"]
 ```
 ```
 
