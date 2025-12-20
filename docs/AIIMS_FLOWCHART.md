@@ -126,7 +126,6 @@ graph TD
     ProjCleaner -- Wipes --> FormsDB
     ProjCleaner -- Wipes --> FormFiles
     
-    note right of ProjCleaner
-        "Blank Forms" are deleted to prevent new users from seeing previous project forms. Completed Instances are KEPT for sync."
-    end note
+    ProjCleanerNote["'Blank Forms' are deleted to prevent new users from seeing previous project forms. Completed Instances are KEPT for sync."]
+    ProjCleaner -.-> ProjCleanerNote
 ```
