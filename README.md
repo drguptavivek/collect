@@ -10,6 +10,27 @@
     *   **Rationale**: The official app uses Basic Auth. Our backend requires short-lived **Bearer Tokens** (JWT) and a custom login flow (`/projects/{id}/app-users/login`).
     *   **Change**: Added `aiims_auth_module` to intercept the startup flow, handle login, and inject tokens into the ODK Core via `TokenProvider`.
     *   **Offline Resilience**: Implements an "Offline Grace Period" (~6 hours) where expired sessions active if the central server is unreachable. Includes a **Soft Expiry** prompt to handle intermittent connectivity without stranding users.
+    
+    ```mermaid
+    stateDiagram-v2
+        [*] --> LOGGED_OUT
+        LOGGED_OUT --> LOGGED_IN : "User logs in (Credentials)"
+        state LOGGED_IN {
+            [*] --> Active : "Token Valid"
+            Active --> GracePeriod : "Token Expired (Time > ExpiresAt)"
+            state GracePeriod {
+                [*] --> CheckReachability
+                CheckReachability --> OfflineGrace : "Server Unreachable"
+                CheckReachability --> SoftExpiry : "Server Reachable"
+                OfflineGrace --> CheckReachability : "Periodic Refresh"
+                SoftExpiry --> ReAuthenticated : "User Logs In"
+                SoftExpiry --> OfflineGrace : "User Cancels (Work Offline)"
+            }
+        }
+        GracePeriod --> LOGGED_OUT : "Hard Deadline (> 6 Hours)"
+        LOGGED_IN --> LOGGED_OUT : "User Manually Logs Out"
+        LOGGED_IN --> LOGGED_OUT : "3 Failed PIN Attempts (Wipe)"
+    ```
 
 2.  **Network Interception**:
     *   **Rationale**: To support standard ODK OpenRosa calls (`/formList`, `/submission`) against our custom backend.
