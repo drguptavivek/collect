@@ -9,28 +9,28 @@ The core logic resides in `AiimsAuthManager`. It handles JWT Bearer tokens, Expi
 stateDiagram-v2
     [*] --> LOGGED_OUT
     
-    LOGGED_OUT --> LOGGED_IN : User logs in (Credentials)
+    LOGGED_OUT --> LOGGED_IN : "User logs in (Credentials)"
     
     state LOGGED_IN {
-        [*] --> Active : Token Valid
-        Active --> GracePeriod : Token Expired (Time > ExpiresAt)
+        [*] --> Active : "Token Valid"
+        Active --> GracePeriod : "Token Expired (Time > ExpiresAt)"
         
         state GracePeriod {
             [*] --> CheckReachability
-            CheckReachability --> OfflineGrace : Server Unreachable
-            CheckReachability --> SoftExpiry : Server Reachable
+            CheckReachability --> OfflineGrace : "Server Unreachable"
+            CheckReachability --> SoftExpiry : "Server Reachable"
             
-            OfflineGrace --> CheckReachability : Periodic Refresh
+            OfflineGrace --> CheckReachability : "Periodic Refresh"
             
-            SoftExpiry --> ReAuthenticated : User Logs In
-            SoftExpiry --> OfflineGrace : User Cancels (Work Offline)
+            SoftExpiry --> ReAuthenticated : "User Logs In"
+            SoftExpiry --> OfflineGrace : "User Cancels (Work Offline)"
         }
         
     }
     
-    GracePeriod --> LOGGED_OUT : Hard Deadline (> 6 Hours)
-    LOGGED_IN --> LOGGED_OUT : User Manually Logs Out
-    LOGGED_IN --> LOGGED_OUT : 3 Failed PIN Attempts (Wipe)
+    GracePeriod --> LOGGED_OUT : "Hard Deadline (> 6 Hours)"
+    LOGGED_IN --> LOGGED_OUT : "User Manually Logs Out"
+    LOGGED_IN --> LOGGED_OUT : "3 Failed PIN Attempts (Wipe)"
 
     note right of GracePeriod
         Token is expired but user
@@ -46,7 +46,7 @@ stateDiagram-v2
 ```mermaid
 sequenceDiagram
     participant User
-    participant AppLock (Lifecycle)
+    participant AppLock as "AppLock (Lifecycle)"
     participant AuthManager
     participant PinManager
     participant Activity
@@ -57,11 +57,11 @@ sequenceDiagram
     AppLock->>AuthManager: getCurrentAuthState()
     
     alt is LOGGED_OUT
-        AppLock->>User: No Action (Go to Login)
+        AppLock->>User: "No Action (Go to Login)"
     else is LOGGED_IN
         AppLock->>AuthManager: isSoftExpiry?
         alt Yes (Soft Expiry)
-            AppLock->>Activity: Start AiimsLoginActivity (Re-Auth Mode)
+            AppLock->>Activity: "Start AiimsLoginActivity (Re-Auth Mode)"
             Activity-->>User: Show "Session Expired" Prompt
             
             opt User Cancels
@@ -87,7 +87,7 @@ sequenceDiagram
                      end
                  end
             else Pin Not Set
-                 AppLock-->>User: Proceed (Should force setup)
+                 AppLock-->>User: "Proceed (Should force setup)"
             end
         end
     end
@@ -102,9 +102,9 @@ graph TD
         AuthPrefs[("aiims_auth_prefs")]
         MetaPrefs[("meta_prefs")]
         
-        AuthPrefs -->|Contains| Token[JWT Token]
-        AuthPrefs -->|Contains| User[User Profile]
-        AuthPrefs -->|Contains| Expiry[Expiry Timestamp]
+        AuthPrefs -->|Contains| Token["JWT Token"]
+        AuthPrefs -->|Contains| User["User Profile"]
+        AuthPrefs -->|Contains| Expiry["Expiry Timestamp"]
     end
     
     subgraph "ODK Internal Storage"
