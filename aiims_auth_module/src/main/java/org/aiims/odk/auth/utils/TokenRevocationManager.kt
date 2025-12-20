@@ -4,8 +4,10 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.aiims.odk.auth.api.AuthClient
 import org.aiims.odk.auth.api.RealAuthClient
 
 /**
@@ -20,6 +22,32 @@ object TokenRevocationManager {
     private const val KEY_PENDING_API_URL = "pending_revoke_api_url"
     private const val KEY_PENDING_REASON = "pending_revoke_reason"
     private const val KEY_PENDING_AT = "pending_revoke_at"
+
+    private var authClientForTesting: AuthClient? = null
+    private var ioDispatcherForTesting: CoroutineDispatcher? = null
+    private var isNetworkAvailableForTesting: Boolean? = null
+
+    @androidx.annotation.VisibleForTesting
+    fun setAuthClient(client: AuthClient) {
+        authClientForTesting = client
+    }
+
+    @androidx.annotation.VisibleForTesting
+    fun setIoDispatcher(dispatcher: CoroutineDispatcher) {
+        ioDispatcherForTesting = dispatcher
+    }
+
+    @androidx.annotation.VisibleForTesting
+    fun setNetworkAvailable(available: Boolean) {
+        isNetworkAvailableForTesting = available
+    }
+
+    @androidx.annotation.VisibleForTesting
+    fun resetForTesting() {
+        authClientForTesting = null
+        ioDispatcherForTesting = null
+        isNetworkAvailableForTesting = null
+    }
 
     fun markPending(
         context: Context,
@@ -44,7 +72,7 @@ object TokenRevocationManager {
     }
 
     suspend fun processPending(context: Context): Boolean {
-        return withContext(Dispatchers.IO) {
+        return withContext(ioDispatcherForTesting ?: Dispatchers.IO) {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val projectId = prefs.getString(KEY_PENDING_PROJECT_ID, null) ?: return@withContext false
             val userId = prefs.getString(KEY_PENDING_USER_ID, null) ?: return@withContext false
@@ -56,7 +84,8 @@ object TokenRevocationManager {
                 return@withContext false
             }
 
-            val success = RealAuthClient.getInstance(context, apiUrl).revokeSession(projectId, userId, authToken)
+            val client = authClientForTesting ?: RealAuthClient.getInstance(context, apiUrl)
+            val success = client.revokeSession(projectId, userId, authToken)
             if (success) {
                 prefs.edit().apply {
                     remove(KEY_PENDING_PROJECT_ID)
@@ -73,6 +102,9 @@ object TokenRevocationManager {
     }
 
     private fun isNetworkAvailable(context: Context): Boolean {
+        if (isNetworkAvailableForTesting != null) {
+            return isNetworkAvailableForTesting!!
+        }
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = cm.activeNetwork ?: return false
         val capabilities = cm.getNetworkCapabilities(network) ?: return false

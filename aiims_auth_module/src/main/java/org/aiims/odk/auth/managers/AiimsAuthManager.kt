@@ -2,6 +2,7 @@ package org.aiims.odk.auth.managers
 
 import android.content.Context
 import android.content.SharedPreferences
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.aiims.odk.auth.api.AuthClient
 import org.aiims.odk.auth.api.AuthResult
 import org.aiims.odk.auth.api.RealAuthClient
 import org.aiims.odk.auth.api.User
@@ -45,10 +47,28 @@ class AiimsAuthManager private constructor(
                 INSTANCE ?: AiimsAuthManager(context.applicationContext, projectCleaner).also { INSTANCE = it }
             }
         }
+
+        @androidx.annotation.VisibleForTesting
+        fun resetInstanceForTesting() {
+            INSTANCE = null
+        }
     }
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    private var authClientForTesting: AuthClient? = null
+    private var ioDispatcherForTesting: CoroutineDispatcher? = null
+
+    @androidx.annotation.VisibleForTesting
+    fun setAuthClient(client: AuthClient) {
+        authClientForTesting = client
+    }
+
+    @androidx.annotation.VisibleForTesting
+    fun setIoDispatcher(dispatcher: CoroutineDispatcher) {
+        ioDispatcherForTesting = dispatcher
+    }
 
 
     // Reactive state for the *Active* Project
@@ -102,6 +122,40 @@ class AiimsAuthManager private constructor(
         if (token != null && user != null && !isTokenExpired(expiresAt)) {
             _authState.value = AuthState.LOGGED_IN
             _currentUser.value = user
+        } else if (token != null && user != null && isTokenExpired(expiresAt)) {
+            // Token is expired. Perform Active Reachability Check.
+            println("DEBUG_TEST: Token expired. activeProjectId=$pid, token=$token")
+            
+            // 1. Optimistic Login (Grace Period)
+            _authState.value = AuthState.LOGGED_IN
+            _currentUser.value = user
+            
+            // 2. Background Verification
+            scope.launch {
+                val apiUrl = getApiUrlForProject(pid)
+                println("DEBUG_TEST: Checked API URL: $apiUrl")
+                if (apiUrl != null) {
+                    val isReachable = try {
+                        val client = getAuthClient(apiUrl)
+                        val r = client.checkReachability()
+                        println("DEBUG_TEST: Reachability result: $r")
+                        r
+                    } catch (e: Exception) {
+                        println("DEBUG_TEST: Reachability exception: $e")
+                        false
+                    }
+
+                    if (isReachable) {
+                        println("DEBUG_TEST: Server reachable. Logging out.")
+                        logoutProject(pid)
+                    } else {
+                        println("DEBUG_TEST: Server unreachable. Staying logged in.")
+                    }
+                } else {
+                    println("DEBUG_TEST: No API URL found. Logging out.")
+                    logoutProject(pid)
+                }
+            }
         } else {
             _authState.value = AuthState.LOGGED_OUT
             _currentUser.value = null
@@ -116,8 +170,8 @@ class AiimsAuthManager private constructor(
             _isLoading.value = true
             _errorMessage.value = null
 
-            // Use real authentication client
-            val client = RealAuthClient.getInstance(context, apiUrl)
+            // Use authentication client
+            val client = getAuthClient(apiUrl)
             val result = client.login(projectId, username, password)
 
             when (result) {
@@ -175,7 +229,7 @@ class AiimsAuthManager private constructor(
         // Revoke if possible
         if (token != null && user != null && !apiUrl.isNullOrBlank()) {
              try {
-                 val client = RealAuthClient.getInstance(context, apiUrl)
+                 val client = getAuthClient(apiUrl)
                  client.revokeSession(projectId, user.id, token)
              } catch (e: Exception) {
                  // Best effort
@@ -186,7 +240,7 @@ class AiimsAuthManager private constructor(
         clearSession(projectId)
 
         // Clear ODK forms and instances for this project (Isolation)
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        kotlinx.coroutines.withContext(ioDispatcherForTesting ?: kotlinx.coroutines.Dispatchers.IO) {
             android.util.Log.d("AiimsAuth", "Attempting to clear project data for: $projectId")
             try {
                 projectCleaner.clearProjectData(projectId)
@@ -254,7 +308,7 @@ class AiimsAuthManager private constructor(
                 id = json.getString("id"),
                 username = json.getString("username"),
                 projectId = json.getString("projectId"),
-                expiresAt = json.optString("expiresAt", null),
+                expiresAt = if (json.has("expiresAt")) json.getString("expiresAt") else null,
                 name = json.optString("name", json.getString("username")),
                 role = json.optString("role", "App User")
             )
@@ -295,6 +349,10 @@ class AiimsAuthManager private constructor(
     fun getActiveProjectToken(): String? {
         val pid = activeProjectId ?: return null
         return getPersistedToken(pid)
+    }
+
+    private fun getAuthClient(apiUrl: String): AuthClient {
+        return authClientForTesting ?: RealAuthClient.getInstance(context, apiUrl)
     }
 }
 

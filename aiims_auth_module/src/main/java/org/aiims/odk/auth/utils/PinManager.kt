@@ -25,6 +25,11 @@ class PinManager private constructor(private val context: Context) {
                 INSTANCE ?: PinManager(context.applicationContext).also { INSTANCE = it }
             }
         }
+
+        @androidx.annotation.VisibleForTesting
+        fun resetInstanceForTesting() {
+            INSTANCE = null
+        }
     }
 
     /**

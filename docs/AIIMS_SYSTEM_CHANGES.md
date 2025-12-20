@@ -236,6 +236,20 @@ sequenceDiagram
 
 ---
 
+**5. Offline Grace Period & Active Reachability**
+*   **Context**: App users may work in areas with spotty connectivity. A hard expiry verification prevents them from working even if the server is unreachable.
+*   **Behavior**:
+    *   **Token Expiry Detection**: `AiimsAuthManager` detects if the JWT is expired during `refreshState`.
+    *   **Active Reachability Check**: Instead of immediately logging out, the app attempts to ping the server (`HEAD /version.txt` or similar).
+    *   **Reachability Logic**:
+        *   **Server Reachable**: If the server responds (even 200 OK), the expiry is **enforced**, and the user is logged out (Session Revoked).
+        *   **Server Unreachable**: If the network or server is down, the user enters a **Grace Period** and remains `LOGGED_IN` to allow offline work.
+*   **Implementation**:
+    *   `AiimsAuthManager.refreshState` optimistically assumes `LOGGED_IN` if expired, then launches a background check.
+    *   `RealAuthClient.checkReachability` performs the network call.
+
+---
+
 ## 5. Summary of Why
 *   **Why did forms fail to download?**
     *   ODK default behavior uses Basic Auth (User/Pass). Your backend expects Bearer Token. We injected the Bearer token.

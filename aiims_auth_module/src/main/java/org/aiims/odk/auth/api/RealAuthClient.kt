@@ -8,6 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.UUID
+import java.net.HttpURLConnection
+import java.net.URL
 
 /**
  * Real authentication client that connects to backend API
@@ -15,7 +17,7 @@ import java.util.UUID
 class RealAuthClient private constructor(
     private val context: Context,
     private val apiUrl: String
-) {
+) : AuthClient {
         private var retrofit: Retrofit? = null
         private var apiService: AuthApiService? = null
 
@@ -135,7 +137,7 @@ class RealAuthClient private constructor(
     /**
      * Login to the Central Backend API
      */
-    suspend fun login(projectId: String, username: String, password: String): AuthResult {
+    override suspend fun login(projectId: String, username: String, password: String): AuthResult {
         return withContext(Dispatchers.IO) {
             try {
                 Log.d("AiimsAuthClient", "Attempting login for user: $username on project: $projectId")
@@ -199,7 +201,7 @@ class RealAuthClient private constructor(
     /**
      * Revoke session by ID.
      */
-    suspend fun revokeSession(projectId: String, userId: String, authToken: String): Boolean {
+    override suspend fun revokeSession(projectId: String, userId: String, authToken: String): Boolean {
         return withContext(Dispatchers.IO) {
             try {
                 val header = "Bearer $authToken"
@@ -221,6 +223,33 @@ class RealAuthClient private constructor(
                 Log.e("AiimsAuthClient", "Revoke exception: ${e.message}", e)
                 false
             }
+        }
+    }
+
+    override suspend fun checkReachability(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            // Remove trailing slash if present then append /version.txt
+            val cleanUrl = if (apiUrl.endsWith("/")) apiUrl.dropLast(1) else apiUrl
+            val url = URL("$cleanUrl/version.txt")
+            
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 5000 // 5 seconds timeout
+            connection.readTimeout = 5000
+            
+            // Handle different response codes gracefully
+            val responseCode = try {
+                connection.responseCode
+            } catch (e: java.io.IOException) {
+                -1 // Network failure
+            }
+            
+            val reachable = responseCode == HttpURLConnection.HTTP_OK
+            Log.d("AiimsAuthClient", "Reachability check to $url returned: $responseCode (Reachable: $reachable)")
+            reachable
+        } catch (e: Exception) {
+            Log.e("AiimsAuthClient", "Reachability check failed", e)
+            false
         }
     }
 

@@ -9,6 +9,7 @@
 1.  **AIIMS Authentication Module**: 
     *   **Rationale**: The official app uses Basic Auth. Our backend requires short-lived **Bearer Tokens** (JWT) and a custom login flow (`/projects/{id}/app-users/login`).
     *   **Change**: Added `aiims_auth_module` to intercept the startup flow, handle login, and inject tokens into the ODK Core via `TokenProvider`.
+    *   **Offline Resilience**: Implements an "Offline Grace Period" where expired sessions remain active if the central server is unreachable.
 
 2.  **Network Interception**:
     *   **Rationale**: To support standard ODK OpenRosa calls (`/formList`, `/submission`) against our custom backend.
