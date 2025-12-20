@@ -174,44 +174,14 @@ class AiimsAuthManagerTest {
     }
 
     @Test
-    fun refreshState_detectsTokenExpiry_andExpiresIfServerReachable() = runTest {
-        val projectId = "1"
-        val user = User("100", "testuser", projectId, "2000-01-01T00:00:00.000Z") // Expired
-        whenever(authClient.login(any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
-        authManager.login(projectId, "user", "pass", "url")
-        authManager.setActiveProject(projectId)
-        advanceUntilIdle()
-        
-        // Stub using runBlocking + doReturn
-        runBlocking {
-            doReturn(true).whenever(authClient).checkReachability()
-        }
-        
-        // Reset memory
-        AiimsAuthManager.resetInstanceForTesting()
-        val newAuthManager = AiimsAuthManager.init(context, projectCleaner)
-        newAuthManager.setAuthClient(authClient)
-        
-        // Critical: Set dispatcher linked to THIS runTest's scheduler
-        newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
-        
-        newAuthManager.setActiveProject(projectId)
-        
-        // Advance time for reachability check and logout
-        advanceUntilIdle()
-        shadowOf(Looper.getMainLooper()).idle()
-        
-        // Verify Check Logic
-        verify(authClient, org.mockito.kotlin.atLeastOnce()).checkReachability()
-        verify(authClient, org.mockito.kotlin.atLeastOnce()).revokeSession(any(), any(), any())
-        
-        assertEquals(AuthState.LOGGED_OUT, newAuthManager.authState.first())
-    }
-
-    @Test
     fun refreshState_detectsTokenExpiry_andAllowsGraceIfServerUnreachable() = runTest {
         val projectId = "1"
-        val user = User("100", "testuser", projectId, "2000-01-01T00:00:00.000Z") 
+        // Expires 1 hour ago (Within 6h grace)
+        val now = System.currentTimeMillis()
+        val oneHourAgo = now - (1 * 60 * 60 * 1000)
+        val expiredDate = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(oneHourAgo))
+        
+        val user = User("100", "testuser", projectId, expiredDate) 
         
         whenever(authClient.login(any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
         authManager.login(projectId, "user", "pass", "url")
@@ -233,6 +203,74 @@ class AiimsAuthManagerTest {
         
         val state = newAuthManager.authState.first()
         assertTrue("State should be LOGGED_IN during grace period", state == AuthState.LOGGED_IN)
+        assertFalse("Should not be Soft Expiry if unreachable", newAuthManager.getIsSoftExpiry())
         verify(authClient).checkReachability()
+    }
+    
+    @Test
+    fun refreshState_enforcesHardDeadline_after6Hours() = runTest {
+        val projectId = "1"
+        // Expires 7 hours ago (> 6h grace)
+        val now = System.currentTimeMillis()
+        val sevenHoursAgo = now - (7 * 60 * 60 * 1000)
+        val expiredDate = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(sevenHoursAgo))
+        
+        val user = User("100", "testuser", projectId, expiredDate) 
+        
+        whenever(authClient.login(any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        authManager.login(projectId, "user", "pass", "url")
+        
+        // Even if server is unreachable, hard deadline kills it (actually code doesn't check reachability for hard deadline)
+        // refreshState checks hard deadline first
+        
+        AiimsAuthManager.resetInstanceForTesting()
+        val newAuthManager = AiimsAuthManager.init(context, projectCleaner)
+        newAuthManager.setAuthClient(authClient)
+        newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
+        
+        newAuthManager.setActiveProject(projectId)
+        
+        advanceUntilIdle() // Coroutine for logout
+        
+        assertEquals(AuthState.LOGGED_OUT, newAuthManager.authState.first())
+        verify(projectCleaner).clearProjectData(projectId)
+        // Reachability should NOT have been called
+        verify(authClient, org.mockito.kotlin.never()).checkReachability()
+    }
+
+    @Test
+    fun refreshState_setsSoftExpiry_ifReachableWithinGrace() = runTest {
+        val projectId = "1"
+        // Expires 1 hour ago (Within 6h grace)
+        val now = System.currentTimeMillis()
+        val oneHourAgo = now - (1 * 60 * 60 * 1000)
+        val expiredDate = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(oneHourAgo))
+        
+        val user = User("100", "testuser", projectId, expiredDate)
+        
+        whenever(authClient.login(any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        authManager.login(projectId, "user", "pass", "url")
+        
+        // Server Reachable
+        runBlocking {
+             doReturn(true).whenever(authClient).checkReachability()
+        }
+        
+        AiimsAuthManager.resetInstanceForTesting()
+        val newAuthManager = AiimsAuthManager.init(context, projectCleaner)
+        newAuthManager.setAuthClient(authClient)
+        newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
+        
+        newAuthManager.setActiveProject(projectId)
+        
+        advanceUntilIdle()
+        shadowOf(Looper.getMainLooper()).idle()
+        
+        // Assert: Logged IN (Grace) but Soft Expiry TRUE
+        assertEquals(AuthState.LOGGED_IN, newAuthManager.authState.first())
+        assertTrue("Should set Soft Expiry", newAuthManager.getIsSoftExpiry())
+        
+        // Should NOT have logged out
+        verify(authClient, org.mockito.kotlin.never()).revokeSession(any(), any(), any())
     }
 }

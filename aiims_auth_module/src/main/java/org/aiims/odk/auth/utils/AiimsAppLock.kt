@@ -33,12 +33,26 @@ class AiimsAppLock(private val application: Application) : Application.ActivityL
         val pinManager = PinManager.getInstance(application)
         val authState = authManager.getCurrentAuthState()
 
-        if (authState == AuthState.LOGGED_IN && pinManager.isPinSet()) {
-            shouldRequirePin = false
-            val intent = Intent(application, PinEntryActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        if (authState == AuthState.LOGGED_IN) {
+            if (authManager.getIsSoftExpiry()) {
+                shouldRequirePin = false
+                val intent = Intent(application, AiimsLoginActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra("is_reauth", true)
+                }
+                application.startActivity(intent)
+                return
             }
-            application.startActivity(intent)
+
+            if (pinManager.isPinSet()) {
+                shouldRequirePin = false
+                val intent = Intent(application, PinEntryActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                application.startActivity(intent)
+            } else {
+                shouldRequirePin = false
+            }
         } else {
             shouldRequirePin = false
         }

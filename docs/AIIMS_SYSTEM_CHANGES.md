@@ -236,17 +236,19 @@ sequenceDiagram
 
 ---
 
-**5. Offline Grace Period & Active Reachability**
+**5. Offline Grace Period & Intermittent Connectivity**
 *   **Context**: App users may work in areas with spotty connectivity. A hard expiry verification prevents them from working even if the server is unreachable.
-*   **Behavior**:
-    *   **Token Expiry Detection**: `AiimsAuthManager` detects if the JWT is expired during `refreshState`.
-    *   **Active Reachability Check**: Instead of immediately logging out, the app attempts to ping the server (`HEAD /version.txt` or similar).
-    *   **Reachability Logic**:
-        *   **Server Reachable**: If the server responds (even 200 OK), the expiry is **enforced**, and the user is logged out (Session Revoked).
-        *   **Server Unreachable**: If the network or server is down, the user enters a **Grace Period** and remains `LOGGED_IN` to allow offline work.
+*   **Feature: 6-Hour Grace Period**:
+    *   **Hard Deadline**: Tokens are valid for offline use for up to **6 hours** after official expiry.
+    *   **After 6 Hours**: Immediate Hard Logout occurs regardless of connectivity.
+*   **Behavior (Within 6 Hours)**:
+    *   **Offline**: If server is unreachable, user remains `LOGGED_IN` (Silent Grace).
+    *   **Online (Intermittent)**: If server is reachable, the app triggers a **Soft Expiry** prompt.
+        *   **User Choice**: The user can "Login" to refresh, or "Cancel" (Work Offline) to use the remaining grace period.
+        *   **Impact**: Prevents users from being stranded/locked out due to a fleeting network connection.
 *   **Implementation**:
-    *   `AiimsAuthManager.refreshState` optimistically assumes `LOGGED_IN` if expired, then launches a background check.
-    *   `RealAuthClient.checkReachability` performs the network call.
+    *   `AiimsAuthManager.refreshState` checks `GRACE_PERIOD_MS` (6h) and sets `isSoftExpiry` flag.
+    *   `AiimsAppLock` detects `isSoftExpiry` and launches `AiimsLoginActivity` in `Re-Auth Mode`.
 
 ---
 

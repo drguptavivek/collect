@@ -318,6 +318,18 @@ class AiimsLoginActivity : AppCompatActivity() {
         contentLayout.addView(passwordField)
         contentLayout.addView(progressBar)
         contentLayout.addView(loginButton)
+        
+        // Cancel / Work Offline Button for Re-Auth
+        val cancelButton = Button(this).apply {
+            text = "Work Offline (Grace Period)"
+            visibility = View.GONE
+            setOnClickListener { 
+                authManager.snoozeSoftExpiry() // Snooze the prompt
+                finish() // Go back to whatever we were doing
+            }
+        }
+        contentLayout.addView(cancelButton)
+        
         contentLayout.addView(scanQrButton)
 
         mainLayout.addView(headerFrame)
@@ -326,6 +338,24 @@ class AiimsLoginActivity : AppCompatActivity() {
         scrollView.addView(mainLayout)
 
         setContentView(scrollView)
+        
+        // Handle Re-Auth Mode
+        if (intent.getBooleanExtra("is_reauth", false)) {
+            title.text = "Session Expired"
+            statusText.text = "Server is reachable. Please re-login to refresh your session.\nOr work offline for now."
+            cancelButton.visibility = View.VISIBLE
+            // Default Cancel logic for Back Press
+        }
+    }
+    
+    override fun onBackPressed() {
+        if (intent.getBooleanExtra("is_reauth", false)) {
+            // Treat Back as Cancel/Snooze
+            authManager.snoozeSoftExpiry()
+            super.onBackPressed()
+        } else {
+            super.onBackPressed()
+        }
     }
 
     private fun showManualUrlDialog() {

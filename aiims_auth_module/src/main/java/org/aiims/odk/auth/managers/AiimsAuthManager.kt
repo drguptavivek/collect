@@ -84,8 +84,14 @@ class AiimsAuthManager private constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: Flow<String?> = _errorMessage.asStateFlow()
 
+    private val _isSoftExpiry = MutableStateFlow(false)
+    val isSoftExpiry: Flow<Boolean> = _isSoftExpiry.asStateFlow()
+
     // Current active project context
     private var activeProjectId: String? = null
+    
+    // 6 Hours in Milliseconds
+    private val GRACE_PERIOD_MS = 6L * 60 * 60 * 1000
 
     init {
         // Restore last active project or default state
@@ -101,6 +107,8 @@ class AiimsAuthManager private constructor(
         if (activeProjectId != projectId) {
             activeProjectId = projectId
             prefs.edit().putString(KEY_ACTIVE_PROJECT_ID, projectId).apply()
+            // Reset soft expiry on project switch
+            _isSoftExpiry.value = false
             refreshState()
         }
     }
@@ -112,6 +120,7 @@ class AiimsAuthManager private constructor(
         if (activeProjectId == null) {
             _authState.value = AuthState.LOGGED_OUT // Or INITIAL
             _currentUser.value = null
+            _isSoftExpiry.value = false
             return
         }
         val pid = activeProjectId!!
@@ -119,47 +128,71 @@ class AiimsAuthManager private constructor(
         val user = getPersistedUser(pid)
         val expiresAt = getPersistedExpiresAt(pid)
 
-        if (token != null && user != null && !isTokenExpired(expiresAt)) {
-            _authState.value = AuthState.LOGGED_IN
-            _currentUser.value = user
-        } else if (token != null && user != null && isTokenExpired(expiresAt)) {
-            // Token is expired. Perform Active Reachability Check.
-            println("DEBUG_TEST: Token expired. activeProjectId=$pid, token=$token")
+        if (token != null && user != null) {
+            val expiryTime = parseExpiryTime(expiresAt)
+            val currentTime = System.currentTimeMillis()
+            val hardDeadline = expiryTime + GRACE_PERIOD_MS
             
-            // 1. Optimistic Login (Grace Period)
-            _authState.value = AuthState.LOGGED_IN
-            _currentUser.value = user
+            if (currentTime > hardDeadline) {
+                 // HARD LOGOUT: Exceeded 6-hour grace
+                 println("DEBUG_AUTH: Hard deadline exceeded. Logging out.")
+                 // We need to launch logout
+                 scope.launch { logoutProject(pid) }
+                 return
+            }
             
-            // 2. Background Verification
-            scope.launch {
-                val apiUrl = getApiUrlForProject(pid)
-                println("DEBUG_TEST: Checked API URL: $apiUrl")
-                if (apiUrl != null) {
-                    val isReachable = try {
-                        val client = getAuthClient(apiUrl)
-                        val r = client.checkReachability()
-                        println("DEBUG_TEST: Reachability result: $r")
-                        r
-                    } catch (e: Exception) {
-                        println("DEBUG_TEST: Reachability exception: $e")
-                        false
+            if (currentTime <= expiryTime) {
+                // VALID
+                _authState.value = AuthState.LOGGED_IN
+                _currentUser.value = user
+                _isSoftExpiry.value = false
+            } else {
+                // GRACE PERIOD (Expired but within 6h)
+                println("DEBUG_AUTH: In Grace Period. Token expired $expiresAt")
+                
+                // Optimistically allow login
+                _authState.value = AuthState.LOGGED_IN
+                _currentUser.value = user
+                
+                // Background Reachability Check
+                 scope.launch {
+                    val apiUrl = getApiUrlForProject(pid)
+                    var serverReachable = false
+                    
+                    if (apiUrl != null) {
+                         try {
+                            val client = getAuthClient(apiUrl)
+                            serverReachable = client.checkReachability()
+                        } catch (e: Exception) {
+                            serverReachable = false
+                        }
                     }
-
-                    if (isReachable) {
-                        println("DEBUG_TEST: Server reachable. Logging out.")
-                        logoutProject(pid)
+                    
+                    if (serverReachable) {
+                        println("DEBUG_AUTH: Server reachable in grace period. Setting Soft Expiry.")
+                        // SOFT EXPIRY: Prompt user, but do not force logout yet
+                        _isSoftExpiry.value = true
                     } else {
-                        println("DEBUG_TEST: Server unreachable. Staying logged in.")
+                         println("DEBUG_AUTH: Server unreachable. Maintaining Offline Grace.")
+                        // OFFLINE GRACE: Keep logged in, silent
+                        _isSoftExpiry.value = false
                     }
-                } else {
-                    println("DEBUG_TEST: No API URL found. Logging out.")
-                    logoutProject(pid)
                 }
             }
         } else {
             _authState.value = AuthState.LOGGED_OUT
             _currentUser.value = null
+            _isSoftExpiry.value = false
         }
+    }
+
+    private fun parseExpiryTime(expiresAt: String?): Long {
+         if (expiresAt == null) return 0L
+         return try {
+              org.aiims.odk.auth.utils.ApiDateFormat.parse(expiresAt)?.time ?: 0L
+         } catch (e: Exception) {
+             0L
+         }
     }
 
     /**
@@ -181,6 +214,9 @@ class AiimsAuthManager private constructor(
 
                     // Persist for this project
                     persistSession(projectId, result.user, result.token, result.expiresAt, apiUrl)
+                    
+                    // Reset soft expiry
+                    _isSoftExpiry.value = false
                     
                     // If this matches the active project, update state immediately
                     if (activeProjectId == projectId) {
@@ -216,6 +252,7 @@ class AiimsAuthManager private constructor(
     suspend fun logout() {
         val pid = activeProjectId ?: return
         logoutProject(pid)
+        _isSoftExpiry.value = false
     }
 
     /**
@@ -329,17 +366,34 @@ class AiimsAuthManager private constructor(
     
     // --- Legacy / Compatibility ---
     fun getCurrentAuthState(): AuthState = _authState.value
+    fun getIsSoftExpiry(): Boolean = _isSoftExpiry.value
     
     fun updateAuthState(state: AuthState) {
         _authState.value = state
-        // In new flow, state is derived from persistence, but we allow transient updates
     }
 
     fun logoutDueToFailedPin() {
-        // For local PIN failure, we just logout
         scope.launch {
             logout()
         }
+    }
+
+    fun snoozeSoftExpiry() {
+        // User cancelled re-auth. Snooze check? 
+        // For now, just keep the flag true? No, if we keep flag true, AppLock will loop.
+        // We probably want to suppress the flag until next refresh?
+        // Actually, if user hits BACK, they go to main menu. onActivityStarted triggers.
+        // Strategies:
+        // 1. Set flag false temporarily?
+        // 2. Add 'snoozed' state?
+        // Let's just set _isSoftExpiry = false for now until next refresh triggers it?
+        // But refresh triggers on every resume? No, refreshState is internal.
+        // We need a way to say "User knows, ignored it".
+        // Let's leave value as TRUE, but AppLock needs to know if it JUST launched it.
+        // Better: Use a "Snooze" method that sets it to false. The check runs in background anyway.
+        // Re-enabling logic: When does it turn back on? 
+        // Only if refreshState is called again (e.g. app restart or manual refresh).
+        _isSoftExpiry.value = false 
     }
 
     /**
