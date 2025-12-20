@@ -40,3 +40,42 @@ To update the custom fork with the latest standard features/fixes:
    git push -f origin vg-work
    ```
    *(Note: Force push is required after rebase)*
+
+## Configuration & Feature Flags
+
+The AIIMS module supports build-time and runtime configuration.
+
+### Feature Flags
+Located in `aiims_auth_module/src/main/res/values/aiims_config.xml` (or overridden in `collect_app`):
+
+| Flag | Default | Description |
+| :--- | :--- | :--- |
+| `aiims_auth_enabled` | `true` | Master switch. If false, app reverts to standard ODK behavior. |
+| `odk_launcher_enabled` | `false` | Inverse of auth_enabled. Controls which Activity handles `MAIN` intent. |
+
+### Build Config
+You can also force flags in `gradle.properties` or `build.gradle`:
+```gradle
+buildConfigField "boolean", "AIIMS_AUTH_ENABLED", "true"
+```
+
+## Troubleshooting
+
+### Common Sync/Build Issues
+
+1.  **Hilt/Dagger Errors**:
+    *   *Symptom*: "Missing binding for AiimsAuthManager".
+    *   *Fix*: Ensure `aiims_auth_module` is included in `settings.gradle` and instantiated in `AppDependencyModule`.
+
+2.  **Release Build Crashes**:
+    *   *Symptom*: Login fails with "Network Error" or `ClassCastException` in Retrofit.
+    *   *Fix*: Check `proguard-rules.pro`. Essential rules:
+        ```proguard
+        -keep class org.aiims.odk.auth.api.** { *; }
+        -keep class kotlin.coroutines.Continuation
+        ```
+
+3.  **Local Development (Emulator)**:
+    *   *Symptom*: Connection Refused to `central.local`.
+    *   *Fix*: Maintain the `OkHttpOpenRosaServerClientProvider` hacks that map `central.local` -> `10.0.2.2` for Debug builds.
+

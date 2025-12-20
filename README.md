@@ -58,7 +58,8 @@ For deep-dives into the custom components, refer to these internal docs:
     *   System Changes & Rationale
     *   Authentication & Security Flows (Diagrams)
     *   Data Architecture
-2.  **[Maintenance Guide](docs/AIIMS_MAINTENANCE.md)**: Instructions for merging upstream changes and maintaining these customizations.
+2.  **[API Specification](docs/AIIMS_API.md)**: Details of the backend endpoints (RPC School Survey API).
+3.  **[Maintenance Guide](docs/AIIMS_MAINTENANCE.md)**: Instructions for merging upstream changes and maintaining these customizations.
 
 ---
 
