@@ -54,9 +54,11 @@
 
 ### Documentation (AIIMS)
 For deep-dives into the custom components, refer to these internal docs:
-1.  **[System Changes & Architecture](docs/AIIMS_SYSTEM_CHANGES.md)**: Detailed technical breakdown of Auth, Isolation, and Networking changes.
-2.  **[Application Flowcharts](docs/AIIMS_FLOWCHART.md)**: Visual diagrams of the Authentication State Machine, Startup/PIN flows, and Data Stores.
-3.  **[Maintenance Guide](docs/AIIMS_MAINTENANCE.md)**: Instructions for merging upstream changes and maintaining these customizations.
+1.  **[Architecture & Flows](docs/AIIMS_ARCHITECTURE.md)**: The unified technical documentation containing:
+    *   System Changes & Rationale
+    *   Authentication & Security Flows (Diagrams)
+    *   Data Architecture
+2.  **[Maintenance Guide](docs/AIIMS_MAINTENANCE.md)**: Instructions for merging upstream changes and maintaining these customizations.
 
 ---
 
