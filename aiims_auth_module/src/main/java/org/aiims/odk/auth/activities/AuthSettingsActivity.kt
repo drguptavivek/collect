@@ -166,11 +166,8 @@ class AuthSettingsActivity : AppCompatActivity() {
             authManager.currentUser.collect { user ->
                 user?.let {
                     val userDetails = """
-                        Name: ${it.name}
-                        Email: ${it.email}
-                        Role: ${it.role.replace("_", " ").uppercase()}
-                        ${if (it.partnerName?.isNotEmpty() == true) "Partner: ${it.partnerName}" else ""}
-                        ${if (it.dateActiveTill?.isNotEmpty() == true) "Active Till: ${it.dateActiveTill}" else ""}
+                        Username: ${it.username}
+                        Project ID: ${it.projectId}
                     """.trimIndent()
 
                     userDetailsText.text = userDetails

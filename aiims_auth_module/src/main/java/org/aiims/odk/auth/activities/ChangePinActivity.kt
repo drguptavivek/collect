@@ -166,11 +166,7 @@ class ChangePinActivity : AppCompatActivity() {
         lifecycleScope.launch {
             authManager.currentUser.collect { user ->
                 user?.let {
-                    val welcomeText = if (it.name.isNotEmpty()) {
-                        "Hello,\n${it.name}"
-                    } else {
-                        "Hello,\n${it.email}"
-                    }
+                    val welcomeText = "Hello,\n${it.username}"
                     userTextView.text = welcomeText
                 }
             }

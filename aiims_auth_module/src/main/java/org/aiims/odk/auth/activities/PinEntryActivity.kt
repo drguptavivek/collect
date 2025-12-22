@@ -13,26 +13,45 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.aiims.odk.auth.managers.AiimsAuthManager
 import org.aiims.odk.auth.utils.PinManager
+import android.Manifest
+import android.content.pm.PackageManager
+import android.graphics.Color
+import androidx.core.content.ContextCompat
 
 /**
  * PIN Entry Activity
  * For returning users who have already set up a PIN
  */
-class PinEntryActivity : AppCompatActivity() {
+class PinEntryActivity : AiimsBaseActivity() {
 
-    private lateinit var authManager: AiimsAuthManager
+    // authManager is inherited
     private lateinit var pinManager: PinManager
     private lateinit var pinField: EditText
     private lateinit var enterButton: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var userTextView: TextView
+    private lateinit var locationStatusView: TextView
+    private lateinit var notificationStatusView: TextView
+    private lateinit var grantPermissionsButton: Button
+
+    override fun onResume() {
+        super.onResume()
+        // Check permissions again on resume
+        checkAndRequestPermissions()
+        // Update UI status
+        updatePermissionStatusUI()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // Initialize auth manager and pin manager
-        authManager = AiimsAuthManager.getInstance(this)
+        // Initialize pin manager
+        // authManager is initialized in super.onCreate()
         pinManager = PinManager.getInstance(this)
+        
+        // Check permissions for Telemetry/Notifications
+        checkAndRequestPermissions()
 
         // Check if PIN is set, if not go to login
         if (!pinManager.isPinSet()) {
@@ -88,6 +107,25 @@ class PinEntryActivity : AppCompatActivity() {
             setPadding(0, 0, 0, 40)
             gravity = android.view.Gravity.CENTER
         }
+        
+        // Permission Status Views
+        locationStatusView = TextView(this).apply {
+            textSize = 14f
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, 10)
+        }
+        
+        notificationStatusView = TextView(this).apply {
+            textSize = 14f
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, 0, 0, 20)
+            visibility = if (android.os.Build.VERSION.SDK_INT >= 33) View.VISIBLE else View.GONE
+        }
+        
+        // Update initial state
+        updatePermissionStatusUI()
+
+        // Progress bar (initially hidden)
 
         // Progress bar (initially hidden)
         progressBar = ProgressBar(this).apply {
@@ -95,6 +133,19 @@ class PinEntryActivity : AppCompatActivity() {
             setPadding(0, 0, 0, 20)
         }
 
+        // Grant Permissions Button (initially hidden)
+        grantPermissionsButton = Button(this).apply {
+            text = "Grant Permissions"
+            textSize = 16f
+            setBackgroundColor(android.graphics.Color.parseColor("#1976D2")) // Blue
+            setTextColor(android.graphics.Color.WHITE)
+            setPadding(20, 10, 20, 10)
+            visibility = View.GONE
+            setOnClickListener {
+                checkAndRequestPermissions(true) // Force request
+            }
+        }
+        
         // PIN field
         val pinHint = TextView(this).apply {
             text = "PIN:"
@@ -135,6 +186,9 @@ class PinEntryActivity : AppCompatActivity() {
         layout.addView(title)
         layout.addView(subtitle)
         layout.addView(userTextView)
+        layout.addView(locationStatusView)
+        layout.addView(notificationStatusView)
+        layout.addView(grantPermissionsButton)
         layout.addView(pinHint)
         layout.addView(pinField)
         layout.addView(enterButton)
@@ -151,11 +205,7 @@ class PinEntryActivity : AppCompatActivity() {
         lifecycleScope.launch {
             authManager.currentUser.collect { user ->
                 user?.let {
-                    val welcomeText = if (it.name.isNotEmpty()) {
-                        "Welcome back,\n${it.name}"
-                    } else {
-                        "Welcome back,\n${it.email}"
-                    }
+                    val welcomeText = "Welcome back,\n${it.username}"
                     userTextView.text = welcomeText
                 }
             }
@@ -208,6 +258,11 @@ class PinEntryActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
 
+                // Trigger Telemetry (Success)
+                lifecycleScope.launch {
+                    authManager.submitTelemetry(getLastKnownLocation())
+                }
+                
                 // Navigate to main app
                 navigateToMain()
             } else {
@@ -225,6 +280,12 @@ class PinEntryActivity : AppCompatActivity() {
                         "Incorrect PIN. $attemptsLeft attempts remaining.",
                         Toast.LENGTH_SHORT
                     ).show()
+                    
+                    // Trigger Telemetry (Failed Attempt)
+                    lifecycleScope.launch {
+                        authManager.submitTelemetry(getLastKnownLocation())
+                    }
+                    
                     pinField.text.clear()
                     pinField.requestFocus()
                 }
@@ -250,6 +311,40 @@ class PinEntryActivity : AppCompatActivity() {
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
+    }
+
+    private fun updatePermissionStatusUI() {
+        // Location Status
+        val hasLocation = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                          ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        
+        if (hasLocation) {
+            locationStatusView.text = "✓ Location Access Granted"
+            locationStatusView.setTextColor(Color.parseColor("#2E7D32")) // Green
+        } else {
+            locationStatusView.text = "✗ Location Access Required"
+            locationStatusView.setTextColor(Color.parseColor("#C62828")) // Red
+        }
+
+        // Notification Status (Android 13+)
+        var hasNotif = true
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            hasNotif = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            if (hasNotif) {
+                notificationStatusView.text = "✓ Notifications Enabled"
+                notificationStatusView.setTextColor(Color.parseColor("#2E7D32")) // Green
+            } else {
+                notificationStatusView.text = "✗ Notifications Disabled"
+                notificationStatusView.setTextColor(Color.parseColor("#C62828")) // Red
+            }
+        }
+        
+        // Show GRANT button if any permission is missing
+        if (!hasLocation || !hasNotif) {
+            grantPermissionsButton.visibility = View.VISIBLE
+        } else {
+            grantPermissionsButton.visibility = View.GONE
+        }
     }
 
     private fun setLoading(loading: Boolean) {

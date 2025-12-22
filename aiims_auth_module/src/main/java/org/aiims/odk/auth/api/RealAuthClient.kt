@@ -137,15 +137,17 @@ class RealAuthClient private constructor(
     /**
      * Login to the Central Backend API
      */
-    override suspend fun login(projectId: String, username: String, password: String): AuthResult {
+    override suspend fun login(projectId: String, username: String, password: String, deviceId: String, comments: String?): AuthResult {
         return withContext(Dispatchers.IO) {
             try {
-                Log.d("AiimsAuthClient", "Attempting login for user: $username on project: $projectId")
+                Log.d("AiimsAuthClient", "Attempting login for user: $username on project: $projectId device: $deviceId")
 
                 // Create login request
                 val request = LoginRequest(
                     username = username,
-                    password = password
+                    password = password,
+                    deviceId = deviceId,
+                    comments = comments
                 )
 
                 Log.d("AiimsAuthClient", "Making API call to ${getApiService()}")
@@ -201,11 +203,12 @@ class RealAuthClient private constructor(
     /**
      * Revoke session by ID.
      */
-    override suspend fun revokeSession(projectId: String, userId: String, authToken: String): Boolean {
+    override suspend fun revokeSession(projectId: String, userId: String, authToken: String, deviceId: String): Boolean {
         return withContext(Dispatchers.IO) {
             try {
                 val header = "Bearer $authToken"
-                val response = getApiService().revokeSession(projectId, userId, header)
+                val request = RevokeRequest(deviceId = deviceId)
+                val response = getApiService().revokeSession(projectId, userId, header, request)
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body?.success == true) {
@@ -253,43 +256,26 @@ class RealAuthClient private constructor(
         }
     }
 
+    override suspend fun submitTelemetry(projectId: String, authToken: String, request: TelemetryRequest): TelemetryResponse? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val header = "Bearer $authToken"
+                val response = getApiService().submitTelemetry(projectId, header, request)
+                
+                if (response.isSuccessful) {
+                    response.body()
+                } else {
+                    Log.e("AiimsAuthClient", "Telemetry failed: ${response.code()}")
+                    null
+                }
+            } catch (e: Exception) {
+                Log.e("AiimsAuthClient", "Telemetry exception: ${e.message}", e)
+                null
+            }
+        }
+    }
+
     /**
      * Generate or retrieve device ID
      */
-    private fun generateDeviceId(): String {
-        val aiimsPrefs = context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE)
-        val collectMetaPrefs = context.getSharedPreferences("meta", Context.MODE_PRIVATE)
-
-        // Prefer the existing Collect install ID (shown as Device ID in ODK settings)
-        val existingCollectId = collectMetaPrefs.getString("metadata_installid", null)
-
-        var deviceId = aiimsPrefs.getString("device_id", null) ?: existingCollectId
-
-        if (deviceId == null) {
-            // Generate the same shape as Collect: "collect:" + 16-char random string
-            val randomSuffix = org.odk.collect.shared.strings.RandomString.randomString(16)
-            deviceId = "collect:$randomSuffix"
-
-            // Persist to both meta (so ODK shows it) and our local cache
-            collectMetaPrefs.edit().putString("metadata_installid", deviceId).apply()
-            aiimsPrefs.edit().putString("device_id", deviceId).apply()
-        } else {
-            // Ensure our cache stores it for consistency
-            aiimsPrefs.edit().putString("device_id", deviceId).apply()
-        }
-
-        return deviceId
-    }
-
-    /**
-     * Generate device information string
-     */
-    private fun generateDeviceInfo(): String {
-        val manufacturer = Build.MANUFACTURER ?: "Unknown"
-        val model = Build.MODEL ?: "Unknown"
-        val osVersion = Build.VERSION.RELEASE ?: "Unknown"
-        val appVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "Unknown"
-
-        return "Android $osVersion; $manufacturer $model; App v$appVersion"
-    }
 }

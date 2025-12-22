@@ -58,14 +58,9 @@ class AiimsSecureStorage private constructor(
         )
     }
 
-    // ===== Device Token Storage =====
-    var deviceToken: String
-        get() = encryptedPrefs.getString(AiimsConstants.KEY_DEVICE_TOKEN, "") ?: ""
-        set(value) = encryptedPrefs.edit().putString(AiimsConstants.KEY_DEVICE_TOKEN, value).apply()
-
-    var refreshToken: String
-        get() = encryptedPrefs.getString(AiimsConstants.KEY_REFRESH_TOKEN, "") ?: ""
-        set(value) = encryptedPrefs.edit().putString(AiimsConstants.KEY_REFRESH_TOKEN, value).apply()
+    var authToken: String?
+        get() = encryptedPrefs.getString(AiimsConstants.KEY_AUTH_TOKEN, null)
+        set(value) = encryptedPrefs.edit().putString(AiimsConstants.KEY_AUTH_TOKEN, value).apply()
 
     var tokenExpiry: Long?
         get() = encryptedPrefs.getLong(AiimsConstants.KEY_TOKEN_EXPIRY, -1).takeIf { it != -1L }
@@ -101,10 +96,6 @@ class AiimsSecureStorage private constructor(
         get() = encryptedPrefs.getString(AiimsConstants.KEY_API_URL, "") ?: ""
         set(value) = encryptedPrefs.edit().putString(AiimsConstants.KEY_API_URL, value).apply()
 
-    var deviceId: String
-        get() = encryptedPrefs.getString(AiimsConstants.KEY_DEVICE_ID, "") ?: ""
-        set(value) = encryptedPrefs.edit().putString(AiimsConstants.KEY_DEVICE_ID, value).apply()
-
     // ===== Authentication State Storage (Regular - Non-sensitive) =====
     var isAuthenticated: Boolean
         get() = regularPrefs.getBoolean(AiimsConstants.KEY_IS_AUTHENTICATED, false)
@@ -127,34 +118,6 @@ class AiimsSecureStorage private constructor(
         get() = regularPrefs.getString(AiimsConstants.KEY_USER_NAME, null)
         set(value) = regularPrefs.edit().putString(AiimsConstants.KEY_USER_NAME, value).apply()
 
-    var userRole: String?
-        get() = regularPrefs.getString(AiimsConstants.KEY_USER_ROLE, null)
-        set(value) = regularPrefs.edit().putString(AiimsConstants.KEY_USER_ROLE, value).apply()
-
-    var partnerId: String?
-        get() = regularPrefs.getString(AiimsConstants.KEY_PARTNER_ID, null)
-        set(value) = regularPrefs.edit().putString(AiimsConstants.KEY_PARTNER_ID, value).apply()
-
-    var partnerName: String?
-        get() = regularPrefs.getString(AiimsConstants.KEY_PARTNER_NAME, null)
-        set(value) = regularPrefs.edit().putString(AiimsConstants.KEY_PARTNER_NAME, value).apply()
-
-    // ===== Settings Storage (Regular) =====
-    var offlinePeriodDays: Int
-        get() = regularPrefs.getInt(AiimsConstants.KEY_OFFLINE_PERIOD_DAYS, AiimsConstants.DEFAULT_OFFLINE_PERIOD_DAYS)
-        set(value) = regularPrefs.edit().putInt(AiimsConstants.KEY_OFFLINE_PERIOD_DAYS, value).apply()
-
-    var autoLogoutMinutes: Int
-        get() = regularPrefs.getInt(AiimsConstants.KEY_AUTO_LOGOUT_MINUTES, AiimsConstants.DEFAULT_AUTO_LOGOUT_MINUTES)
-        set(value) = regularPrefs.edit().putInt(AiimsConstants.KEY_AUTO_LOGOUT_MINUTES, value).apply()
-
-    var lastSyncTimestamp: Long
-        get() = regularPrefs.getLong(AiimsConstants.KEY_LAST_SYNC_TIMESTAMP, 0L)
-        set(value) = regularPrefs.edit().putLong(AiimsConstants.KEY_LAST_SYNC_TIMESTAMP, value).apply()
-
-    var syncPendingCount: Int
-        get() = regularPrefs.getInt(AiimsConstants.KEY_SYNC_PENDING_COUNT, 0)
-        set(value) = regularPrefs.edit().putInt(AiimsConstants.KEY_SYNC_PENDING_COUNT, value).apply()
 
     // ===== Utility Methods =====
 
@@ -171,9 +134,6 @@ class AiimsSecureStorage private constructor(
             .remove(AiimsConstants.KEY_USER_ID)
             .remove(AiimsConstants.KEY_USER_EMAIL)
             .remove(AiimsConstants.KEY_USER_NAME)
-            .remove(AiimsConstants.KEY_USER_ROLE)
-            .remove(AiimsConstants.KEY_PARTNER_ID)
-            .remove(AiimsConstants.KEY_PARTNER_NAME)
             .remove(AiimsConstants.KEY_LAST_AUTH_TIMESTAMP)
             .apply()
     }
@@ -183,8 +143,6 @@ class AiimsSecureStorage private constructor(
      */
     fun clearSensitiveData() {
         encryptedPrefs.edit()
-            .remove(AiimsConstants.KEY_DEVICE_TOKEN)
-            .remove(AiimsConstants.KEY_REFRESH_TOKEN)
             .remove(AiimsConstants.KEY_TOKEN_EXPIRY)
             .remove(AiimsConstants.KEY_PIN_HASH)
             .remove(AiimsConstants.KEY_PIN_SALT)
@@ -249,8 +207,6 @@ class AiimsSecureStorage private constructor(
      */
     fun exportSettings(): Map<String, Any> {
         return mapOf(
-            "offlinePeriodDays" to offlinePeriodDays,
-            "autoLogoutMinutes" to autoLogoutMinutes,
             "biometricEnabled" to biometricEnabled
         )
     }
@@ -261,8 +217,6 @@ class AiimsSecureStorage private constructor(
     fun importSettings(settings: Map<String, Any>) {
         settings.forEach { (key, value) ->
             when (key) {
-                "offlinePeriodDays" -> offlinePeriodDays = (value as? String)?.toIntOrNull() ?: offlinePeriodDays
-                "autoLogoutMinutes" -> autoLogoutMinutes = (value as? String)?.toIntOrNull() ?: autoLogoutMinutes
                 "biometricEnabled" -> biometricEnabled = (value as? Boolean) ?: biometricEnabled
             }
         }

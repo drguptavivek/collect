@@ -8,18 +8,14 @@ object AiimsConstants {
 
     // Authentication State
     const val KEY_IS_AUTHENTICATED = "is_authenticated"
-    const val KEY_DEVICE_TOKEN = "device_token"
+    const val KEY_AUTH_TOKEN = "auth_token"
     const val KEY_TOKEN_EXPIRY = "token_expiry"
-    const val KEY_REFRESH_TOKEN = "refresh_token"
     const val KEY_LAST_AUTH_TIMESTAMP = "last_auth_timestamp"
 
     // User Information
     const val KEY_USER_ID = "user_id"
     const val KEY_USER_EMAIL = "user_email"
     const val KEY_USER_NAME = "user_name"
-    const val KEY_USER_ROLE = "user_role"
-    const val KEY_PARTNER_ID = "partner_id"
-    const val KEY_PARTNER_NAME = "partner_name"
 
     // PIN Security
     const val KEY_PIN_HASH = "pin_hash"
@@ -32,14 +28,6 @@ object AiimsConstants {
     // API Configuration
     const val KEY_API_URL = "api_url"
     const val KEY_API_VERSION = "api_version"
-    const val KEY_DEVICE_ID = "device_id"
-    const val KEY_DEVICE_INFO = "device_info"
-
-    // Offline Settings
-    const val KEY_OFFLINE_PERIOD_DAYS = "offline_period_days"
-    const val KEY_AUTO_LOGOUT_MINUTES = "auto_logout_minutes"
-    const val KEY_LAST_SYNC_TIMESTAMP = "last_sync_timestamp"
-    const val KEY_SYNC_PENDING_COUNT = "sync_pending_count"
 
     // Feature Flags
     const val KEY_AIIMS_AUTH_ENABLED = "aiims_auth_enabled"
@@ -49,12 +37,9 @@ object AiimsConstants {
     // Default Values
     const val DEFAULT_API_URL = "http://localhost:5174/api"
     const val DEFAULT_API_VERSION = "v1"
-    const val DEFAULT_OFFLINE_PERIOD_DAYS = 7
-    const val DEFAULT_AUTO_LOGOUT_MINUTES = 30
     const val MAX_PIN_ATTEMPTS = 3
     const val PIN_LENGTH_MIN = 4
     const val PIN_LENGTH_MAX = 6
-    const val TOKEN_REFRESH_THRESHOLD_DAYS = 1
 
     // Time Constants (in milliseconds)
     const val DAY_IN_MS = 24 * 60 * 60 * 1000L
@@ -66,17 +51,6 @@ object AiimsConstants {
     const val BIOMETRIC_PROMPT_SUBTITLE = "Use your fingerprint to authenticate"
     const val BIOMETRIC_PROMPT_NEGATIVE = "Cancel"
 
-    // API Endpoints
-    object ApiEndpoints {
-        const val AUTH_LOGIN = "/auth/login"
-        const val AUTH_VERIFY = "/auth/verify"
-        const val AUTH_REFRESH = "/auth/refresh"
-        const val AUTH_LOGOUT = "/auth/logout"
-        const val USER_PROFILE = "/user/profile"
-        const val SCHOOLS_BY_PARTNER = "/schools/by-partner"
-        const val SURVEYS_SUBMIT = "/surveys/submit"
-        const val SYNC_UPLOAD = "/sync/upload"
-    }
 
     // Error Codes
     object ErrorCodes {

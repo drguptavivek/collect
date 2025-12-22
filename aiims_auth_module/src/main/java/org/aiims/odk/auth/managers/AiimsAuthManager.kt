@@ -14,8 +14,17 @@ import org.aiims.odk.auth.api.AuthClient
 import org.aiims.odk.auth.api.AuthResult
 import org.aiims.odk.auth.api.RealAuthClient
 import org.aiims.odk.auth.api.User
+import org.aiims.odk.auth.api.TelemetryRequest
+import org.aiims.odk.auth.api.TelemetryLocation
 import org.aiims.odk.auth.utils.AiimsProjectUtils
 import org.json.JSONObject
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.WorkManager
+import androidx.work.ExistingPeriodicWorkPolicy
+import java.util.concurrent.TimeUnit
+import org.aiims.odk.auth.work.TelemetryWorker
 
 /**
  * Authentication Manager for Central Backend.
@@ -146,6 +155,9 @@ class AiimsAuthManager private constructor(
                 _authState.value = AuthState.LOGGED_IN
                 _currentUser.value = user
                 _isSoftExpiry.value = false
+                
+                // Ensure Telemetry Worker is scheduled
+                startPeriodicTelemetry()
             } else {
                 // GRACE PERIOD (Expired but within 6h)
                 println("DEBUG_AUTH: In Grace Period. Token expired $expiresAt")
@@ -205,7 +217,9 @@ class AiimsAuthManager private constructor(
 
             // Use authentication client
             val client = getAuthClient(apiUrl)
-            val result = client.login(projectId, username, password)
+            val deviceId = getDeviceId()
+            val comments = getMetadataComments()
+            val result = client.login(projectId, username, password, deviceId, comments)
 
             when (result) {
                 is AuthResult.Success -> {
@@ -222,6 +236,13 @@ class AiimsAuthManager private constructor(
                     if (activeProjectId == projectId) {
                         refreshState()
                     }
+                    
+                    // Trigger Telemetry
+                    submitTelemetry(null)
+                    
+                    // Start Background Worker
+                    startPeriodicTelemetry()
+                    
                     result
                 }
                 is AuthResult.Error -> {
@@ -267,10 +288,24 @@ class AiimsAuthManager private constructor(
         if (token != null && user != null && !apiUrl.isNullOrBlank()) {
              try {
                  val client = getAuthClient(apiUrl)
-                 client.revokeSession(projectId, user.id, token)
+                 val deviceId = getDeviceId()
+                 client.revokeSession(projectId, user.id, token, deviceId)
              } catch (e: Exception) {
                  // Best effort
              }
+        }
+        
+        // Trigger Telemetry before clearing session (allows using the valid token)
+        try {
+            // Note: We are using the token which is about to be cleared.
+            // submitTelemetry is async (launch), so we need to capture the values.
+            // Actually, submitTelemetry retrieves values from persistence/mem. 
+            // If we clear session immediately, it might fail.
+            // Let's pass the token explicitly? No, submitTelemetry reads from persistence.
+            // We should call it before clearSession.
+            submitTelemetry(null) 
+        } catch (e: Exception) {
+            // Ignore
         }
 
         // Clear persistence
@@ -293,6 +328,9 @@ class AiimsAuthManager private constructor(
         if (activeProjectId == projectId) {
             refreshState()
         }
+        
+        // Stop telemetry worker
+        stopPeriodicTelemetry()
     }
 
     private fun persistSession(projectId: String, user: User, token: String, expiresAt: String, apiUrl: String) {
@@ -305,10 +343,8 @@ class AiimsAuthManager private constructor(
                 put("id", user.id)
                 put("username", user.username)
                 put("projectId", user.projectId)
+                put("projectId", user.projectId)
                 put("expiresAt", user.expiresAt)
-                // Legacy fields
-                put("name", user.name)
-                put("role", user.role)
             }.toString()
             putString(keyUser(projectId), userJson)
             
@@ -345,9 +381,7 @@ class AiimsAuthManager private constructor(
                 id = json.getString("id"),
                 username = json.getString("username"),
                 projectId = json.getString("projectId"),
-                expiresAt = if (json.has("expiresAt")) json.getString("expiresAt") else null,
-                name = json.optString("name", json.getString("username")),
-                role = json.optString("role", "App User")
+                expiresAt = if (json.has("expiresAt")) json.getString("expiresAt") else null
             )
         } catch (e: Exception) {
             null
@@ -407,6 +441,95 @@ class AiimsAuthManager private constructor(
 
     private fun getAuthClient(apiUrl: String): AuthClient {
         return authClientForTesting ?: RealAuthClient.getInstance(context, apiUrl)
+    }
+
+    private fun getDeviceId(): String {
+        return context.getSharedPreferences("meta", Context.MODE_PRIVATE)
+            .getString("metadata_installid", "unknown_device") ?: "unknown_device"
+    }
+
+    /**
+     * Submit telemetry data to the backend immediately.
+     */
+    suspend fun submitTelemetry(location: android.location.Location?) {
+        val pid = activeProjectId ?: return
+        val token = getPersistedToken(pid) ?: return
+        val apiUrl = getApiUrlForProject(pid) ?: return
+        
+        scope.launch(ioDispatcherForTesting ?: Dispatchers.IO) {
+            try {
+                val client = getAuthClient(apiUrl)
+                val deviceId = getDeviceId()
+                
+                // Format location
+                val telemetryLocation = if (location != null) {
+                    TelemetryLocation(
+                        latitude = location.latitude,
+                        longitude = location.longitude,
+                        altitude = if (location.hasAltitude()) location.altitude else null,
+                        accuracy = if (location.hasAccuracy()) location.accuracy else null,
+                        speed = if (location.hasSpeed()) location.speed else null,
+                        bearing = if (location.hasBearing()) location.bearing else null,
+                        provider = location.provider
+                    )
+                } else {
+                    TelemetryLocation(0.0, 0.0, null, null, null, null, "unknown")
+                }
+                
+                val request = TelemetryRequest(
+                    deviceId = deviceId,
+                    collectVersion = "Collect/Unknown",
+                    deviceDateTime = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date()),
+                    location = telemetryLocation
+                )
+                
+                client.submitTelemetry(pid, token, request)
+                
+            } catch (e: Exception) {
+                android.util.Log.e("AiimsAuthManager", "Failed to submit telemetry", e)
+            }
+        }
+    }
+
+    private fun startPeriodicTelemetry() {
+        try {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val workRequest = PeriodicWorkRequestBuilder<TelemetryWorker>(20, TimeUnit.MINUTES)
+                .setConstraints(constraints)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "AiimsTelemetryWorker",
+                ExistingPeriodicWorkPolicy.KEEP,
+                workRequest
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("AiimsAuthManager", "Failed to schedule telemetry worker", e)
+        }
+    }
+
+    private fun stopPeriodicTelemetry() {
+        try {
+            WorkManager.getInstance(context).cancelUniqueWork("AiimsTelemetryWorker")
+        } catch (e: Exception) {
+            // Ignore
+        }
+    }
+
+    private fun getMetadataComments(): String {
+        return try {
+            JSONObject().apply {
+                put("manufacturer", android.os.Build.MANUFACTURER)
+                put("model", android.os.Build.MODEL)
+                put("os_version", android.os.Build.VERSION.RELEASE)
+                put("location", "unknown")
+            }.toString()
+        } catch (e: Exception) {
+            "{}"
+        }
     }
 }
 

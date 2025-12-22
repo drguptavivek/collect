@@ -85,7 +85,10 @@ object TokenRevocationManager {
             }
 
             val client = authClientForTesting ?: RealAuthClient.getInstance(context, apiUrl)
-            val success = client.revokeSession(projectId, userId, authToken)
+            val deviceId = context.getSharedPreferences("meta", Context.MODE_PRIVATE)
+                .getString("metadata_installid", "unknown_device") ?: "unknown_device"
+
+            val success = client.revokeSession(projectId, userId, authToken, deviceId)
             if (success) {
                 prefs.edit().apply {
                     remove(KEY_PENDING_PROJECT_ID)

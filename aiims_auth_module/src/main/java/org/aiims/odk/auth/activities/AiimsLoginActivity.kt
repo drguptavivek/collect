@@ -13,39 +13,60 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.appcompat.app.AlertDialog
 import kotlinx.coroutines.launch
 import org.aiims.odk.auth.api.AuthResult
 import org.aiims.odk.auth.managers.AiimsAuthManager
 import org.aiims.odk.auth.utils.AiimsProjectUtils
 import org.aiims.odk.auth.utils.TokenRevocationManager
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import java.io.File
 
 /**
  * AIIMS Login Activity (Central Backend Version)
  * Automatically detects the current ODK Project and authenticates against it.
  */
-class AiimsLoginActivity : AppCompatActivity() {
+class AiimsLoginActivity : AiimsBaseActivity() {
 
-    private lateinit var authManager: AiimsAuthManager
+    // authManager is inherited
     private lateinit var usernameField: EditText
     private lateinit var passwordField: EditText
     private lateinit var loginButton: Button
     private lateinit var scanQrButton: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var statusText: TextView
+    private lateinit var locationStatusView: TextView
+    private lateinit var notificationStatusView: TextView
+    private lateinit var grantPermissionsButton: Button
 
     // Active Project Context
     private var currentSystemProjectId: String? = null // ODK's internal UUID
     private var centralProjectId: String? = null // Central's integer ID
     private var serverUrl: String? = null
 
+
+    override fun onResume() {
+        super.onResume()
+        checkAndRequestPermissions()
+        // Update UI status
+        updatePermissionStatusUI()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Check permissions (Location + Notification)
+        checkAndRequestPermissions()
 
-        authManager = AiimsAuthManager.getInstance(this)
+        // authManager initialized in super
 
         // UI Setup
         createLayout()
+        
+        // Update initial state
+        updatePermissionStatusUI()
 
         // Process any pending revocations
         lifecycleScope.launch {
@@ -148,6 +169,11 @@ class AiimsLoginActivity : AppCompatActivity() {
             when (result) {
                 is AuthResult.Success -> {
                     Toast.makeText(this@AiimsLoginActivity, "Welcome ${result.user.username}", Toast.LENGTH_SHORT).show()
+                    
+                    // Trigger Telemetry with Location (Manager sends one without location, we refine it here)
+                    lifecycleScope.launch {
+                         authManager.submitTelemetry(getLastKnownLocation())
+                    }
                     
                     // SAVE CREDENTIALS TO ODK SETTINGS
                     if (currentSystemProjectId != null && currentSystemProjectId != "MANUAL_FALLBACK") {
@@ -287,6 +313,33 @@ class AiimsLoginActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 20)
         }
+        
+        // Permission Status Views
+        locationStatusView = TextView(this).apply {
+            textSize = 14f
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 10)
+        }
+        
+        notificationStatusView = TextView(this).apply {
+            textSize = 14f
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 20)
+            visibility = if (android.os.Build.VERSION.SDK_INT >= 33) View.VISIBLE else View.GONE
+        }
+        
+        // Grant Permissions Button (initially hidden)
+        grantPermissionsButton = Button(this).apply {
+            text = "Grant Permissions"
+            textSize = 16f
+            setBackgroundColor(android.graphics.Color.parseColor("#1976D2")) // Blue
+            setTextColor(android.graphics.Color.WHITE)
+            setPadding(20, 10, 20, 10)
+            visibility = View.GONE
+            setOnClickListener {
+                checkAndRequestPermissions(true) // Force request
+            }
+        }
 
         usernameField = EditText(this).apply {
             hint = "Username"
@@ -314,6 +367,9 @@ class AiimsLoginActivity : AppCompatActivity() {
 
         contentLayout.addView(title)
         contentLayout.addView(statusText)
+        contentLayout.addView(locationStatusView)
+        contentLayout.addView(notificationStatusView)
+        contentLayout.addView(grantPermissionsButton)
         contentLayout.addView(usernameField)
         contentLayout.addView(passwordField)
         contentLayout.addView(progressBar)
@@ -386,25 +442,30 @@ class AiimsLoginActivity : AppCompatActivity() {
         })
         layout.addView(projectIdInput)
 
-        android.app.AlertDialog.Builder(this)
-            .setTitle("Manual Configuration")
-            .setView(layout)
-            .setPositiveButton("Set") { _, _ ->
-                val baseUrl = baseUrlInput.text.toString().trim().trimEnd('/')
-                val pid = projectIdInput.text.toString().trim()
-                
-                if (baseUrl.isNotEmpty() && pid.isNotEmpty()) {
-                    // Construct full URL: Base + /v1/projects/ + ID
-                    val fullUrl = "$baseUrl/v1/projects/$pid"
-                    manualConfigureProject(fullUrl)
-                } else {
-                    Toast.makeText(this, "Please enter both Base URL and Project ID", Toast.LENGTH_SHORT).show()
+        try {
+            AlertDialog.Builder(this)
+                .setTitle("Manual Configuration")
+                .setView(layout)
+                .setPositiveButton("Set") { _, _ ->
+                    val baseUrl = baseUrlInput.text.toString().trim().trimEnd('/')
+                    val pid = projectIdInput.text.toString().trim()
+                    
+                    if (baseUrl.isNotEmpty() && pid.isNotEmpty()) {
+                        // Construct full URL: Base + /v1/projects/ + ID
+                        val fullUrl = "$baseUrl/v1/projects/$pid"
+                        manualConfigureProject(fullUrl)
+                    } else {
+                        Toast.makeText(this, "Please enter both Base URL and Project ID", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            }
-            .setNeutralButton("Direct URL") { _, _ ->
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+                .setNeutralButton("Direct URL") { _, _ ->
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error showing settings: ${e.message}", Toast.LENGTH_SHORT).show()
+            e.printStackTrace()
+        }
     }
 
     private fun manualConfigureProject(url: String) {
@@ -527,5 +588,39 @@ class AiimsLoginActivity : AppCompatActivity() {
         override fun reset(key: String) { remove(key) }
         override fun registerOnSettingChangeListener(listener: org.odk.collect.shared.settings.Settings.OnSettingChangeListener) {}
         override fun unregisterOnSettingChangeListener(listener: org.odk.collect.shared.settings.Settings.OnSettingChangeListener) {}
+    }
+
+    private fun updatePermissionStatusUI() {
+        // Location Status
+        val hasLocation = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                          ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        
+        if (hasLocation) {
+            locationStatusView.text = "✓ Location Access Granted"
+            locationStatusView.setTextColor(android.graphics.Color.parseColor("#2E7D32")) // Green
+        } else {
+            locationStatusView.text = "✗ Location Access Required"
+            locationStatusView.setTextColor(android.graphics.Color.parseColor("#C62828")) // Red
+        }
+
+        // Notification Status (Android 13+)
+        var hasNotif = true
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            hasNotif = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            if (hasNotif) {
+                notificationStatusView.text = "✓ Notifications Enabled"
+                notificationStatusView.setTextColor(android.graphics.Color.parseColor("#2E7D32")) // Green
+            } else {
+                notificationStatusView.text = "✗ Notifications Disabled"
+                notificationStatusView.setTextColor(android.graphics.Color.parseColor("#C62828")) // Red
+            }
+        }
+        
+        // Show GRANT button if any permission is missing
+        if (!hasLocation || !hasNotif) {
+            grantPermissionsButton.visibility = View.VISIBLE
+        } else {
+            grantPermissionsButton.visibility = View.GONE
+        }
     }
 }

@@ -111,4 +111,7 @@ dependencies {
     testImplementation libs.robolectric
     testImplementation libs.androidxTestCoreKtx
     testImplementation libs.androidxTestExtJunit
+    
+    // Background Work
+    implementation 'androidx.work:work-runtime-ktx:2.9.0'
 }

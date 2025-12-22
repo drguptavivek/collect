@@ -24,8 +24,16 @@ interface AuthApiService {
     suspend fun revokeSession(
         @Path("projectId") projectId: String,
         @Path("id") userId: String,
-        @Header("Authorization") authHeader: String
+        @Header("Authorization") authHeader: String,
+        @Body request: RevokeRequest
     ): Response<RevokeResponse>
+
+    @POST("projects/{projectId}/app-users/telemetry")
+    suspend fun submitTelemetry(
+        @Path("projectId") projectId: String,
+        @Header("Authorization") authHeader: String,
+        @Body request: TelemetryRequest
+    ): Response<TelemetryResponse>
 }
 
 /**
@@ -33,7 +41,36 @@ interface AuthApiService {
  */
 data class LoginRequest(
     val username: String,
-    val password: String
+    val password: String,
+    val deviceId: String,
+    val comments: String? = null
+)
+
+/**
+ * Revoke request body
+ */
+data class RevokeRequest(
+    val deviceId: String
+)
+
+/**
+ * Telemetry request body
+ */
+data class TelemetryRequest(
+    val deviceId: String,
+    val collectVersion: String,
+    val deviceDateTime: String, // UTC ISO
+    val location: TelemetryLocation
+)
+
+data class TelemetryLocation(
+    val latitude: Double,
+    val longitude: Double,
+    val altitude: Double?,
+    val accuracy: Float?,
+    val speed: Float?,
+    val bearing: Float?,
+    val provider: String?
 )
 
 /**
@@ -48,5 +85,10 @@ data class LoginResponse(
 
 data class RevokeResponse(
     val success: Boolean
+)
+
+data class TelemetryResponse(
+    val id: Int,
+    val dateTime: String
 )
 

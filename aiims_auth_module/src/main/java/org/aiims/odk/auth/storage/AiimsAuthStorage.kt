@@ -42,12 +42,8 @@ class AiimsAuthStorage private constructor(
 
     // ===== Device Tokens =====
     var deviceToken: String
-        get() = secureStorage.deviceToken
-        set(value) { secureStorage.deviceToken = value }
-
-    var refreshToken: String
-        get() = secureStorage.refreshToken
-        set(value) { secureStorage.refreshToken = value }
+        get() = secureStorage.authToken ?: ""
+        set(value) { secureStorage.authToken = value }
 
     var tokenExpiry: Long?
         get() = secureStorage.tokenExpiry
@@ -65,18 +61,6 @@ class AiimsAuthStorage private constructor(
     var userName: String?
         get() = secureStorage.userName
         set(value) { secureStorage.userName = value }
-
-    var userRole: String?
-        get() = secureStorage.userRole
-        set(value) { secureStorage.userRole = value }
-
-    var partnerId: String?
-        get() = secureStorage.partnerId
-        set(value) { secureStorage.partnerId = value }
-
-    var partnerName: String?
-        get() = secureStorage.partnerName
-        set(value) { secureStorage.partnerName = value }
 
     // ===== PIN Security =====
     var pinHash: String?
@@ -108,30 +92,11 @@ class AiimsAuthStorage private constructor(
         get() = secureStorage.apiUrl
         set(value) { secureStorage.apiUrl = value }
 
-    var deviceId: String
-        get() = secureStorage.deviceId
-        set(value) { secureStorage.deviceId = value }
-
-    // ===== Settings =====
-    var offlinePeriodDays: Int
-        get() = secureStorage.offlinePeriodDays
-        set(value) { secureStorage.offlinePeriodDays = value }
-
-    var autoLogoutMinutes: Int
-        get() = secureStorage.autoLogoutMinutes
-        set(value) { secureStorage.autoLogoutMinutes = value }
 
     var lastAuthTimestamp: Long
         get() = secureStorage.lastAuthTimestamp
         set(value) { secureStorage.lastAuthTimestamp = value }
 
-    var lastSyncTimestamp: Long
-        get() = secureStorage.lastSyncTimestamp
-        set(value) { secureStorage.lastSyncTimestamp = value }
-
-    var syncPendingCount: Int
-        get() = secureStorage.syncPendingCount
-        set(value) { secureStorage.syncPendingCount = value }
 
     // ===== High-Level Operations =====
 
@@ -140,11 +105,9 @@ class AiimsAuthStorage private constructor(
      */
     fun saveUser(user: User) {
         userId = user.id
-        userEmail = user.email
-        userName = user.name
-        userRole = user.role
-        partnerId = user.partnerId
-        partnerName = user.partnerName
+        // userEmail = user.username // Map username to email for legacy compat if needed, or just username
+        userName = user.username
+        userEmail = user.username
     }
 
     /**
@@ -154,14 +117,8 @@ class AiimsAuthStorage private constructor(
         val id = userId ?: return null
         return User(
             id = id,
-            email = userEmail ?: "",
-            name = userName ?: "",
-            role = userRole ?: "",
-            partnerId = partnerId,
-            partnerName = partnerName,
-            phoneNumber = null,
-            isActive = true,
-            dateActiveTill = null
+            username = userName ?: ""
+            // role, partnerId, etc are gone
         )
     }
 
@@ -170,14 +127,13 @@ class AiimsAuthStorage private constructor(
      */
     fun saveAuthSession(
         token: String,
-        refreshToken: String,
         expiresAt: String,
         user: User,
         apiUrl: String
     ) {
         // Save tokens
         deviceToken = token
-        this.refreshToken = refreshToken
+        // refreshToken gone
         tokenExpiry = org.aiims.odk.auth.utils.ApiDateFormat.parse(expiresAt)?.time
 
         // Save user info
@@ -201,29 +157,7 @@ class AiimsAuthStorage private constructor(
         secureStorage.clearAllAuthData()
     }
 
-    /**
-     * Check if offline access is allowed.
-     */
-    fun isOfflineAccessAllowed(): Boolean {
-        val lastAuth = lastAuthTimestamp
-        if (lastAuth == 0L) return false
 
-        val offlinePeriodMs = offlinePeriodDays * 24 * 60 * 60 * 1000L
-        val currentTime = System.currentTimeMillis()
-        return (currentTime - lastAuth) <= offlinePeriodMs
-    }
-
-    /**
-     * Check if auto-logout should occur.
-     */
-    fun shouldAutoLogout(): Boolean {
-        val lastAuth = lastAuthTimestamp
-        if (lastAuth == 0L) return false
-
-        val timeoutMs = autoLogoutMinutes * 60 * 1000L
-        val currentTime = System.currentTimeMillis()
-        return (currentTime - lastAuth) > timeoutMs
-    }
 
     /**
      * Update last authentication timestamp.
@@ -232,25 +166,6 @@ class AiimsAuthStorage private constructor(
         lastAuthTimestamp = System.currentTimeMillis()
     }
 
-    /**
-     * Get user-friendly role display name.
-     */
-    fun getUserRoleDisplayName(): String {
-        return when (userRole) {
-            "national_admin" -> "National Administrator"
-            "data_manager" -> "Data Manager"
-            "partner_manager" -> "Partner Manager"
-            "team_member" -> "Team Member"
-            else -> "Unknown Role"
-        }
-    }
-
-    /**
-     * Check if user has partner access.
-     */
-    fun hasPartnerAccess(): Boolean {
-        return partnerId != null && partnerId!!.isNotEmpty()
-    }
 
     /**
      * Get authentication summary for debugging.
@@ -260,13 +175,9 @@ class AiimsAuthStorage private constructor(
             "isAuthenticated" to isAuthenticated,
             "userId" to (userId ?: ""),
             "userEmail" to (userEmail ?: ""),
-            "userRole" to (userRole ?: ""),
-            "partnerId" to (partnerId ?: ""),
             "hasPin" to (pinHash != null),
             "biometricEnabled" to biometricEnabled,
             "apiUrl" to apiUrl,
-            "deviceId" to deviceId,
-            "offlineAccessAllowed" to isOfflineAccessAllowed(),
             "tokenExpired" to secureStorage.isTokenExpired(),
             "pinLocked" to secureStorage.isPinLocked()
         )
@@ -286,9 +197,6 @@ class AiimsAuthStorage private constructor(
         userId = null
         userEmail = null
         userName = null
-        userRole = null
-        partnerId = null
-        partnerName = null
         pinHash = null
         pinSalt = null
         pinAttempts = 0
@@ -296,7 +204,5 @@ class AiimsAuthStorage private constructor(
         biometricEnabled = false
         biometricKeyAlias = null
         lastAuthTimestamp = 0
-        syncPendingCount = 0
-        lastSyncTimestamp = 0
     }
 }

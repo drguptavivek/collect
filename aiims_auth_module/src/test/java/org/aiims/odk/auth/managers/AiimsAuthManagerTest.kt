@@ -76,7 +76,7 @@ class AiimsAuthManagerTest {
         val user = User("100", "testuser", projectId, "2099-01-01T00:00:00.000Z")
         val token = "test_token"
         
-        whenever(authClient.login(any(), any(), any())).thenReturn(
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(
             AuthResult.Success(user, token, user.expiresAt!!)
         )
 
@@ -95,7 +95,7 @@ class AiimsAuthManagerTest {
     @Test
     fun login_failure_returnsErrorAndDoesNotChangeState() = runTest {
         val projectId = "1"
-        whenever(authClient.login(any(), any(), any())).thenReturn(
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(
             AuthResult.Error("Invalid credentials")
         )
 
@@ -116,7 +116,7 @@ class AiimsAuthManagerTest {
         val userA = User("A", "userA", projectId, "2099-01-01T00:00:00.000Z")
         val userB = User("B", "userB", projectId, "2099-01-01T00:00:00.000Z")
         
-        whenever(authClient.login(any(), any(), any())).thenReturn(AuthResult.Success(userA, "tokenA", userA.expiresAt!!))
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(userA, "tokenA", userA.expiresAt!!))
         authManager.login(projectId, "userA", "pass", "url")
         authManager.setActiveProject(projectId)
         advanceUntilIdle()
@@ -124,7 +124,7 @@ class AiimsAuthManagerTest {
         pinManager.savePin("1234")
         assertTrue(pinManager.isPinSet())
 
-        whenever(authClient.login(any(), any(), any())).thenReturn(AuthResult.Success(userB, "tokenB", userB.expiresAt!!))
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(userB, "tokenB", userB.expiresAt!!))
         authManager.login(projectId, "userB", "pass", "url")
         advanceUntilIdle()
 
@@ -136,7 +136,7 @@ class AiimsAuthManagerTest {
         val projectId = "1"
         val userA = User("A", "userA", projectId, "2099-01-01T00:00:00.000Z")
         
-        whenever(authClient.login(any(), any(), any())).thenReturn(AuthResult.Success(userA, "tokenA", userA.expiresAt!!))
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(userA, "tokenA", userA.expiresAt!!))
         authManager.login(projectId, "userA", "pass", "url")
         authManager.setActiveProject(projectId)
         advanceUntilIdle()
@@ -155,8 +155,8 @@ class AiimsAuthManagerTest {
         val projectId = "1"
         
         val user = User("100", "testuser", projectId, "2099-01-01T00:00:00.000Z")
-        whenever(authClient.login(any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
-        whenever(authClient.revokeSession(any(), any(), any())).thenReturn(true)
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        whenever(authClient.revokeSession(any(), any(), any(), any())).thenReturn(true)
         
         authManager.login(projectId, "user", "pass", "url")
         authManager.setActiveProject(projectId)
@@ -167,7 +167,7 @@ class AiimsAuthManagerTest {
         authManager.logout()
         advanceUntilIdle()
 
-        verify(authClient, org.mockito.kotlin.atLeastOnce()).revokeSession(any(), any(), any())
+        verify(authClient, org.mockito.kotlin.atLeastOnce()).revokeSession(any(), any(), any(), any())
         verify(projectCleaner).clearProjectData(projectId)
         assertEquals(AuthState.LOGGED_OUT, authManager.authState.first())
         assertNull(authManager.getActiveProjectToken())
@@ -183,7 +183,7 @@ class AiimsAuthManagerTest {
         
         val user = User("100", "testuser", projectId, expiredDate) 
         
-        whenever(authClient.login(any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
         authManager.login(projectId, "user", "pass", "url")
         advanceUntilIdle()
         
@@ -217,7 +217,7 @@ class AiimsAuthManagerTest {
         
         val user = User("100", "testuser", projectId, expiredDate) 
         
-        whenever(authClient.login(any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
         authManager.login(projectId, "user", "pass", "url")
         
         // Even if server is unreachable, hard deadline kills it (actually code doesn't check reachability for hard deadline)
@@ -248,7 +248,7 @@ class AiimsAuthManagerTest {
         
         val user = User("100", "testuser", projectId, expiredDate)
         
-        whenever(authClient.login(any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
         authManager.login(projectId, "user", "pass", "url")
         
         // Server Reachable
@@ -271,6 +271,32 @@ class AiimsAuthManagerTest {
         assertTrue("Should set Soft Expiry", newAuthManager.getIsSoftExpiry())
         
         // Should NOT have logged out
-        verify(authClient, org.mockito.kotlin.never()).revokeSession(any(), any(), any())
+        verify(authClient, org.mockito.kotlin.never()).revokeSession(any(), any(), any(), any())
+    }
+    @Test
+    fun submitTelemetry_sendsCorrectData() = runTest {
+        val projectId = "1"
+        val user = User("100", "testuser", projectId, "2099-01-01T00:00:00.000Z")
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        authManager.login(projectId, "user", "pass", "url")
+        authManager.setActiveProject(projectId)
+        advanceUntilIdle()
+
+        // Mock Location
+        val mockLocation = mock<android.location.Location>()
+        whenever(mockLocation.latitude).thenReturn(10.0)
+        whenever(mockLocation.longitude).thenReturn(20.0)
+        whenever(mockLocation.provider).thenReturn("gps")
+
+        authManager.submitTelemetry(mockLocation)
+        advanceUntilIdle()
+        
+        verify(authClient).submitTelemetry(org.mockito.kotlin.eq(projectId), org.mockito.kotlin.eq("token"), org.mockito.kotlin.check {
+            assertEquals("unknown_device", it.deviceId)
+            assertEquals("10.0", it.location.latitude.toString())
+            assertEquals("20.0", it.location.longitude.toString())
+            assertEquals("gps", it.location.provider)
+            assertNotNull(it.deviceDateTime)
+        })
     }
 }

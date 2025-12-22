@@ -66,7 +66,7 @@ class TokenRevocationManagerTest {
 
         // Assert
         assertFalse(result)
-        verify(authClient, never()).revokeSession(any(), any(), any())
+        verify(authClient, never()).revokeSession(any(), any(), any(), any())
         
         // Ensure data is still pending
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -78,14 +78,14 @@ class TokenRevocationManagerTest {
         // Arrange
         TokenRevocationManager.markPending(context, "p1", "u1", "url", "token", "logout")
         TokenRevocationManager.setNetworkAvailable(true) // Online
-        whenever(authClient.revokeSession(any(), any(), any())).thenReturn(true)
+        whenever(authClient.revokeSession(any(), any(), any(), any())).thenReturn(true)
 
         // Act
         val result = TokenRevocationManager.processPending(context)
 
         // Assert
         assertTrue(result)
-        verify(authClient).revokeSession("p1", "u1", "token")
+        verify(authClient).revokeSession(org.mockito.kotlin.eq("p1"), org.mockito.kotlin.eq("u1"), org.mockito.kotlin.eq("token"), any())
         
         // Ensure data is cleared
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -97,14 +97,14 @@ class TokenRevocationManagerTest {
         // Arrange
         TokenRevocationManager.markPending(context, "p1", "u1", "url", "token", "logout")
         TokenRevocationManager.setNetworkAvailable(true) // Online
-        whenever(authClient.revokeSession(any(), any(), any())).thenReturn(false) // Fail
+        whenever(authClient.revokeSession(any(), any(), any(), any())).thenReturn(false) // Fail
 
         // Act
         val result = TokenRevocationManager.processPending(context)
 
         // Assert
         assertFalse(result)
-        verify(authClient).revokeSession("p1", "u1", "token")
+        verify(authClient).revokeSession(org.mockito.kotlin.eq("p1"), org.mockito.kotlin.eq("u1"), org.mockito.kotlin.eq("token"), any())
         
         // Ensure data is RETAINED for retry
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

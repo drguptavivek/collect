@@ -142,11 +142,7 @@ class SetupPinActivity : AppCompatActivity() {
         lifecycleScope.launch {
             authManager.currentUser.collect { user ->
                 user?.let {
-                    val welcomeText = if (it.name.isNotEmpty()) {
-                        "Welcome,\n${it.name}"
-                    } else {
-                        "Welcome,\n${it.email}"
-                    }
+                    val welcomeText = "Welcome,\n${it.username}"
                     userTextView.text = welcomeText
                 }
             }

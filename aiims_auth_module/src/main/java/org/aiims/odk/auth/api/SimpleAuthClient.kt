@@ -16,14 +16,9 @@ class SimpleAuthClient {
         return if (email.contains("@") && password.isNotEmpty()) {
             val user = User(
                 id = "123",
-                email = email,
-                name = "Test User",
-                role = "team_member",
-                partnerId = null,
-                partnerName = null,
-                phoneNumber = null,
-                isActive = true,
-                dateActiveTill = null
+                username = email,
+                projectId = "1",
+                expiresAt = null
             )
             AuthResult.Success(user)
         } else {
