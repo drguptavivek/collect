@@ -1,4 +1,5 @@
 # AIIMS / VG App-User Auth API
+This in brief describes the ODK Central API customziations that are deisgend to work hand in hand with the ODK Collect customizations donme in this reporsitory
 
 ## Overview
 Short-lived, password-based authentication for Collect-style app users tied to projects. Tokens are bearer-only (no cookies) and expire based on `vg_app_user_session_ttl_days` (default 3 days) stored in `vg_settings`.

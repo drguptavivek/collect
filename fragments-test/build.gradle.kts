@@ -35,7 +35,7 @@ dependencies {
     implementation(libs.androidMaterial)
 
     //noinspection FragmentGradleConfiguration
-    debugApi(libs.androidxFragmentTesting) {
+    api(libs.androidxFragmentTesting) {
         exclude(group = "androidx.test", module = "monitor") // fixes issue https://github.com/android/android-test/issues/731
     }
 }
