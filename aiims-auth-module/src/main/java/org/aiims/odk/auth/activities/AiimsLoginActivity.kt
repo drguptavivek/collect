@@ -5,12 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.view.Gravity
 import android.view.View
-import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -18,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.aiims.odk.auth.api.AuthResult
+import org.aiims.odk.auth.databinding.ActivityAiimsLoginBinding
 import org.aiims.odk.auth.injection.AiimsAuthDependencyComponentProvider
 import org.aiims.odk.auth.managers.AiimsAuthManager
 import org.aiims.odk.auth.utils.AiimsProjectUtils
@@ -34,25 +32,16 @@ class AiimsLoginActivity : AiimsBaseActivity() {
     @Inject
     lateinit var pinManager: PinManager
 
-    override fun injectDependencies() {
-        (application as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.inject(this)
-    }
-
-    // authManager is inherited
-    private lateinit var usernameField: EditText
-    private lateinit var passwordField: EditText
-    private lateinit var loginButton: Button
-    private lateinit var scanQrButton: Button
-    private lateinit var progressBar: ProgressBar
-    private lateinit var statusText: TextView
-    private lateinit var locationStatusView: TextView
-    private lateinit var notificationStatusView: TextView
-    private lateinit var grantPermissionsButton: Button
+    private lateinit var binding: ActivityAiimsLoginBinding
 
     // Active Project Context
     private var currentSystemProjectId: String? = null // ODK's internal UUID
     private var centralProjectId: String? = null // Central's integer ID
     private var serverUrl: String? = null
+
+    override fun injectDependencies() {
+        (application as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.inject(this)
+    }
 
     override fun onResume() {
         super.onResume()
@@ -64,13 +53,15 @@ class AiimsLoginActivity : AiimsBaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Initialize ViewBinding
+        binding = ActivityAiimsLoginBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
         // Check permissions (Location + Notification)
         checkAndRequestPermissions()
 
-        // authManager initialized in super
-
         // UI Setup
-        createLayout()
+        setupListeners()
 
         // Update initial state
         updatePermissionStatusUI()
@@ -82,6 +73,13 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
         // Detect Project
         detectCurrentProject()
+
+        // Handle Re-Auth Mode
+        if (intent.getBooleanExtra("is_reauth", false)) {
+            binding.appTitle.text = getString(org.aiims.odk.auth.R.string.aiims_session_expired_title)
+            binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_session_expired_message)
+            binding.offlineButton.visibility = View.VISIBLE
+        }
 
         // Observe Auth State
         lifecycleScope.launch {
@@ -97,6 +95,17 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun setupListeners() {
+        binding.loginButton.setOnClickListener { attemptLogin() }
+        binding.scanQrButton.setOnClickListener { launchQrScanner() }
+        binding.settingsButton.setOnClickListener { showManualUrlDialog() }
+        binding.grantPermissionsButton.setOnClickListener { checkAndRequestPermissions(true) }
+        binding.offlineButton.setOnClickListener {
+            authManager.snoozeSoftExpiry()
+            finish()
         }
     }
 
@@ -122,39 +131,39 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             if (centralProjectId != null && serverUrl != null) {
                 // Set Active Project in Auth Manager
                 authManager.setActiveProject(centralProjectId)
-                statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, currentSystemProjectId, serverUrl)
-                statusText.visibility = View.VISIBLE
+                binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, currentSystemProjectId, serverUrl)
+                binding.statusText.visibility = View.VISIBLE
                 enableLoginUi(true)
             } else {
-                statusText.text = getString(org.aiims.odk.auth.R.string.aiims_invalid_project_config, serverUrl)
-                statusText.visibility = View.VISIBLE
+                binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_invalid_project_config, serverUrl)
+                binding.statusText.visibility = View.VISIBLE
                 enableLoginUi(false)
             }
         } catch (e: Exception) {
-            statusText.text = getString(org.aiims.odk.auth.R.string.aiims_error_reading_project_settings, e.message)
+            binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_error_reading_project_settings, e.message)
             enableLoginUi(false)
         }
     }
 
     private fun showProjectMissingState() {
-        statusText.text = getString(org.aiims.odk.auth.R.string.aiims_no_project_configured)
-        statusText.visibility = View.VISIBLE
+        binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_no_project_configured)
+        binding.statusText.visibility = View.VISIBLE
         enableLoginUi(false)
-        scanQrButton.visibility = View.VISIBLE
-        loginButton.visibility = View.GONE
+        binding.scanQrButton.visibility = View.VISIBLE
+        binding.loginButton.visibility = View.GONE
     }
 
     private fun enableLoginUi(enable: Boolean) {
-        usernameField.isEnabled = enable
-        passwordField.isEnabled = enable
-        loginButton.isEnabled = enable
-        loginButton.visibility = if (enable) View.VISIBLE else View.GONE
-        scanQrButton.visibility = if (!enable) View.VISIBLE else View.GONE
+        binding.usernameLayout.isEnabled = enable
+        binding.passwordLayout.isEnabled = enable
+        binding.loginButton.isEnabled = enable
+        binding.loginButton.visibility = if (enable) View.VISIBLE else View.GONE
+        binding.scanQrButton.visibility = if (!enable) View.VISIBLE else View.GONE
     }
 
     private fun attemptLogin() {
-        val username = usernameField.text.toString().trim()
-        val password = passwordField.text.toString()
+        val username = binding.usernameField.text.toString().trim()
+        val password = binding.passwordField.text.toString()
 
         if (username.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_invalid_credentials), Toast.LENGTH_SHORT).show()
@@ -164,13 +173,13 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         val pid = centralProjectId ?: return
         val url = serverUrl ?: return
 
-        progressBar.visibility = View.VISIBLE
-        loginButton.isEnabled = false
+        binding.loginProgress.visibility = View.VISIBLE
+        binding.loginButton.isEnabled = false
 
         lifecycleScope.launch {
             val result = authManager.login(pid, username, password, url)
-            progressBar.visibility = View.GONE
-            loginButton.isEnabled = true
+            binding.loginProgress.visibility = View.GONE
+            binding.loginButton.isEnabled = true
 
             when (result) {
                 is AuthResult.Success -> {
@@ -233,179 +242,6 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             startActivity(intent)
         } catch (e: Exception) {
             Toast.makeText(this, "Could not launch QR Scanner", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun createLayout() {
-        // Main container with ScrollView for small screens
-        val scrollView = android.widget.ScrollView(this).apply {
-            isFillViewport = true
-        }
-
-        val mainLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(0, 0, 0, 0)
-        }
-
-        // Header Frame: Settings Icon (Top Right) + Logo (Center)
-        val headerFrame = android.widget.FrameLayout(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(0, 50, 0, 20)
-            }
-        }
-
-        // Settings Icon
-        val settingsBtn = android.widget.ImageButton(this).apply {
-            setImageResource(android.R.drawable.ic_menu_preferences)
-            setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            setOnClickListener { showManualUrlDialog() }
-            layoutParams = android.widget.FrameLayout.LayoutParams(
-                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
-                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                gravity = Gravity.TOP or Gravity.END
-                setMargins(0, 0, 30, 0)
-            }
-        }
-
-        // Logo
-        val logoView = android.widget.ImageView(this).apply {
-            try {
-                // Assuming R.drawable.aiims_logo exists and is accessible
-                // If not, we fall back or catch exception to avoid crash
-                setImageResource(org.aiims.odk.auth.R.drawable.aiims_logo)
-            } catch (e: Exception) {
-                // Fallback text if resource issue
-            }
-            adjustViewBounds = true
-            maxHeight = 300
-            layoutParams = android.widget.FrameLayout.LayoutParams(
-                400, // Width
-                400 // Height
-            ).apply {
-                gravity = Gravity.CENTER_HORIZONTAL
-                topMargin = 100 // Push down below settings icon
-            }
-        }
-
-        headerFrame.addView(logoView)
-        headerFrame.addView(settingsBtn)
-
-        val contentLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(50, 50, 50, 50)
-            gravity = Gravity.CENTER_HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        val title = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_app_name)
-            textSize = 24f
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 40)
-        }
-
-        statusText = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_initializing)
-            textSize = 14f
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 20)
-        }
-
-        // Permission Status Views
-        locationStatusView = TextView(this).apply {
-            textSize = 14f
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 10)
-        }
-
-        notificationStatusView = TextView(this).apply {
-            textSize = 14f
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 20)
-            visibility = if (android.os.Build.VERSION.SDK_INT >= 33) View.VISIBLE else View.GONE
-        }
-
-        // Grant Permissions Button (initially hidden)
-        grantPermissionsButton = Button(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_button_grant_permissions)
-            textSize = 16f
-            setBackgroundColor(android.graphics.Color.parseColor("#1976D2")) // Blue
-            setTextColor(android.graphics.Color.WHITE)
-            setPadding(20, 10, 20, 10)
-            visibility = View.GONE
-            setOnClickListener {
-                checkAndRequestPermissions(true) // Force request
-            }
-        }
-
-        usernameField = EditText(this).apply {
-            hint = getString(org.aiims.odk.auth.R.string.aiims_username_hint)
-        }
-
-        passwordField = EditText(this).apply {
-            hint = getString(org.aiims.odk.auth.R.string.aiims_password_hint)
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-        }
-
-        progressBar = ProgressBar(this).apply {
-            visibility = View.GONE
-        }
-
-        loginButton = Button(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_button_login)
-            setOnClickListener { attemptLogin() }
-        }
-
-        scanQrButton = Button(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_button_scan_qr_code)
-            visibility = View.GONE
-            setOnClickListener { launchQrScanner() }
-        }
-
-        contentLayout.addView(title)
-        contentLayout.addView(statusText)
-        contentLayout.addView(locationStatusView)
-        contentLayout.addView(notificationStatusView)
-        contentLayout.addView(grantPermissionsButton)
-        contentLayout.addView(usernameField)
-        contentLayout.addView(passwordField)
-        contentLayout.addView(progressBar)
-        contentLayout.addView(loginButton)
-
-        // Cancel / Work Offline Button for Re-Auth
-        val cancelButton = Button(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_button_work_offline_grace)
-            visibility = View.GONE
-            setOnClickListener {
-                authManager.snoozeSoftExpiry() // Snooze the prompt
-                finish() // Go back to whatever we were doing
-            }
-        }
-        contentLayout.addView(cancelButton)
-
-        contentLayout.addView(scanQrButton)
-
-        mainLayout.addView(headerFrame)
-        mainLayout.addView(contentLayout)
-
-        scrollView.addView(mainLayout)
-
-        setContentView(scrollView)
-
-        // Handle Re-Auth Mode
-        if (intent.getBooleanExtra("is_reauth", false)) {
-            title.text = getString(org.aiims.odk.auth.R.string.aiims_session_expired_title)
-            statusText.text = getString(org.aiims.odk.auth.R.string.aiims_session_expired_message)
-            cancelButton.visibility = View.VISIBLE
-            // Default Cancel logic for Back Press
         }
     }
 
@@ -535,8 +371,8 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
                 authManager.setActiveProject(centralPid)
 
-                statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, centralPid, url)
-                statusText.visibility = View.VISIBLE
+                binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, centralPid, url)
+                binding.statusText.visibility = View.VISIBLE
                 enableLoginUi(true)
 
                 Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_project_saved, targetProjectUuid), Toast.LENGTH_SHORT).show()
@@ -600,11 +436,11 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
         if (hasLocation) {
-            locationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_location_access_granted)
-            locationStatusView.setTextColor(android.graphics.Color.parseColor("#2E7D32")) // Green
+            binding.locationStatus.text = getString(org.aiims.odk.auth.R.string.aiims_location_access_granted)
+            binding.locationStatus.setTextColor(android.graphics.Color.parseColor("#2E7D32")) // Green
         } else {
-            locationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_location_access_required)
-            locationStatusView.setTextColor(android.graphics.Color.parseColor("#C62828")) // Red
+            binding.locationStatus.text = getString(org.aiims.odk.auth.R.string.aiims_location_access_required)
+            binding.locationStatus.setTextColor(android.graphics.Color.parseColor("#C62828")) // Red
         }
 
         // Notification Status (Android 13+)
@@ -612,19 +448,19 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         if (android.os.Build.VERSION.SDK_INT >= 33) {
             hasNotif = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
             if (hasNotif) {
-                notificationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_notifications_enabled)
-                notificationStatusView.setTextColor(android.graphics.Color.parseColor("#2E7D32")) // Green
+                binding.notificationStatus.text = getString(org.aiims.odk.auth.R.string.aiims_notifications_enabled)
+                binding.notificationStatus.setTextColor(android.graphics.Color.parseColor("#2E7D32")) // Green
             } else {
-                notificationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_notifications_disabled)
-                notificationStatusView.setTextColor(android.graphics.Color.parseColor("#C62828")) // Red
+                binding.notificationStatus.text = getString(org.aiims.odk.auth.R.string.aiims_notifications_disabled)
+                binding.notificationStatus.setTextColor(android.graphics.Color.parseColor("#C62828")) // Red
             }
         }
 
         // Show GRANT button if any permission is missing
         if (!hasLocation || !hasNotif) {
-            grantPermissionsButton.visibility = View.VISIBLE
+            binding.grantPermissionsButton.visibility = View.VISIBLE
         } else {
-            grantPermissionsButton.visibility = View.GONE
+            binding.grantPermissionsButton.visibility = View.GONE
         }
     }
 }

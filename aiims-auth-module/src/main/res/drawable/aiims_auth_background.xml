@@ -1,0 +1,36 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="1080dp"
+    android:height="1920dp"
+    android:viewportWidth="1080"
+    android:viewportHeight="1920">
+  <path
+      android:pathData="M0,0h1080v1920h-1080z">
+    <aapt:attr name="android:fillColor">
+      <gradient 
+          android:startY="0" 
+          android:startX="0" 
+          android:endY="1920" 
+          android:endX="0"
+          android:type="linear">
+        <item android:offset="0" android:color="#FFF8FBFD"/> <!-- Very light blue tint -->
+        <item android:offset="1" android:color="#FFFFFFFF"/>
+      </gradient>
+    </aapt:attr>
+  </path>
+  <!-- Top Left Organic Shape (Primary Color, Low Opacity) -->
+  <path
+      android:pathData="M0,0 H600 Q400,400 0,600 Z"
+      android:fillColor="#1A005D8B"/>
+  
+  <!-- Bottom Right Organic Shape (Secondary Color, Low Opacity) -->
+  <path
+      android:pathData="M1080,1920 H480 Q680,1520 1080,1320 Z"
+      android:fillColor="#1A5D8B00"/>
+      
+  <!-- Additional Decorative Circle top right -->
+  <path
+      android:pathData="M900,200 m-100,0 a100,100 0 1,1 200,0 a100,100 0 1,1 -200,0"
+      android:fillColor="#0D005D8B"/>
+
+</vector>
