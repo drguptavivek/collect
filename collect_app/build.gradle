@@ -84,6 +84,42 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
+    flavorDimensions "version"
+
+    productFlavors {
+        odk {
+            dimension "version"
+            applicationId "org.odk.collect.android"
+
+            // Override app name for ODK flavor
+            resValue("string", "collect_app_name", "ODK Collect")
+
+            // Set feature flags for standard ODK
+            resValue("bool", "aiims_auth_enabled", "false")
+            resValue("bool", "odk_launcher_enabled", "true")
+        }
+
+        aiims {
+            dimension "version"
+            applicationId "org.aiims.odk.collect"
+
+            // AIIMS-specific versioning
+            versionNameSuffix "-AIIMS"
+
+            // Override app name for AIIMS flavor
+            resValue("string", "collect_app_name", "AIIMS ODK Collect")
+
+            // Set feature flags for AIIMS
+            resValue("bool", "aiims_auth_enabled", "true")
+            resValue("bool", "odk_launcher_enabled", "false")
+
+            // AIIMS-specific config
+            resValue("string", "aiims_default_api_url", "\"http://localhost:5174/api\"")
+            resValue("integer", "aiims_default_offline_period", "7")
+            resValue("integer", "aiims_default_auto_logout", "30")
+        }
+    }
+
     base {
         archivesName = "ODK-Collect"
     }
@@ -145,6 +181,7 @@ android {
 
         debug {
             debuggable(true)
+            versionNameSuffix "-DEBUG"
             resValue("string", "GOOGLE_MAPS_API_KEY", googleMapsApiKey)
             resValue("string", "mapbox_access_token", mapboxAccessToken)
             buildConfigField("String", "ENTITIES_FILTER_PROJECT_URL", "\"$entitiesFilterProjectUrl\"")
@@ -155,10 +192,27 @@ android {
     }
 
     applicationVariants.configureEach { variant ->
-        if (variant.getName() == "selfSignedRelease" || variant.getName() == "odkCollectRelease") {
-            variant.outputs.configureEach { output ->
-                outputFileName = new File(outputFileName.replace("${variant.getName()}.apk", "${defaultConfig.versionName}.apk"))
-            }
+        // Determine base name based on flavor
+        def baseName
+        if (variant.flavorName == "aiims") {
+            baseName = "AIIMS-ODK-Collect"
+        } else if (variant.flavorName == "odk") {
+            baseName = "ODK-Collect"
+        } else {
+            baseName = "Collect"
+        }
+
+        // Determine build type suffix
+        def buildTypeSuffix
+        if (variant.buildType.name == "selfSignedRelease" || variant.buildType.name == "odkCollectRelease") {
+            buildTypeSuffix = defaultConfig.versionName
+        } else {
+            buildTypeSuffix = variant.buildType.name
+        }
+
+        // Apply the naming
+        variant.outputs.configureEach { output ->
+            output.outputFileName = "${baseName}-${buildTypeSuffix}.apk"
         }
     }
 
