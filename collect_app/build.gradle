@@ -328,7 +328,7 @@ dependencies {
     implementation project(':db')
     implementation project(':open-rosa')
     implementation project(':mobile-device-management')
-    implementation project(':aiims_auth_module')
+    implementation project(':aiims-auth-module')
 
     if (getSecrets().getProperty('MAPBOX_DOWNLOADS_TOKEN', '') != '') {
         implementation project(':mapbox')

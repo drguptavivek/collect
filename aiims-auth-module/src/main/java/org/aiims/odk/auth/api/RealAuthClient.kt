@@ -1,13 +1,11 @@
 package org.aiims.odk.auth.api
 
 import android.content.Context
-import android.os.Build
 import android.util.Log
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.UUID
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -18,106 +16,107 @@ class RealAuthClient private constructor(
     private val context: Context,
     private val apiUrl: String
 ) : AuthClient {
-        private var retrofit: Retrofit? = null
-        private var apiService: AuthApiService? = null
+    private var retrofit: Retrofit? = null
+    private var apiService: AuthApiService? = null
 
-        // Lazy initialization of Retrofit
-        private fun getRetrofit(): Retrofit {
-            return retrofit ?: synchronized(this) {
-                // Check if we need an unsafe client (for local emulator/LAN testing against self-signed certs)
-                val clientBuilder = okhttp3.OkHttpClient.Builder()
-                
-                if (shouldUseUnsafeClient(apiUrl)) {
-                    configureUnsafeClient(clientBuilder)
-                }
+    // Lazy initialization of Retrofit
+    private fun getRetrofit(): Retrofit {
+        return retrofit ?: synchronized(this) {
+            // Check if we need an unsafe client (for local emulator/LAN testing against self-signed certs)
+            val clientBuilder = okhttp3.OkHttpClient.Builder()
 
-                // Sanitize URL: Remove project path if present, as ApiService adds it
-                // e.g. https://server/v1/projects/1 -> https://server/v1/
-                var sanitizedUrl = apiUrl
-                // Ensure we strip off the specific project path but keep the base (usually v1/)
-                if (sanitizedUrl.contains("/projects/")) {
-                    sanitizedUrl = sanitizedUrl.substringBefore("/projects/") + "/"
-                }
-                // Retrofit requires base URL to end with /
-                if (!sanitizedUrl.endsWith("/")) {
-                    sanitizedUrl += "/"
-                }
-
-                retrofit ?: Retrofit.Builder()
-                    .baseUrl(sanitizedUrl)
-                    .client(clientBuilder.build())
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build()
-                    .also { retrofit = it }
+            if (shouldUseUnsafeClient(apiUrl)) {
+                configureUnsafeClient(clientBuilder)
             }
+
+            // Sanitize URL: Remove project path if present, as ApiService adds it
+            // e.g. https://server/v1/projects/1 -> https://server/v1/
+            var sanitizedUrl = apiUrl
+            // Ensure we strip off the specific project path but keep the base (usually v1/)
+            if (sanitizedUrl.contains("/projects/")) {
+                sanitizedUrl = sanitizedUrl.substringBefore("/projects/") + "/"
+            }
+            // Retrofit requires base URL to end with /
+            if (!sanitizedUrl.endsWith("/")) {
+                sanitizedUrl += "/"
+            }
+
+            retrofit ?: Retrofit.Builder()
+                .baseUrl(sanitizedUrl)
+                .client(clientBuilder.build())
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .also { retrofit = it }
         }
+    }
 
-        private fun shouldUseUnsafeClient(url: String): Boolean {
-            val lowerUrl = url.lowercase()
-            return lowerUrl.contains("localhost") || 
-                   lowerUrl.contains("127.0.0.1") ||
-                   lowerUrl.contains("10.0.2.") ||   // Covers 10.0.2.2 and subnet
-                   lowerUrl.contains("192.168.") ||  // Covers 192.168.0.0/16
-                   lowerUrl.contains("central-dev") ||
-                   lowerUrl.contains("central.dev") ||
-                   lowerUrl.contains("central.local")
-        }
+    private fun shouldUseUnsafeClient(url: String): Boolean {
+        val lowerUrl = url.lowercase()
+        return lowerUrl.contains("localhost") ||
+            lowerUrl.contains("127.0.0.1") ||
+            lowerUrl.contains("10.0.2.") || // Covers 10.0.2.2 and subnet
+            lowerUrl.contains("192.168.") || // Covers 192.168.0.0/16
+            lowerUrl.contains("central-dev") ||
+            lowerUrl.contains("central.dev") ||
+            lowerUrl.contains("central.local")
+    }
 
-        private fun configureUnsafeClient(builder: okhttp3.OkHttpClient.Builder) {
-            try {
-                // Create a trust manager that does not validate certificate chains
-                val trustAllCerts = arrayOf<javax.net.ssl.TrustManager>(object : javax.net.ssl.X509TrustManager {
-                    override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
-                    override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
-                    override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
-                })
+    private fun configureUnsafeClient(builder: okhttp3.OkHttpClient.Builder) {
+        try {
+            // Create a trust manager that does not validate certificate chains
+            val trustAllCerts = arrayOf<javax.net.ssl.TrustManager>(object : javax.net.ssl.X509TrustManager {
+                override fun checkClientTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                override fun checkServerTrusted(chain: Array<java.security.cert.X509Certificate>, authType: String) {}
+                override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = arrayOf()
+            })
 
-                // Install the all-trusting trust manager
-                val sslContext = javax.net.ssl.SSLContext.getInstance("SSL")
-                sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+            // Install the all-trusting trust manager
+            val sslContext = javax.net.ssl.SSLContext.getInstance("SSL")
+            sslContext.init(null, trustAllCerts, java.security.SecureRandom())
 
-                // Create an ssl socket factory with our all-trusting manager
-                val sslSocketFactory = sslContext.socketFactory
+            // Create an ssl socket factory with our all-trusting manager
+            val sslSocketFactory = sslContext.socketFactory
 
-                builder.sslSocketFactory(sslSocketFactory, trustAllCerts[0] as javax.net.ssl.X509TrustManager)
-                builder.hostnameVerifier { _, _ -> true }
-                
-                // Force HTTP/1.1 to avoid HTTP 421 (Misdirected Request) errors common with HTTP/2 + Self Signed/Local IPs
-                builder.protocols(java.util.Collections.singletonList(okhttp3.Protocol.HTTP_1_1))
+            builder.sslSocketFactory(sslSocketFactory, trustAllCerts[0] as javax.net.ssl.X509TrustManager)
+            builder.hostnameVerifier { _, _ -> true }
 
-                // Custom DNS: Map 'central-dev' and 'central.dev' to 10.0.2.2 (Simulator Localhost)
-                // This allows us to use the hostname (satisfying Nginx SNI/Host headers) but route to the host machine
-                builder.dns(object : okhttp3.Dns {
-                    override fun lookup(hostname: String): List<java.net.InetAddress> {
-                        if (hostname.equals("central-dev", ignoreCase = true) || 
-                            hostname.equals("central.dev", ignoreCase = true) ||
-                            hostname.equals("central.local", ignoreCase = true)) {
-                            try {
-                                return java.util.Collections.singletonList(java.net.InetAddress.getByName("10.0.2.2"))
-                            } catch (e: Exception) {
-                                Log.w("RealAuthClient", "Custom DNS resolution failed for $hostname")
-                            }
+            // Force HTTP/1.1 to avoid HTTP 421 (Misdirected Request) errors common with HTTP/2 + Self Signed/Local IPs
+            builder.protocols(java.util.Collections.singletonList(okhttp3.Protocol.HTTP_1_1))
+
+            // Custom DNS: Map 'central-dev' and 'central.dev' to 10.0.2.2 (Simulator Localhost)
+            // This allows us to use the hostname (satisfying Nginx SNI/Host headers) but route to the host machine
+            builder.dns(object : okhttp3.Dns {
+                override fun lookup(hostname: String): List<java.net.InetAddress> {
+                    if (hostname.equals("central-dev", ignoreCase = true) ||
+                        hostname.equals("central.dev", ignoreCase = true) ||
+                        hostname.equals("central.local", ignoreCase = true)) {
+                        try {
+                            return java.util.Collections.singletonList(java.net.InetAddress.getByName("10.0.2.2"))
+                        } catch (e: Exception) {
+                            Log.w("RealAuthClient", "Custom DNS resolution failed for $hostname")
                         }
-                        return okhttp3.Dns.SYSTEM.lookup(hostname)
                     }
-                })
-                
-                Log.w("RealAuthClient", "UNSAFE SSL: Enabled for $apiUrl (Mapped central-dev -> 10.0.2.2)")
-            } catch (e: Exception) {
-                Log.e("RealAuthClient", "Error creating unsafe client", e)
-            }
-        }
+                    return okhttp3.Dns.SYSTEM.lookup(hostname)
+                }
+            })
 
-        // Lazy initialization of API service
-        private fun getApiService(): AuthApiService {
-            return apiService ?: synchronized(this) {
-                apiService ?: getRetrofit().create(AuthApiService::class.java).also { apiService = it }
-            }
+            Log.w("RealAuthClient", "UNSAFE SSL: Enabled for $apiUrl (Mapped central-dev -> 10.0.2.2)")
+        } catch (e: Exception) {
+            Log.e("RealAuthClient", "Error creating unsafe client", e)
         }
+    }
+
+    // Lazy initialization of API service
+    private fun getApiService(): AuthApiService {
+        return apiService ?: synchronized(this) {
+            apiService ?: getRetrofit().create(AuthApiService::class.java).also { apiService = it }
+        }
+    }
 
     companion object {
         @Volatile
         private var INSTANCE: RealAuthClient? = null
+
         @Volatile
         private var lastBaseUrl: String? = null
 
@@ -134,6 +133,7 @@ class RealAuthClient private constructor(
     /**
      * Login to the real API
      */
+
     /**
      * Login to the Central Backend API
      */
@@ -160,7 +160,7 @@ class RealAuthClient private constructor(
                     val body = response.body()
                     if (body != null) {
                         Log.d("AiimsAuthClient", "Login successful")
-                        
+
                         // Construct User object from response + input
                         val user = User(
                             id = body.id.toString(),
@@ -200,6 +200,7 @@ class RealAuthClient private constructor(
     /**
      * Revoke device token by ID. If authToken is provided, send it as Bearer header.
      */
+
     /**
      * Revoke session by ID.
      */
@@ -234,19 +235,19 @@ class RealAuthClient private constructor(
             // Remove trailing slash if present then append /version.txt
             val cleanUrl = if (apiUrl.endsWith("/")) apiUrl.dropLast(1) else apiUrl
             val url = URL("$cleanUrl/version.txt")
-            
+
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 5000 // 5 seconds timeout
             connection.readTimeout = 5000
-            
+
             // Handle different response codes gracefully
             val responseCode = try {
                 connection.responseCode
             } catch (e: java.io.IOException) {
                 -1 // Network failure
             }
-            
+
             val reachable = responseCode == HttpURLConnection.HTTP_OK
             Log.d("AiimsAuthClient", "Reachability check to $url returned: $responseCode (Reachable: $reachable)")
             reachable
@@ -261,7 +262,7 @@ class RealAuthClient private constructor(
             try {
                 val header = "Bearer $authToken"
                 val response = getApiService().submitTelemetry(projectId, header, request)
-                
+
                 if (response.isSuccessful) {
                     response.body()
                 } else {

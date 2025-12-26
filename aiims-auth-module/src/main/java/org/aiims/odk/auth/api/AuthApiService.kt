@@ -91,4 +91,3 @@ data class TelemetryResponse(
     val id: Int,
     val dateTime: String
 )
-

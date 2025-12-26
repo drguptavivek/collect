@@ -11,7 +11,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import org.aiims.odk.auth.api.AuthResult
 import org.aiims.odk.auth.managers.AiimsAuthManager
 import org.aiims.odk.auth.utils.PinManager
 

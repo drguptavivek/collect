@@ -22,7 +22,7 @@ class PinManagerTest {
         // Reset Singleton and Prefs to ensure clean state
         PinManager.resetInstanceForTesting()
         context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE).edit().clear().commit()
-        
+
         pinManager = PinManager.getInstance(context)
     }
 
@@ -30,7 +30,7 @@ class PinManagerTest {
     fun savePin_storesPinAndResetsAttempts() {
         // Arrange
         val pin = "1234"
-        
+
         // Act
         pinManager.savePin(pin)
 
@@ -77,12 +77,12 @@ class PinManagerTest {
         // Act: Fail 3 times
         pinManager.verifyPin("0000") // 1
         assertFalse(pinManager.isMaxAttemptsReached())
-        
+
         pinManager.verifyPin("0000") // 2
         assertFalse(pinManager.isMaxAttemptsReached())
-        
+
         pinManager.verifyPin("0000") // 3
-        
+
         // Assert
         assertTrue("Should be locked out after 3 attempts", pinManager.isMaxAttemptsReached())
     }

@@ -30,8 +30,9 @@
 ## 📦 Build Configuration
 
 ### Gradle Modules
-*   `:aiims_auth_module`: Contains all custom logic (Auth, PIN, API).
-*   `:collect_app`: The main app module, which depends on `aiims_auth_module`.
+*   `:collect_app`: The main app module.
+*   `:aiims-auth-module`: Contains all custom logic (Auth, PIN, API).
+*   `:projects`, `:settings`, etc.: ODK shared modules.
 
 ### ProGuard / R8
 *   **Important**: If you modify API models (`User`, `LoginResponse`), ensure they are kept in `proguard-rules.txt` or `consumer-rules.pro` to prevent Release build crashes.

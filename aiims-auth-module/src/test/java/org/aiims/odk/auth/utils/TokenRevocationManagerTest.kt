@@ -34,11 +34,11 @@ class TokenRevocationManagerTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        
+
         // Reset state
         TokenRevocationManager.resetForTesting()
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit()
-        
+
         // Inject mocks
         TokenRevocationManager.setAuthClient(authClient)
         TokenRevocationManager.setIoDispatcher(testDispatcher)
@@ -67,7 +67,7 @@ class TokenRevocationManagerTest {
         // Assert
         assertFalse(result)
         verify(authClient, never()).revokeSession(any(), any(), any(), any())
-        
+
         // Ensure data is still pending
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         assertEquals("p1", prefs.getString(KEY_PENDING_PROJECT_ID, null))
@@ -86,7 +86,7 @@ class TokenRevocationManagerTest {
         // Assert
         assertTrue(result)
         verify(authClient).revokeSession(org.mockito.kotlin.eq("p1"), org.mockito.kotlin.eq("u1"), org.mockito.kotlin.eq("token"), any())
-        
+
         // Ensure data is cleared
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         assertEquals(null, prefs.getString(KEY_PENDING_PROJECT_ID, null))
@@ -105,7 +105,7 @@ class TokenRevocationManagerTest {
         // Assert
         assertFalse(result)
         verify(authClient).revokeSession(org.mockito.kotlin.eq("p1"), org.mockito.kotlin.eq("u1"), org.mockito.kotlin.eq("token"), any())
-        
+
         // Ensure data is RETAINED for retry
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         assertEquals("p1", prefs.getString(KEY_PENDING_PROJECT_ID, null))

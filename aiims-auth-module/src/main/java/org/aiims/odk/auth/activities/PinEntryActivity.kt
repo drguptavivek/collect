@@ -1,6 +1,9 @@
 package org.aiims.odk.auth.activities
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -8,15 +11,10 @@ import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import org.aiims.odk.auth.managers.AiimsAuthManager
 import org.aiims.odk.auth.utils.PinManager
-import android.Manifest
-import android.content.pm.PackageManager
-import android.graphics.Color
-import androidx.core.content.ContextCompat
 
 /**
  * PIN Entry Activity
@@ -49,7 +47,7 @@ class PinEntryActivity : AiimsBaseActivity() {
         // Initialize pin manager
         // authManager is initialized in super.onCreate()
         pinManager = PinManager.getInstance(this)
-        
+
         // Check permissions for Telemetry/Notifications
         checkAndRequestPermissions()
 
@@ -107,21 +105,21 @@ class PinEntryActivity : AiimsBaseActivity() {
             setPadding(0, 0, 0, 40)
             gravity = android.view.Gravity.CENTER
         }
-        
+
         // Permission Status Views
         locationStatusView = TextView(this).apply {
             textSize = 14f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 10)
         }
-        
+
         notificationStatusView = TextView(this).apply {
             textSize = 14f
             gravity = android.view.Gravity.CENTER
             setPadding(0, 0, 0, 20)
             visibility = if (android.os.Build.VERSION.SDK_INT >= 33) View.VISIBLE else View.GONE
         }
-        
+
         // Update initial state
         updatePermissionStatusUI()
 
@@ -145,7 +143,7 @@ class PinEntryActivity : AiimsBaseActivity() {
                 checkAndRequestPermissions(true) // Force request
             }
         }
-        
+
         // PIN field
         val pinHint = TextView(this).apply {
             text = "PIN:"
@@ -262,7 +260,7 @@ class PinEntryActivity : AiimsBaseActivity() {
                 lifecycleScope.launch {
                     authManager.submitTelemetry(getLastKnownLocation())
                 }
-                
+
                 // Navigate to main app
                 navigateToMain()
             } else {
@@ -280,12 +278,12 @@ class PinEntryActivity : AiimsBaseActivity() {
                         "Incorrect PIN. $attemptsLeft attempts remaining.",
                         Toast.LENGTH_SHORT
                     ).show()
-                    
+
                     // Trigger Telemetry (Failed Attempt)
                     lifecycleScope.launch {
                         authManager.submitTelemetry(getLastKnownLocation())
                     }
-                    
+
                     pinField.text.clear()
                     pinField.requestFocus()
                 }
@@ -316,8 +314,8 @@ class PinEntryActivity : AiimsBaseActivity() {
     private fun updatePermissionStatusUI() {
         // Location Status
         val hasLocation = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                          ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
         if (hasLocation) {
             locationStatusView.text = "✓ Location Access Granted"
             locationStatusView.setTextColor(Color.parseColor("#2E7D32")) // Green
@@ -338,7 +336,7 @@ class PinEntryActivity : AiimsBaseActivity() {
                 notificationStatusView.setTextColor(Color.parseColor("#C62828")) // Red
             }
         }
-        
+
         // Show GRANT button if any permission is missing
         if (!hasLocation || !hasNotif) {
             grantPermissionsButton.visibility = View.VISIBLE

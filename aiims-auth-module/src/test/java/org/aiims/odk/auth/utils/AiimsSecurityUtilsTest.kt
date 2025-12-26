@@ -10,7 +10,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.Base64
 import javax.crypto.spec.SecretKeySpec
 
 @RunWith(AndroidJUnit4::class)
@@ -36,10 +35,10 @@ class AiimsSecurityUtilsTest {
     fun hashPin_returnsConsistentHash() {
         val pin = "1234"
         val salt = securityUtils.generateSalt()
-        
+
         val hash1 = securityUtils.hashPin(pin, salt)
         val hash2 = securityUtils.hashPin(pin, salt)
-        
+
         assertEquals(hash1, hash2)
     }
 
@@ -48,10 +47,10 @@ class AiimsSecurityUtilsTest {
         val pin = "1234"
         val salt1 = securityUtils.generateSalt()
         val salt2 = securityUtils.generateSalt()
-        
+
         val hash1 = securityUtils.hashPin(pin, salt1)
         val hash2 = securityUtils.hashPin(pin, salt2)
-        
+
         // Theoretically possible to collide, but astronomically unlikely
         assertFalse(hash1 == hash2)
     }
@@ -61,7 +60,7 @@ class AiimsSecurityUtilsTest {
         val pin = "1234"
         val salt = securityUtils.generateSalt()
         val hash = securityUtils.hashPin(pin, salt)
-        
+
         assertTrue(securityUtils.verifyPin(pin, hash, salt))
     }
 
@@ -70,23 +69,23 @@ class AiimsSecurityUtilsTest {
         val pin = "1234"
         val salt = securityUtils.generateSalt()
         val hash = securityUtils.hashPin(pin, salt)
-        
+
         assertFalse(securityUtils.verifyPin("9999", hash, salt))
     }
 
     @Test
     fun encryptDecrypt_roundTripWorks() {
-        // We'll manually create a key since Keystore operations might be flaky in pure Robolectric 
+        // We'll manually create a key since Keystore operations might be flaky in pure Robolectric
         // without more complex shadowing, but let's try the pure crypto logic first.
-        
+
         // Generate a standard AES Key for testing (bypassing Keystore for this specific test to isolate logic)
         val keyBytes = ByteArray(32) { i -> i.toByte() }
         val secretKey = SecretKeySpec(keyBytes, "AES")
-        
+
         val originalText = "Sensitive Data 123"
         val encrypted = securityUtils.encrypt(originalText, secretKey)
         val decrypted = securityUtils.decrypt(encrypted, secretKey)
-        
+
         assertEquals(originalText, decrypted)
     }
 

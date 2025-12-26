@@ -48,18 +48,18 @@ class AiimsAuthManagerTest {
         // Use StandardTestDispatcher for control
         Dispatchers.setMain(StandardTestDispatcher())
         context = ApplicationProvider.getApplicationContext()
-        
+
         // Ensure clean state
         AiimsAuthManager.resetInstanceForTesting()
         context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE).edit().clear().commit()
-        
+
         // Initialize Managers
         authManager = AiimsAuthManager.init(context, projectCleaner)
         authManager.setAuthClient(authClient)
         // Note: We don't attach testScheduler here because setUp runs outside runTest
         // But StandardTestDispatcher() works.
         authManager.setIoDispatcher(StandardTestDispatcher())
-        
+
         pinManager = PinManager.getInstance(context)
         pinManager.clearPin()
     }
@@ -75,7 +75,7 @@ class AiimsAuthManagerTest {
         val projectId = "1"
         val user = User("100", "testuser", projectId, "2099-01-01T00:00:00.000Z")
         val token = "test_token"
-        
+
         whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(
             AuthResult.Success(user, token, user.expiresAt!!)
         )
@@ -86,7 +86,7 @@ class AiimsAuthManagerTest {
         assertTrue(result is AuthResult.Success)
         authManager.setActiveProject(projectId)
         advanceUntilIdle()
-        
+
         assertEquals(AuthState.LOGGED_IN, authManager.authState.first())
         assertEquals("testuser", authManager.currentUser.first()?.username)
         assertEquals(token, authManager.getActiveProjectToken())
@@ -104,7 +104,7 @@ class AiimsAuthManagerTest {
 
         assertTrue(result is AuthResult.Error)
         assertEquals("Invalid credentials", (result as AuthResult.Error).message)
-        
+
         authManager.setActiveProject(projectId)
         advanceUntilIdle()
         assertEquals(AuthState.LOGGED_OUT, authManager.authState.first())
@@ -115,12 +115,12 @@ class AiimsAuthManagerTest {
         val projectId = "1"
         val userA = User("A", "userA", projectId, "2099-01-01T00:00:00.000Z")
         val userB = User("B", "userB", projectId, "2099-01-01T00:00:00.000Z")
-        
+
         whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(userA, "tokenA", userA.expiresAt!!))
         authManager.login(projectId, "userA", "pass", "url")
         authManager.setActiveProject(projectId)
         advanceUntilIdle()
-        
+
         pinManager.savePin("1234")
         assertTrue(pinManager.isPinSet())
 
@@ -130,17 +130,17 @@ class AiimsAuthManagerTest {
 
         assertFalse("PIN should be cleared when user changes", pinManager.isPinSet())
     }
-    
+
     @Test
     fun login_withSameUser_keepsPin() = runTest {
         val projectId = "1"
         val userA = User("A", "userA", projectId, "2099-01-01T00:00:00.000Z")
-        
+
         whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(userA, "tokenA", userA.expiresAt!!))
         authManager.login(projectId, "userA", "pass", "url")
         authManager.setActiveProject(projectId)
         advanceUntilIdle()
-        
+
         pinManager.savePin("1234")
         assertTrue(pinManager.isPinSet())
 
@@ -153,15 +153,15 @@ class AiimsAuthManagerTest {
     @Test
     fun logout_revokesTokenAndClearsData() = runTest {
         val projectId = "1"
-        
+
         val user = User("100", "testuser", projectId, "2099-01-01T00:00:00.000Z")
         whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
         whenever(authClient.revokeSession(any(), any(), any(), any())).thenReturn(true)
-        
+
         authManager.login(projectId, "user", "pass", "url")
         authManager.setActiveProject(projectId)
         advanceUntilIdle()
-        
+
         assertNotNull("Token should be present before logout", authManager.getActiveProjectToken())
 
         authManager.logout()
@@ -180,33 +180,33 @@ class AiimsAuthManagerTest {
         val now = System.currentTimeMillis()
         val oneHourAgo = now - (1 * 60 * 60 * 1000)
         val expiredDate = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(oneHourAgo))
-        
-        val user = User("100", "testuser", projectId, expiredDate) 
-        
+
+        val user = User("100", "testuser", projectId, expiredDate)
+
         whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
         authManager.login(projectId, "user", "pass", "url")
         advanceUntilIdle()
-        
+
         runBlocking {
-             doReturn(false).whenever(authClient).checkReachability()
+            doReturn(false).whenever(authClient).checkReachability()
         }
-        
+
         AiimsAuthManager.resetInstanceForTesting()
         val newAuthManager = AiimsAuthManager.init(context, projectCleaner)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
-        
+
         newAuthManager.setActiveProject(projectId)
-        
+
         advanceUntilIdle()
         shadowOf(Looper.getMainLooper()).idle()
-        
+
         val state = newAuthManager.authState.first()
         assertTrue("State should be LOGGED_IN during grace period", state == AuthState.LOGGED_IN)
         assertFalse("Should not be Soft Expiry if unreachable", newAuthManager.getIsSoftExpiry())
         verify(authClient).checkReachability()
     }
-    
+
     @Test
     fun refreshState_enforcesHardDeadline_after6Hours() = runTest {
         val projectId = "1"
@@ -214,24 +214,24 @@ class AiimsAuthManagerTest {
         val now = System.currentTimeMillis()
         val sevenHoursAgo = now - (7 * 60 * 60 * 1000)
         val expiredDate = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(sevenHoursAgo))
-        
-        val user = User("100", "testuser", projectId, expiredDate) 
-        
+
+        val user = User("100", "testuser", projectId, expiredDate)
+
         whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
         authManager.login(projectId, "user", "pass", "url")
-        
+
         // Even if server is unreachable, hard deadline kills it (actually code doesn't check reachability for hard deadline)
         // refreshState checks hard deadline first
-        
+
         AiimsAuthManager.resetInstanceForTesting()
         val newAuthManager = AiimsAuthManager.init(context, projectCleaner)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
-        
+
         newAuthManager.setActiveProject(projectId)
-        
+
         advanceUntilIdle() // Coroutine for logout
-        
+
         assertEquals(AuthState.LOGGED_OUT, newAuthManager.authState.first())
         verify(projectCleaner).clearProjectData(projectId)
         // Reachability should NOT have been called
@@ -245,34 +245,35 @@ class AiimsAuthManagerTest {
         val now = System.currentTimeMillis()
         val oneHourAgo = now - (1 * 60 * 60 * 1000)
         val expiredDate = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(oneHourAgo))
-        
+
         val user = User("100", "testuser", projectId, expiredDate)
-        
+
         whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
         authManager.login(projectId, "user", "pass", "url")
-        
+
         // Server Reachable
         runBlocking {
-             doReturn(true).whenever(authClient).checkReachability()
+            doReturn(true).whenever(authClient).checkReachability()
         }
-        
+
         AiimsAuthManager.resetInstanceForTesting()
         val newAuthManager = AiimsAuthManager.init(context, projectCleaner)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
-        
+
         newAuthManager.setActiveProject(projectId)
-        
+
         advanceUntilIdle()
         shadowOf(Looper.getMainLooper()).idle()
-        
+
         // Assert: Logged IN (Grace) but Soft Expiry TRUE
         assertEquals(AuthState.LOGGED_IN, newAuthManager.authState.first())
         assertTrue("Should set Soft Expiry", newAuthManager.getIsSoftExpiry())
-        
+
         // Should NOT have logged out
         verify(authClient, org.mockito.kotlin.never()).revokeSession(any(), any(), any(), any())
     }
+
     @Test
     fun submitTelemetry_sendsCorrectData() = runTest {
         val projectId = "1"
@@ -290,7 +291,7 @@ class AiimsAuthManagerTest {
 
         authManager.submitTelemetry(mockLocation)
         advanceUntilIdle()
-        
+
         verify(authClient).submitTelemetry(org.mockito.kotlin.eq(projectId), org.mockito.kotlin.eq("token"), org.mockito.kotlin.check {
             assertEquals("unknown_device", it.deviceId)
             assertEquals("10.0", it.location.latitude.toString())

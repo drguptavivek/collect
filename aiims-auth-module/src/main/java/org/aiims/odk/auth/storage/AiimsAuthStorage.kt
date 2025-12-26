@@ -92,11 +92,9 @@ class AiimsAuthStorage private constructor(
         get() = secureStorage.apiUrl
         set(value) { secureStorage.apiUrl = value }
 
-
     var lastAuthTimestamp: Long
         get() = secureStorage.lastAuthTimestamp
         set(value) { secureStorage.lastAuthTimestamp = value }
-
 
     // ===== High-Level Operations =====
 
@@ -157,15 +155,12 @@ class AiimsAuthStorage private constructor(
         secureStorage.clearAllAuthData()
     }
 
-
-
     /**
      * Update last authentication timestamp.
      */
     fun updateLastAuthTimestamp() {
         lastAuthTimestamp = System.currentTimeMillis()
     }
-
 
     /**
      * Get authentication summary for debugging.

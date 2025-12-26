@@ -14,7 +14,6 @@ import java.util.Base64
 import java.util.UUID
 import java.util.concurrent.Executor
 import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.IvParameterSpec

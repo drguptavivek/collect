@@ -1,7 +1,9 @@
 package org.aiims.odk.auth.activities
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -11,18 +13,13 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.aiims.odk.auth.api.AuthResult
-import org.aiims.odk.auth.managers.AiimsAuthManager
 import org.aiims.odk.auth.utils.AiimsProjectUtils
 import org.aiims.odk.auth.utils.TokenRevocationManager
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
-import java.io.File
 
 /**
  * AIIMS Login Activity (Central Backend Version)
@@ -46,7 +43,6 @@ class AiimsLoginActivity : AiimsBaseActivity() {
     private var centralProjectId: String? = null // Central's integer ID
     private var serverUrl: String? = null
 
-
     override fun onResume() {
         super.onResume()
         checkAndRequestPermissions()
@@ -56,7 +52,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         // Check permissions (Location + Notification)
         checkAndRequestPermissions()
 
@@ -64,7 +60,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
         // UI Setup
         createLayout()
-        
+
         // Update initial state
         updatePermissionStatusUI()
 
@@ -123,7 +119,6 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 statusText.visibility = View.VISIBLE
                 enableLoginUi(false)
             }
-
         } catch (e: Exception) {
             statusText.text = "Error reading project settings: ${e.message}"
             enableLoginUi(false)
@@ -137,7 +132,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         scanQrButton.visibility = View.VISIBLE
         loginButton.visibility = View.GONE
     }
-    
+
     private fun enableLoginUi(enable: Boolean) {
         usernameField.isEnabled = enable
         passwordField.isEnabled = enable
@@ -169,12 +164,12 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             when (result) {
                 is AuthResult.Success -> {
                     Toast.makeText(this@AiimsLoginActivity, "Welcome ${result.user.username}", Toast.LENGTH_SHORT).show()
-                    
+
                     // Trigger Telemetry with Location (Manager sends one without location, we refine it here)
                     lifecycleScope.launch {
-                         authManager.submitTelemetry(getLastKnownLocation())
+                        authManager.submitTelemetry(getLastKnownLocation())
                     }
-                    
+
                     // SAVE CREDENTIALS TO ODK SETTINGS
                     if (currentSystemProjectId != null && currentSystemProjectId != "MANUAL_FALLBACK") {
                         try {
@@ -211,7 +206,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         startActivity(intent)
         finish()
     }
-    
+
     private fun navigateToPinSetup(token: String, expiresAt: String) {
         val intent = Intent(this, org.aiims.odk.auth.activities.SetupPinActivity::class.java)
         intent.putExtra("authToken", token)
@@ -280,7 +275,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             maxHeight = 300
             layoutParams = android.widget.FrameLayout.LayoutParams(
                 400, // Width
-                400  // Height
+                400 // Height
             ).apply {
                 gravity = Gravity.CENTER_HORIZONTAL
                 topMargin = 100 // Push down below settings icon
@@ -313,21 +308,21 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 20)
         }
-        
+
         // Permission Status Views
         locationStatusView = TextView(this).apply {
             textSize = 14f
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 10)
         }
-        
+
         notificationStatusView = TextView(this).apply {
             textSize = 14f
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 20)
             visibility = if (android.os.Build.VERSION.SDK_INT >= 33) View.VISIBLE else View.GONE
         }
-        
+
         // Grant Permissions Button (initially hidden)
         grantPermissionsButton = Button(this).apply {
             text = "Grant Permissions"
@@ -349,7 +344,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             hint = "Password"
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
         }
-        
+
         progressBar = ProgressBar(this).apply {
             visibility = View.GONE
         }
@@ -374,27 +369,27 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         contentLayout.addView(passwordField)
         contentLayout.addView(progressBar)
         contentLayout.addView(loginButton)
-        
+
         // Cancel / Work Offline Button for Re-Auth
         val cancelButton = Button(this).apply {
             text = "Work Offline (Grace Period)"
             visibility = View.GONE
-            setOnClickListener { 
+            setOnClickListener {
                 authManager.snoozeSoftExpiry() // Snooze the prompt
                 finish() // Go back to whatever we were doing
             }
         }
         contentLayout.addView(cancelButton)
-        
+
         contentLayout.addView(scanQrButton)
 
         mainLayout.addView(headerFrame)
         mainLayout.addView(contentLayout)
-        
+
         scrollView.addView(mainLayout)
 
         setContentView(scrollView)
-        
+
         // Handle Re-Auth Mode
         if (intent.getBooleanExtra("is_reauth", false)) {
             title.text = "Session Expired"
@@ -403,7 +398,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             // Default Cancel logic for Back Press
         }
     }
-    
+
     override fun onBackPressed() {
         if (intent.getBooleanExtra("is_reauth", false)) {
             // Treat Back as Cancel/Snooze
@@ -427,7 +422,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             // Strip project part if present for cleaner default
             setText(if (current.contains("/v1/projects")) current.substringBefore("/v1/projects") else current)
         }
-        
+
         val projectIdInput = EditText(this).apply {
             hint = "Project ID (e.g. 1)"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
@@ -436,7 +431,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
         layout.addView(TextView(this).apply { text = "Server Base URL" })
         layout.addView(baseUrlInput)
-        layout.addView(TextView(this).apply { 
+        layout.addView(TextView(this).apply {
             text = "Project ID"
             setPadding(0, 30, 0, 0)
         })
@@ -449,7 +444,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 .setPositiveButton("Set") { _, _ ->
                     val baseUrl = baseUrlInput.text.toString().trim().trimEnd('/')
                     val pid = projectIdInput.text.toString().trim()
-                    
+
                     if (baseUrl.isNotEmpty() && pid.isNotEmpty()) {
                         // Construct full URL: Base + /v1/projects/ + ID
                         val fullUrl = "$baseUrl/v1/projects/$pid"
@@ -475,11 +470,11 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 // Initialize Helpers
                 val uuidGenerator = org.odk.collect.shared.strings.UUIDGenerator()
                 val gson = com.google.gson.Gson()
-                
+
                 // Create Meta Settings Wrapper
                 val metaPrefs = getSharedPreferences("meta", Context.MODE_PRIVATE)
                 val metaSettings = AiimsSettings(metaPrefs)
-                
+
                 // Initialize Repository
                 val projectsRepo = org.odk.collect.projects.SharedPreferencesProjectsRepository(
                     uuidGenerator,
@@ -491,7 +486,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 // Check for existing project
                 var targetProjectUuid: String? = null
                 val allProjects = projectsRepo.getAll()
-                
+
                 for (proj in allProjects) {
                     val projPrefs = getSharedPreferences("general_prefs${proj.uuid}", Context.MODE_PRIVATE)
                     val projUrl = projPrefs.getString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, null)
@@ -504,8 +499,8 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 // Create if not exists
                 if (targetProjectUuid == null) {
                     val newProject = org.odk.collect.projects.Project.New(
-                        "Manual Project $centralPid", 
-                        "M", 
+                        "Manual Project $centralPid",
+                        "M",
                         "#3e9fcc"
                     )
                     val saved = projectsRepo.save(newProject)
@@ -527,19 +522,18 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 currentSystemProjectId = targetProjectUuid
                 serverUrl = url
                 centralProjectId = centralPid
-                
+
                 authManager.setActiveProject(centralPid)
-                
+
                 statusText.text = "Configured & Saved (ID: $centralPid)\nServer: $url"
                 statusText.visibility = View.VISIBLE
                 enableLoginUi(true)
-                
-                Toast.makeText(this, "Project Saved: $targetProjectUuid", Toast.LENGTH_SHORT).show()
 
+                Toast.makeText(this, "Project Saved: $targetProjectUuid", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 android.util.Log.e("AiimsLogin", "Error saving project", e)
                 Toast.makeText(this, "Error saving project: ${e.message}", Toast.LENGTH_LONG).show()
-                
+
                 // Fallback
                 currentSystemProjectId = "MANUAL_FALLBACK"
                 serverUrl = url
@@ -548,27 +542,27 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 enableLoginUi(true)
             }
         } else {
-             Toast.makeText(this, "Invalid Project URL format", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Invalid Project URL format", Toast.LENGTH_LONG).show()
         }
     }
-    
+
     // Local Settings Implementation to bridge SharedPreferences -> ODK Settings Interface
     private class AiimsSettings(private val prefs: android.content.SharedPreferences) : org.odk.collect.shared.settings.Settings {
         override fun save(key: String, value: Any?) {
-             val editor = prefs.edit()
-             when (value) {
-                 is String -> editor.putString(key, value)
-                 is Boolean -> editor.putBoolean(key, value)
-                 is Long -> editor.putLong(key, value)
-                 is Int -> editor.putInt(key, value)
-                 is Float -> editor.putFloat(key, value)
-                 is Set<*> -> editor.putStringSet(key, value as Set<String>)
-                 null -> editor.remove(key)
-                 else -> throw IllegalArgumentException("Unsupported type")
-             }
-             editor.apply()
+            val editor = prefs.edit()
+            when (value) {
+                is String -> editor.putString(key, value)
+                is Boolean -> editor.putBoolean(key, value)
+                is Long -> editor.putLong(key, value)
+                is Int -> editor.putInt(key, value)
+                is Float -> editor.putFloat(key, value)
+                is Set<*> -> editor.putStringSet(key, value as Set<String>)
+                null -> editor.remove(key)
+                else -> throw IllegalArgumentException("Unsupported type")
+            }
+            editor.apply()
         }
-        
+
         override fun getString(key: String) = prefs.getString(key, null)
         override fun getBoolean(key: String) = prefs.getBoolean(key, false)
         override fun getLong(key: String) = prefs.getLong(key, 0L)
@@ -579,7 +573,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         override fun contains(key: String) = prefs.contains(key)
         override fun remove(key: String) { prefs.edit().remove(key).apply() }
         override fun clear() { prefs.edit().clear().apply() }
-        
+
         // Unused stubs
         override fun setDefaultForAllSettingsWithoutValues() {}
         override fun saveAll(prefs: Map<String, Any?>) {
@@ -593,8 +587,8 @@ class AiimsLoginActivity : AiimsBaseActivity() {
     private fun updatePermissionStatusUI() {
         // Location Status
         val hasLocation = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                          ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
         if (hasLocation) {
             locationStatusView.text = "✓ Location Access Granted"
             locationStatusView.setTextColor(android.graphics.Color.parseColor("#2E7D32")) // Green
@@ -615,7 +609,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 notificationStatusView.setTextColor(android.graphics.Color.parseColor("#C62828")) // Red
             }
         }
-        
+
         // Show GRANT button if any permission is missing
         if (!hasLocation || !hasNotif) {
             grantPermissionsButton.visibility = View.VISIBLE

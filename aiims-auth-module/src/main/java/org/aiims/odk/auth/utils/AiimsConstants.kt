@@ -51,7 +51,6 @@ object AiimsConstants {
     const val BIOMETRIC_PROMPT_SUBTITLE = "Use your fingerprint to authenticate"
     const val BIOMETRIC_PROMPT_NEGATIVE = "Cancel"
 
-
     // Error Codes
     object ErrorCodes {
         const val NETWORK_ERROR = 1001

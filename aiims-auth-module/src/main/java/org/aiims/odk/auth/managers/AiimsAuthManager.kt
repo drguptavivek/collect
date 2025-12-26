@@ -2,6 +2,11 @@ package org.aiims.odk.auth.managers
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,18 +18,12 @@ import kotlinx.coroutines.launch
 import org.aiims.odk.auth.api.AuthClient
 import org.aiims.odk.auth.api.AuthResult
 import org.aiims.odk.auth.api.RealAuthClient
-import org.aiims.odk.auth.api.User
-import org.aiims.odk.auth.api.TelemetryRequest
 import org.aiims.odk.auth.api.TelemetryLocation
-import org.aiims.odk.auth.utils.AiimsProjectUtils
-import org.json.JSONObject
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.Constraints
-import androidx.work.NetworkType
-import androidx.work.WorkManager
-import androidx.work.ExistingPeriodicWorkPolicy
-import java.util.concurrent.TimeUnit
+import org.aiims.odk.auth.api.TelemetryRequest
+import org.aiims.odk.auth.api.User
 import org.aiims.odk.auth.work.TelemetryWorker
+import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 
 /**
  * Authentication Manager for Central Backend.
@@ -79,7 +78,6 @@ class AiimsAuthManager private constructor(
         ioDispatcherForTesting = dispatcher
     }
 
-
     // Reactive state for the *Active* Project
     private val _authState = MutableStateFlow(AuthState.INITIAL)
     val authState: Flow<AuthState> = _authState.asStateFlow()
@@ -98,7 +96,7 @@ class AiimsAuthManager private constructor(
 
     // Current active project context
     private var activeProjectId: String? = null
-    
+
     // 6 Hours in Milliseconds
     private val GRACE_PERIOD_MS = 6L * 60 * 60 * 1000
 
@@ -141,51 +139,51 @@ class AiimsAuthManager private constructor(
             val expiryTime = parseExpiryTime(expiresAt)
             val currentTime = System.currentTimeMillis()
             val hardDeadline = expiryTime + GRACE_PERIOD_MS
-            
+
             if (currentTime > hardDeadline) {
-                 // HARD LOGOUT: Exceeded 6-hour grace
-                 println("DEBUG_AUTH: Hard deadline exceeded. Logging out.")
-                 // We need to launch logout
-                 scope.launch { logoutProject(pid) }
-                 return
+                // HARD LOGOUT: Exceeded 6-hour grace
+                println("DEBUG_AUTH: Hard deadline exceeded. Logging out.")
+                // We need to launch logout
+                scope.launch { logoutProject(pid) }
+                return
             }
-            
+
             if (currentTime <= expiryTime) {
                 // VALID
                 _authState.value = AuthState.LOGGED_IN
                 _currentUser.value = user
                 _isSoftExpiry.value = false
-                
+
                 // Ensure Telemetry Worker is scheduled
                 startPeriodicTelemetry()
             } else {
                 // GRACE PERIOD (Expired but within 6h)
                 println("DEBUG_AUTH: In Grace Period. Token expired $expiresAt")
-                
+
                 // Optimistically allow login
                 _authState.value = AuthState.LOGGED_IN
                 _currentUser.value = user
-                
+
                 // Background Reachability Check
-                 scope.launch {
+                scope.launch {
                     val apiUrl = getApiUrlForProject(pid)
                     var serverReachable = false
-                    
+
                     if (apiUrl != null) {
-                         try {
+                        try {
                             val client = getAuthClient(apiUrl)
                             serverReachable = client.checkReachability()
                         } catch (e: Exception) {
                             serverReachable = false
                         }
                     }
-                    
+
                     if (serverReachable) {
                         println("DEBUG_AUTH: Server reachable in grace period. Setting Soft Expiry.")
                         // SOFT EXPIRY: Prompt user, but do not force logout yet
                         _isSoftExpiry.value = true
                     } else {
-                         println("DEBUG_AUTH: Server unreachable. Maintaining Offline Grace.")
+                        println("DEBUG_AUTH: Server unreachable. Maintaining Offline Grace.")
                         // OFFLINE GRACE: Keep logged in, silent
                         _isSoftExpiry.value = false
                     }
@@ -199,12 +197,12 @@ class AiimsAuthManager private constructor(
     }
 
     private fun parseExpiryTime(expiresAt: String?): Long {
-         if (expiresAt == null) return 0L
-         return try {
-              org.aiims.odk.auth.utils.ApiDateFormat.parse(expiresAt)?.time ?: 0L
-         } catch (e: Exception) {
-             0L
-         }
+        if (expiresAt == null) return 0L
+        return try {
+            org.aiims.odk.auth.utils.ApiDateFormat.parse(expiresAt)?.time ?: 0L
+        } catch (e: Exception) {
+            0L
+        }
     }
 
     /**
@@ -228,21 +226,21 @@ class AiimsAuthManager private constructor(
 
                     // Persist for this project
                     persistSession(projectId, result.user, result.token, result.expiresAt, apiUrl)
-                    
+
                     // Reset soft expiry
                     _isSoftExpiry.value = false
-                    
+
                     // If this matches the active project, update state immediately
                     if (activeProjectId == projectId) {
                         refreshState()
                     }
-                    
+
                     // Trigger Telemetry
                     submitTelemetry(null)
-                    
+
                     // Start Background Worker
                     startPeriodicTelemetry()
-                    
+
                     result
                 }
                 is AuthResult.Error -> {
@@ -262,8 +260,8 @@ class AiimsAuthManager private constructor(
     private fun checkAndClearPinIfUserChanged(projectId: String, newUser: User) {
         val oldUser = getPersistedUser(projectId)
         if (oldUser != null && oldUser.id != newUser.id) {
-             android.util.Log.d("AiimsAuthManager", "User changed from ${oldUser.id} to ${newUser.id}. Clearing PIN.")
-             org.aiims.odk.auth.utils.PinManager.getInstance(context).clearPin()
+            android.util.Log.d("AiimsAuthManager", "User changed from ${oldUser.id} to ${newUser.id}. Clearing PIN.")
+            org.aiims.odk.auth.utils.PinManager.getInstance(context).clearPin()
         }
     }
 
@@ -286,24 +284,24 @@ class AiimsAuthManager private constructor(
 
         // Revoke if possible
         if (token != null && user != null && !apiUrl.isNullOrBlank()) {
-             try {
-                 val client = getAuthClient(apiUrl)
-                 val deviceId = getDeviceId()
-                 client.revokeSession(projectId, user.id, token, deviceId)
-             } catch (e: Exception) {
-                 // Best effort
-             }
+            try {
+                val client = getAuthClient(apiUrl)
+                val deviceId = getDeviceId()
+                client.revokeSession(projectId, user.id, token, deviceId)
+            } catch (e: Exception) {
+                // Best effort
+            }
         }
-        
+
         // Trigger Telemetry before clearing session (allows using the valid token)
         try {
             // Note: We are using the token which is about to be cleared.
             // submitTelemetry is async (launch), so we need to capture the values.
-            // Actually, submitTelemetry retrieves values from persistence/mem. 
+            // Actually, submitTelemetry retrieves values from persistence/mem.
             // If we clear session immediately, it might fail.
             // Let's pass the token explicitly? No, submitTelemetry reads from persistence.
             // We should call it before clearSession.
-            submitTelemetry(null) 
+            submitTelemetry(null)
         } catch (e: Exception) {
             // Ignore
         }
@@ -321,14 +319,14 @@ class AiimsAuthManager private constructor(
                 android.util.Log.e("AiimsAuth", "Failed to clear project data", e)
             }
         }
-        
+
         // Clear local PIN
         org.aiims.odk.auth.utils.PinManager.getInstance(context).clearPin()
 
         if (activeProjectId == projectId) {
             refreshState()
         }
-        
+
         // Stop telemetry worker
         stopPeriodicTelemetry()
     }
@@ -338,7 +336,7 @@ class AiimsAuthManager private constructor(
             putString(keyToken(projectId), token)
             putString(keyExpiresAt(projectId), expiresAt)
             putString(keyApiUrl(projectId), apiUrl)
-            
+
             val userJson = JSONObject().apply {
                 put("id", user.id)
                 put("username", user.username)
@@ -347,7 +345,7 @@ class AiimsAuthManager private constructor(
                 put("expiresAt", user.expiresAt)
             }.toString()
             putString(keyUser(projectId), userJson)
-            
+
             apply()
         }
     }
@@ -391,17 +389,17 @@ class AiimsAuthManager private constructor(
     private fun isTokenExpired(expiresAt: String?): Boolean {
         if (expiresAt == null) return true
         return try {
-             val expiryTime = org.aiims.odk.auth.utils.ApiDateFormat.parse(expiresAt)?.time ?: 0L
-             System.currentTimeMillis() >= expiryTime
+            val expiryTime = org.aiims.odk.auth.utils.ApiDateFormat.parse(expiresAt)?.time ?: 0L
+            System.currentTimeMillis() >= expiryTime
         } catch (e: Exception) {
-            true 
+            true
         }
     }
-    
+
     // --- Legacy / Compatibility ---
     fun getCurrentAuthState(): AuthState = _authState.value
     fun getIsSoftExpiry(): Boolean = _isSoftExpiry.value
-    
+
     fun updateAuthState(state: AuthState) {
         _authState.value = state
     }
@@ -413,7 +411,7 @@ class AiimsAuthManager private constructor(
     }
 
     fun snoozeSoftExpiry() {
-        // User cancelled re-auth. Snooze check? 
+        // User cancelled re-auth. Snooze check?
         // For now, just keep the flag true? No, if we keep flag true, AppLock will loop.
         // We probably want to suppress the flag until next refresh?
         // Actually, if user hits BACK, they go to main menu. onActivityStarted triggers.
@@ -425,9 +423,9 @@ class AiimsAuthManager private constructor(
         // We need a way to say "User knows, ignored it".
         // Let's leave value as TRUE, but AppLock needs to know if it JUST launched it.
         // Better: Use a "Snooze" method that sets it to false. The check runs in background anyway.
-        // Re-enabling logic: When does it turn back on? 
+        // Re-enabling logic: When does it turn back on?
         // Only if refreshState is called again (e.g. app restart or manual refresh).
-        _isSoftExpiry.value = false 
+        _isSoftExpiry.value = false
     }
 
     /**
@@ -455,12 +453,12 @@ class AiimsAuthManager private constructor(
         val pid = activeProjectId ?: return
         val token = getPersistedToken(pid) ?: return
         val apiUrl = getApiUrlForProject(pid) ?: return
-        
+
         scope.launch(ioDispatcherForTesting ?: Dispatchers.IO) {
             try {
                 val client = getAuthClient(apiUrl)
                 val deviceId = getDeviceId()
-                
+
                 // Format location
                 val telemetryLocation = if (location != null) {
                     TelemetryLocation(
@@ -475,16 +473,15 @@ class AiimsAuthManager private constructor(
                 } else {
                     TelemetryLocation(0.0, 0.0, null, null, null, null, "unknown")
                 }
-                
+
                 val request = TelemetryRequest(
                     deviceId = deviceId,
                     collectVersion = "Collect/Unknown",
                     deviceDateTime = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date()),
                     location = telemetryLocation
                 )
-                
+
                 client.submitTelemetry(pid, token, request)
-                
             } catch (e: Exception) {
                 android.util.Log.e("AiimsAuthManager", "Failed to submit telemetry", e)
             }
@@ -537,6 +534,7 @@ enum class AuthState {
     INITIAL,
     LOGGED_IN,
     LOGGED_OUT,
+
     // REQUIRES_PIN - Removed, now Local only
     ERROR
 }

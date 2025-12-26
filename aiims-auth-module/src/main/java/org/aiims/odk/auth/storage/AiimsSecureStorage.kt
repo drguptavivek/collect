@@ -118,7 +118,6 @@ class AiimsSecureStorage private constructor(
         get() = regularPrefs.getString(AiimsConstants.KEY_USER_NAME, null)
         set(value) = regularPrefs.edit().putString(AiimsConstants.KEY_USER_NAME, value).apply()
 
-
     // ===== Utility Methods =====
 
     /**
@@ -179,7 +178,7 @@ class AiimsSecureStorage private constructor(
 
         // Lock if max attempts reached and less than 24 hours since last attempt
         return attempts >= AiimsConstants.MAX_PIN_ATTEMPTS &&
-                System.currentTimeMillis() - lastAttempt < AiimsConstants.DAY_IN_MS
+            System.currentTimeMillis() - lastAttempt < AiimsConstants.DAY_IN_MS
     }
 
     /**

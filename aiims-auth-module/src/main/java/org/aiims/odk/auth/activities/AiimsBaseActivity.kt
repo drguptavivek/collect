@@ -33,22 +33,22 @@ abstract class AiimsBaseActivity : AppCompatActivity() {
     private var permissionRequestInProgress = false
 
     protected fun checkAndRequestPermissions(force: Boolean = false) {
-         if (permissionRequestInProgress) return
+        if (permissionRequestInProgress) return
 
-         val permissionsToRequest = mutableListOf<String>()
+        val permissionsToRequest = mutableListOf<String>()
 
         // Location Permissions
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-             permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+            permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
         }
-        
+
         // Notification Permissions (Android 13+)
         if (android.os.Build.VERSION.SDK_INT >= 33) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                 permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
 
@@ -58,17 +58,17 @@ abstract class AiimsBaseActivity : AppCompatActivity() {
             if (!force) {
                 var showRationale = false
                 for (perm in permissionsToRequest) {
-                     if (ActivityCompat.shouldShowRequestPermissionRationale(this, perm)) {
-                         showRationale = true
-                         break
-                     }
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(this, perm)) {
+                        showRationale = true
+                        break
+                    }
                 }
 
                 if (showRationale) {
                     return
                 }
             }
-            
+
             permissionRequestInProgress = true
             ActivityCompat.requestPermissions(
                 this,
@@ -95,7 +95,7 @@ abstract class AiimsBaseActivity : AppCompatActivity() {
             val locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
             val providers = locationManager.getProviders(true)
             var bestLocation: Location? = null
-            
+
             for (provider in providers) {
                 val l = locationManager.getLastKnownLocation(provider) ?: continue
                 if (bestLocation == null || l.accuracy < bestLocation.accuracy) {

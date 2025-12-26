@@ -115,3 +115,5 @@ dependencies {
     // Background Work
     implementation 'androidx.work:work-runtime-ktx:2.9.0'
 }
+
+apply from: '../config/quality.gradle'
