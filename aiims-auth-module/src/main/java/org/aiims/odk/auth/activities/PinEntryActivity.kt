@@ -81,7 +81,7 @@ class PinEntryActivity : AiimsBaseActivity() {
 
         // Title
         val title = TextView(this).apply {
-            text = "Enter PIN"
+            text = getString(org.aiims.odk.auth.R.string.aiims_pin)
             textSize = 28f
             setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(0, 0, 0, 20)
@@ -90,7 +90,7 @@ class PinEntryActivity : AiimsBaseActivity() {
 
         // Subtitle
         val subtitle = TextView(this).apply {
-            text = "Enter your 4-digit PIN to continue"
+            text = getString(org.aiims.odk.auth.R.string.aiims_enter_pin_message)
             textSize = 16f
             setTextColor(android.graphics.Color.GRAY)
             setPadding(0, 0, 0, 20)
@@ -99,7 +99,7 @@ class PinEntryActivity : AiimsBaseActivity() {
 
         // User info
         userTextView = TextView(this).apply {
-            text = "Welcome back"
+            text = getString(org.aiims.odk.auth.R.string.aiims_welcome_back_user, "")
             textSize = 16f
             setTextColor(android.graphics.Color.DKGRAY)
             setPadding(0, 0, 0, 40)
@@ -133,7 +133,7 @@ class PinEntryActivity : AiimsBaseActivity() {
 
         // Grant Permissions Button (initially hidden)
         grantPermissionsButton = Button(this).apply {
-            text = "Grant Permissions"
+            text = getString(org.aiims.odk.auth.R.string.aiims_button_grant_permissions)
             textSize = 16f
             setBackgroundColor(android.graphics.Color.parseColor("#1976D2")) // Blue
             setTextColor(android.graphics.Color.WHITE)
@@ -146,7 +146,7 @@ class PinEntryActivity : AiimsBaseActivity() {
 
         // PIN field
         val pinHint = TextView(this).apply {
-            text = "PIN:"
+            text = getString(org.aiims.odk.auth.R.string.aiims_pin_hint)
             textSize = 16f
             setPadding(0, 20, 0, 8)
         }
@@ -160,7 +160,7 @@ class PinEntryActivity : AiimsBaseActivity() {
 
         // Enter Button
         enterButton = Button(this).apply {
-            text = "Enter"
+            text = getString(org.aiims.odk.auth.R.string.aiims_button_verify)
             textSize = 18f
             setPadding(0, 30, 0, 30)
             setOnClickListener {
@@ -170,7 +170,7 @@ class PinEntryActivity : AiimsBaseActivity() {
 
         // Forgot PIN
         val forgotPinButton = Button(this).apply {
-            text = "Forgot PIN?"
+            text = getString(org.aiims.odk.auth.R.string.aiims_button_forgot_pin)
             textSize = 14f
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
             setTextColor(android.graphics.Color.BLUE)
@@ -203,8 +203,7 @@ class PinEntryActivity : AiimsBaseActivity() {
         lifecycleScope.launch {
             authManager.currentUser.collect { user ->
                 user?.let {
-                    val welcomeText = "Welcome back,\n${it.username}"
-                    userTextView.text = welcomeText
+                    userTextView.text = getString(org.aiims.odk.auth.R.string.aiims_welcome_back_user, it.username)
                 }
             }
         }
@@ -216,12 +215,12 @@ class PinEntryActivity : AiimsBaseActivity() {
         // Validation
         when {
             pin.isEmpty() -> {
-                pinField.error = "PIN is required"
+                pinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_required)
                 pinField.requestFocus()
                 return
             }
             pin.length != 4 -> {
-                pinField.error = "PIN must be 4 digits"
+                pinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_digits)
                 pinField.requestFocus()
                 return
             }
@@ -240,7 +239,7 @@ class PinEntryActivity : AiimsBaseActivity() {
             if (pinManager.isMaxAttemptsReached()) {
                 Toast.makeText(
                     this@PinEntryActivity,
-                    "Too many failed attempts. Please login again.",
+                    getString(org.aiims.odk.auth.R.string.aiims_error_too_many_attempts),
                     Toast.LENGTH_LONG
                 ).show()
 
@@ -252,7 +251,7 @@ class PinEntryActivity : AiimsBaseActivity() {
             if (pinManager.verifyPin(pin)) {
                 Toast.makeText(
                     this@PinEntryActivity,
-                    "PIN verified successfully",
+                    getString(org.aiims.odk.auth.R.string.aiims_pin_success),
                     Toast.LENGTH_SHORT
                 ).show()
 
@@ -267,7 +266,7 @@ class PinEntryActivity : AiimsBaseActivity() {
                 if (pinManager.isMaxAttemptsReached()) {
                     Toast.makeText(
                         this@PinEntryActivity,
-                        "Max attempts reached. Logging out...",
+                        getString(org.aiims.odk.auth.R.string.aiims_error_max_attempts_reached),
                         Toast.LENGTH_LONG
                     ).show()
                     authManager.logoutDueToFailedPin()
@@ -275,7 +274,7 @@ class PinEntryActivity : AiimsBaseActivity() {
                     val attemptsLeft = 3 - pinManager.getFailedAttempts()
                     Toast.makeText(
                         this@PinEntryActivity,
-                        "Incorrect PIN. $attemptsLeft attempts remaining.",
+                        getString(org.aiims.odk.auth.R.string.aiims_error_incorrect_pin_attempts, attemptsLeft),
                         Toast.LENGTH_SHORT
                     ).show()
 
@@ -295,7 +294,7 @@ class PinEntryActivity : AiimsBaseActivity() {
         // Clear the session but preserve PIN
         Toast.makeText(
             this,
-            "Session cleared. Please login again.",
+            getString(org.aiims.odk.auth.R.string.aiims_session_expired),
             Toast.LENGTH_LONG
         ).show()
 
@@ -317,10 +316,10 @@ class PinEntryActivity : AiimsBaseActivity() {
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
         if (hasLocation) {
-            locationStatusView.text = "✓ Location Access Granted"
+            locationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_location_access_granted)
             locationStatusView.setTextColor(Color.parseColor("#2E7D32")) // Green
         } else {
-            locationStatusView.text = "✗ Location Access Required"
+            locationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_location_access_required)
             locationStatusView.setTextColor(Color.parseColor("#C62828")) // Red
         }
 
@@ -329,10 +328,10 @@ class PinEntryActivity : AiimsBaseActivity() {
         if (android.os.Build.VERSION.SDK_INT >= 33) {
             hasNotif = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
             if (hasNotif) {
-                notificationStatusView.text = "✓ Notifications Enabled"
+                notificationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_notifications_enabled)
                 notificationStatusView.setTextColor(Color.parseColor("#2E7D32")) // Green
             } else {
-                notificationStatusView.text = "✗ Notifications Disabled"
+                notificationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_notifications_disabled)
                 notificationStatusView.setTextColor(Color.parseColor("#C62828")) // Red
             }
         }

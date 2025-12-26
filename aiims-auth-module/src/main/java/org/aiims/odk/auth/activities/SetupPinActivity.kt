@@ -51,7 +51,7 @@ class SetupPinActivity : AppCompatActivity() {
 
         // Title
         val title = TextView(this).apply {
-            text = "Setup PIN"
+            text = getString(org.aiims.odk.auth.R.string.aiims_pin_setup_title)
             textSize = 28f
             setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(0, 0, 0, 20)
@@ -60,7 +60,7 @@ class SetupPinActivity : AppCompatActivity() {
 
         // Subtitle
         val subtitle = TextView(this).apply {
-            text = "Create a 4-digit PIN for quick access"
+            text = getString(org.aiims.odk.auth.R.string.aiims_pin_setup_message)
             textSize = 16f
             setTextColor(android.graphics.Color.GRAY)
             setPadding(0, 0, 0, 20)
@@ -69,7 +69,7 @@ class SetupPinActivity : AppCompatActivity() {
 
         // User info
         userTextView = TextView(this).apply {
-            text = "Welcome"
+            text = getString(org.aiims.odk.auth.R.string.aiims_welcome_user, "")
             textSize = 16f
             setTextColor(android.graphics.Color.DKGRAY)
             setPadding(0, 0, 0, 40)
@@ -84,7 +84,7 @@ class SetupPinActivity : AppCompatActivity() {
 
         // PIN field
         val pinHint = TextView(this).apply {
-            text = "Enter PIN (4 digits):"
+            text = getString(org.aiims.odk.auth.R.string.aiims_pin_hint)
             textSize = 16f
             setPadding(0, 20, 0, 8)
         }
@@ -98,7 +98,7 @@ class SetupPinActivity : AppCompatActivity() {
 
         // Confirm PIN field
         val confirmPinHint = TextView(this).apply {
-            text = "Confirm PIN:"
+            text = getString(org.aiims.odk.auth.R.string.aiims_confirm_pin_hint)
             textSize = 16f
             setPadding(0, 20, 0, 8)
         }
@@ -112,7 +112,7 @@ class SetupPinActivity : AppCompatActivity() {
 
         // Setup Button
         setupButton = Button(this).apply {
-            text = "Setup PIN"
+            text = getString(org.aiims.odk.auth.R.string.aiims_button_setup)
             textSize = 18f
             setPadding(0, 30, 0, 30)
             setOnClickListener {
@@ -141,8 +141,7 @@ class SetupPinActivity : AppCompatActivity() {
         lifecycleScope.launch {
             authManager.currentUser.collect { user ->
                 user?.let {
-                    val welcomeText = "Welcome,\n${it.username}"
-                    userTextView.text = welcomeText
+                    userTextView.text = getString(org.aiims.odk.auth.R.string.aiims_welcome_user, it.username)
                 }
             }
         }
@@ -155,22 +154,22 @@ class SetupPinActivity : AppCompatActivity() {
         // Validation
         when {
             pin.isEmpty() -> {
-                pinField.error = "PIN is required"
+                pinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_required)
                 pinField.requestFocus()
                 return
             }
             pin.length != 4 -> {
-                pinField.error = "PIN must be 4 digits"
+                pinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_digits)
                 pinField.requestFocus()
                 return
             }
             confirmPin.isEmpty() -> {
-                confirmPinField.error = "Please confirm your PIN"
+                confirmPinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_confirm)
                 confirmPinField.requestFocus()
                 return
             }
             pin != confirmPin -> {
-                confirmPinField.error = "PINs do not match"
+                confirmPinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_mismatch)
                 confirmPinField.requestFocus()
                 return
             }
@@ -195,7 +194,7 @@ class SetupPinActivity : AppCompatActivity() {
 
             Toast.makeText(
                 this@SetupPinActivity,
-                "PIN setup successful!",
+                getString(org.aiims.odk.auth.R.string.aiims_pin_setup_success),
                 Toast.LENGTH_SHORT
             ).show()
 

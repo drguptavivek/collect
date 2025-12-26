@@ -111,22 +111,22 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             if (centralProjectId != null && serverUrl != null) {
                 // Set Active Project in Auth Manager
                 authManager.setActiveProject(centralProjectId)
-                statusText.text = "Project Configured: $currentSystemProjectId\nServer: $serverUrl"
+                statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, currentSystemProjectId, serverUrl)
                 statusText.visibility = View.VISIBLE
                 enableLoginUi(true)
             } else {
-                statusText.text = "Invalid Project Configuration.\nURL: $serverUrl"
+                statusText.text = getString(org.aiims.odk.auth.R.string.aiims_invalid_project_config, serverUrl)
                 statusText.visibility = View.VISIBLE
                 enableLoginUi(false)
             }
         } catch (e: Exception) {
-            statusText.text = "Error reading project settings: ${e.message}"
+            statusText.text = getString(org.aiims.odk.auth.R.string.aiims_error_reading_project_settings, e.message)
             enableLoginUi(false)
         }
     }
 
     private fun showProjectMissingState() {
-        statusText.text = "No Project Configured. Please scan a QR code."
+        statusText.text = getString(org.aiims.odk.auth.R.string.aiims_no_project_configured)
         statusText.visibility = View.VISIBLE
         enableLoginUi(false)
         scanQrButton.visibility = View.VISIBLE
@@ -146,7 +146,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         val password = passwordField.text.toString()
 
         if (username.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Please enter credentials", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_invalid_credentials), Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -163,7 +163,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
             when (result) {
                 is AuthResult.Success -> {
-                    Toast.makeText(this@AiimsLoginActivity, "Welcome ${result.user.username}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@AiimsLoginActivity, getString(org.aiims.odk.auth.R.string.aiims_welcome_user, result.user.username), Toast.LENGTH_SHORT).show()
 
                     // Trigger Telemetry with Location (Manager sends one without location, we refine it here)
                     lifecycleScope.launch {
@@ -296,14 +296,14 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         }
 
         val title = TextView(this).apply {
-            text = "AIIMS ODK Collect"
+            text = getString(org.aiims.odk.auth.R.string.aiims_app_name)
             textSize = 24f
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 40)
         }
 
         statusText = TextView(this).apply {
-            text = "Initializing..."
+            text = getString(org.aiims.odk.auth.R.string.aiims_initializing)
             textSize = 14f
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 20)
@@ -325,7 +325,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
         // Grant Permissions Button (initially hidden)
         grantPermissionsButton = Button(this).apply {
-            text = "Grant Permissions"
+            text = getString(org.aiims.odk.auth.R.string.aiims_button_grant_permissions)
             textSize = 16f
             setBackgroundColor(android.graphics.Color.parseColor("#1976D2")) // Blue
             setTextColor(android.graphics.Color.WHITE)
@@ -337,11 +337,11 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         }
 
         usernameField = EditText(this).apply {
-            hint = "Username"
+            hint = getString(org.aiims.odk.auth.R.string.aiims_username_hint)
         }
 
         passwordField = EditText(this).apply {
-            hint = "Password"
+            hint = getString(org.aiims.odk.auth.R.string.aiims_password_hint)
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
         }
 
@@ -350,12 +350,12 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         }
 
         loginButton = Button(this).apply {
-            text = "Login"
+            text = getString(org.aiims.odk.auth.R.string.aiims_button_login)
             setOnClickListener { attemptLogin() }
         }
 
         scanQrButton = Button(this).apply {
-            text = "Scan QR Code"
+            text = getString(org.aiims.odk.auth.R.string.aiims_button_scan_qr_code)
             visibility = View.GONE
             setOnClickListener { launchQrScanner() }
         }
@@ -372,7 +372,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
         // Cancel / Work Offline Button for Re-Auth
         val cancelButton = Button(this).apply {
-            text = "Work Offline (Grace Period)"
+            text = getString(org.aiims.odk.auth.R.string.aiims_button_work_offline_grace)
             visibility = View.GONE
             setOnClickListener {
                 authManager.snoozeSoftExpiry() // Snooze the prompt
@@ -392,8 +392,8 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
         // Handle Re-Auth Mode
         if (intent.getBooleanExtra("is_reauth", false)) {
-            title.text = "Session Expired"
-            statusText.text = "Server is reachable. Please re-login to refresh your session.\nOr work offline for now."
+            title.text = getString(org.aiims.odk.auth.R.string.aiims_session_expired_title)
+            statusText.text = getString(org.aiims.odk.auth.R.string.aiims_session_expired_message)
             cancelButton.visibility = View.VISIBLE
             // Default Cancel logic for Back Press
         }
@@ -416,7 +416,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         }
 
         val baseUrlInput = EditText(this).apply {
-            hint = "Base URL (e.g. https://central.local)"
+            hint = getString(org.aiims.odk.auth.R.string.aiims_base_url_hint)
             // Use existing base if feasible, or default
             val current = serverUrl ?: "https://central.local"
             // Strip project part if present for cleaner default
@@ -424,24 +424,24 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         }
 
         val projectIdInput = EditText(this).apply {
-            hint = "Project ID (e.g. 1)"
+            hint = getString(org.aiims.odk.auth.R.string.aiims_project_id_hint)
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
             setText(centralProjectId ?: "1")
         }
 
-        layout.addView(TextView(this).apply { text = "Server Base URL" })
+        layout.addView(TextView(this).apply { text = getString(org.aiims.odk.auth.R.string.aiims_server_base_url) })
         layout.addView(baseUrlInput)
         layout.addView(TextView(this).apply {
-            text = "Project ID"
+            text = getString(org.aiims.odk.auth.R.string.aiims_project_id_label)
             setPadding(0, 30, 0, 0)
         })
         layout.addView(projectIdInput)
 
         try {
             AlertDialog.Builder(this)
-                .setTitle("Manual Configuration")
+                .setTitle(getString(org.aiims.odk.auth.R.string.aiims_manual_configuration_title))
                 .setView(layout)
-                .setPositiveButton("Set") { _, _ ->
+                .setPositiveButton(getString(org.aiims.odk.auth.R.string.aiims_button_set)) { _, _ ->
                     val baseUrl = baseUrlInput.text.toString().trim().trimEnd('/')
                     val pid = projectIdInput.text.toString().trim()
 
@@ -450,15 +450,15 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                         val fullUrl = "$baseUrl/v1/projects/$pid"
                         manualConfigureProject(fullUrl)
                     } else {
-                        Toast.makeText(this, "Please enter both Base URL and Project ID", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_manual_config_missing), Toast.LENGTH_SHORT).show()
                     }
                 }
-                .setNeutralButton("Direct URL") { _, _ ->
+                .setNeutralButton(getString(org.aiims.odk.auth.R.string.aiims_button_direct_url)) { _, _ ->
                 }
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(getString(org.aiims.odk.auth.R.string.aiims_button_cancel), null)
                 .show()
         } catch (e: Exception) {
-            Toast.makeText(this, "Error showing settings: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_reading_project_settings, e.message), Toast.LENGTH_SHORT).show()
             e.printStackTrace()
         }
     }
@@ -525,14 +525,14 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
                 authManager.setActiveProject(centralPid)
 
-                statusText.text = "Configured & Saved (ID: $centralPid)\nServer: $url"
+                statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, centralPid, url)
                 statusText.visibility = View.VISIBLE
                 enableLoginUi(true)
 
-                Toast.makeText(this, "Project Saved: $targetProjectUuid", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_project_saved, targetProjectUuid), Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 android.util.Log.e("AiimsLogin", "Error saving project", e)
-                Toast.makeText(this, "Error saving project: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_saving_project, e.message), Toast.LENGTH_LONG).show()
 
                 // Fallback
                 currentSystemProjectId = "MANUAL_FALLBACK"
@@ -542,7 +542,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 enableLoginUi(true)
             }
         } else {
-            Toast.makeText(this, "Invalid Project URL format", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_invalid_url_format), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -590,10 +590,10 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
         if (hasLocation) {
-            locationStatusView.text = "✓ Location Access Granted"
+            locationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_location_access_granted)
             locationStatusView.setTextColor(android.graphics.Color.parseColor("#2E7D32")) // Green
         } else {
-            locationStatusView.text = "✗ Location Access Required"
+            locationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_location_access_required)
             locationStatusView.setTextColor(android.graphics.Color.parseColor("#C62828")) // Red
         }
 
@@ -602,10 +602,10 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         if (android.os.Build.VERSION.SDK_INT >= 33) {
             hasNotif = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
             if (hasNotif) {
-                notificationStatusView.text = "✓ Notifications Enabled"
+                notificationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_notifications_enabled)
                 notificationStatusView.setTextColor(android.graphics.Color.parseColor("#2E7D32")) // Green
             } else {
-                notificationStatusView.text = "✗ Notifications Disabled"
+                notificationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_notifications_disabled)
                 notificationStatusView.setTextColor(android.graphics.Color.parseColor("#C62828")) // Red
             }
         }

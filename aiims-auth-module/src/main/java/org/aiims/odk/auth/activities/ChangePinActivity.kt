@@ -43,7 +43,7 @@ class ChangePinActivity : AppCompatActivity() {
 
         // Title
         val title = TextView(this).apply {
-            text = "Change PIN"
+            text = getString(org.aiims.odk.auth.R.string.aiims_change_pin_title)
             textSize = 28f
             setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(0, 0, 0, 20)
@@ -52,7 +52,7 @@ class ChangePinActivity : AppCompatActivity() {
 
         // Subtitle
         val subtitle = TextView(this).apply {
-            text = "Update your 4-digit PIN for quick access"
+            text = getString(org.aiims.odk.auth.R.string.aiims_change_pin_message)
             textSize = 16f
             setTextColor(android.graphics.Color.GRAY)
             setPadding(0, 0, 0, 20)
@@ -61,7 +61,7 @@ class ChangePinActivity : AppCompatActivity() {
 
         // User info
         userTextView = TextView(this).apply {
-            text = "Welcome"
+            text = getString(org.aiims.odk.auth.R.string.aiims_welcome_user, "")
             textSize = 16f
             setTextColor(android.graphics.Color.DKGRAY)
             setPadding(0, 0, 0, 40)
@@ -76,7 +76,7 @@ class ChangePinActivity : AppCompatActivity() {
 
         // Current PIN field
         val currentPinHint = TextView(this).apply {
-            text = "Current PIN:"
+            text = getString(org.aiims.odk.auth.R.string.aiims_current_pin_hint)
             textSize = 16f
             setPadding(0, 20, 0, 8)
         }
@@ -90,7 +90,7 @@ class ChangePinActivity : AppCompatActivity() {
 
         // New PIN field
         val newPinHint = TextView(this).apply {
-            text = "New PIN (4 digits):"
+            text = getString(org.aiims.odk.auth.R.string.aiims_new_pin_hint)
             textSize = 16f
             setPadding(0, 20, 0, 8)
         }
@@ -104,7 +104,7 @@ class ChangePinActivity : AppCompatActivity() {
 
         // Confirm new PIN field
         val confirmPinHint = TextView(this).apply {
-            text = "Confirm New PIN:"
+            text = getString(org.aiims.odk.auth.R.string.aiims_confirm_new_pin_hint)
             textSize = 16f
             setPadding(0, 20, 0, 8)
         }
@@ -118,7 +118,7 @@ class ChangePinActivity : AppCompatActivity() {
 
         // Change PIN Button
         changeButton = Button(this).apply {
-            text = "Change PIN"
+            text = getString(org.aiims.odk.auth.R.string.aiims_button_change)
             textSize = 18f
             setPadding(0, 30, 0, 30)
             setOnClickListener {
@@ -128,7 +128,7 @@ class ChangePinActivity : AppCompatActivity() {
 
         // Cancel Button
         val cancelButton = Button(this).apply {
-            text = "Cancel"
+            text = getString(org.aiims.odk.auth.R.string.aiims_button_cancel)
             textSize = 16f
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
             setTextColor(android.graphics.Color.GRAY)
@@ -165,8 +165,7 @@ class ChangePinActivity : AppCompatActivity() {
         lifecycleScope.launch {
             authManager.currentUser.collect { user ->
                 user?.let {
-                    val welcomeText = "Hello,\n${it.username}"
-                    userTextView.text = welcomeText
+                    userTextView.text = getString(org.aiims.odk.auth.R.string.aiims_welcome_user, it.username)
                 }
             }
         }
@@ -180,37 +179,37 @@ class ChangePinActivity : AppCompatActivity() {
         // Validation
         when {
             currentPin.isEmpty() -> {
-                currentPinField.error = "Current PIN is required"
+                currentPinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_required)
                 currentPinField.requestFocus()
                 return
             }
             currentPin.length != 4 -> {
-                currentPinField.error = "PIN must be 4 digits"
+                currentPinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_digits)
                 currentPinField.requestFocus()
                 return
             }
             newPin.isEmpty() -> {
-                newPinField.error = "New PIN is required"
+                newPinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_required)
                 newPinField.requestFocus()
                 return
             }
             newPin.length != 4 -> {
-                newPinField.error = "PIN must be 4 digits"
+                newPinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_digits)
                 newPinField.requestFocus()
                 return
             }
             confirmPin.isEmpty() -> {
-                confirmPinField.error = "Please confirm your new PIN"
+                confirmPinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_confirm)
                 confirmPinField.requestFocus()
                 return
             }
             confirmPin != newPin -> {
-                confirmPinField.error = "New PINs do not match"
+                confirmPinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_mismatch)
                 confirmPinField.requestFocus()
                 return
             }
             newPin == currentPin -> {
-                newPinField.error = "New PIN must be different from current PIN"
+                newPinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_different)
                 newPinField.requestFocus()
                 return
             }
@@ -230,7 +229,7 @@ class ChangePinActivity : AppCompatActivity() {
             if (!pinManager.verifyPin(currentPin)) {
                 Toast.makeText(
                     this@ChangePinActivity,
-                    "Current PIN is incorrect",
+                    getString(org.aiims.odk.auth.R.string.aiims_error_pin_incorrect),
                     Toast.LENGTH_LONG
                 ).show()
                 currentPinField.text.clear()
@@ -243,7 +242,7 @@ class ChangePinActivity : AppCompatActivity() {
 
             Toast.makeText(
                 this@ChangePinActivity,
-                "PIN changed successfully!",
+                getString(org.aiims.odk.auth.R.string.aiims_pin_changed_success),
                 Toast.LENGTH_SHORT
             ).show()
 

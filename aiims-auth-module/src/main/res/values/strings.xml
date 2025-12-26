@@ -21,6 +21,33 @@
     <string name="aiims_pin_incorrect">Incorrect PIN</string>
     <string name="aiims_pin_set">PIN set successfully</string>
     <string name="aiims_session_expired">Session expired. Please login again.</string>
+    <string name="aiims_welcome_user">Welcome %s</string>
+    <string name="aiims_welcome_back_user">Welcome back, %s</string>
+    <string name="aiims_initializing">Initializing...</string>
+    <string name="aiims_no_project_configured">No Project Configured. Please scan a QR code.</string>
+    <string name="aiims_project_configured">Project Configured: %1$s\nServer: %2$s</string>
+    <string name="aiims_invalid_project_config">Invalid Project Configuration.\nURL: %s</string>
+    <string name="aiims_error_reading_project_settings">Error reading project settings: %s</string>
+    <string name="aiims_project_saved">Project Saved: %s</string>
+    <string name="aiims_token_copied">Token copied to clipboard</string>
+    <string name="aiims_device_id_copied">Device ID copied</string>
+
+    <!-- Labels and Hints -->
+    <string name="aiims_username_hint">Username</string>
+    <string name="aiims_password_hint">Password</string>
+    <string name="aiims_pin_hint">PIN:</string>
+    <string name="aiims_confirm_pin_hint">Confirm PIN:</string>
+    <string name="aiims_current_pin_hint">Current PIN:</string>
+    <string name="aiims_new_pin_hint">New PIN (4 digits):</string>
+    <string name="aiims_confirm_new_pin_hint">Confirm New PIN:</string>
+    <string name="aiims_server_base_url">Server Base URL</string>
+    <string name="aiims_project_id_label">Project ID</string>
+    <string name="aiims_base_url_hint">Base URL (e.g. https://central.local)</string>
+    <string name="aiims_project_id_hint">Project ID (e.g. 1)</string>
+    <string name="aiims_copy_to_clipboard_hint">(Tap to copy to clipboard)</string>
+    <string name="aiims_user_details_title">User Details</string>
+    <string name="aiims_device_token_title">Device Token</string>
+    <string name="aiims_device_id_title">Device ID</string>
 
     <!-- Settings -->
     <string name="aiims_api_url">API URL</string>
@@ -43,25 +70,58 @@
     <string name="aiims_button_cancel">Cancel</string>
     <string name="aiims_button_ok">OK</string>
     <string name="aiims_button_save">Save</string>
+    <string name="aiims_button_scan_qr_code">Scan QR Code</string>
+    <string name="aiims_button_work_offline_grace">Work Offline (Grace Period)</string>
+    <string name="aiims_button_grant_permissions">Grant Permissions</string>
+    <string name="aiims_button_forgot_pin">Forgot PIN?</string>
+    <string name="aiims_button_back_to_odk">Back to ODK</string>
+    <string name="aiims_button_set">Set</string>
+    <string name="aiims_button_direct_url">Direct URL</string>
 
     <!-- Errors -->
     <string name="aiims_error_network">Network error. Please check your connection.</string>
     <string name="aiims_error_invalid_credentials">Invalid email or password.</string>
     <string name="aiims_error_pin_locked">PIN locked. Try again tomorrow.</string>
     <string name="aiims_error_server">Server error. Please try again later.</string>
+    <string name="aiims_error_pin_required">PIN is required</string>
+    <string name="aiims_error_pin_digits">PIN must be 4 digits</string>
+    <string name="aiims_error_pin_confirm">Please confirm your PIN</string>
+    <string name="aiims_error_pin_mismatch">PINs do not match</string>
+    <string name="aiims_error_pin_different">New PIN must be different from current PIN</string>
+    <string name="aiims_error_pin_incorrect">Current PIN is incorrect</string>
+    <string name="aiims_error_too_many_attempts">Too many failed attempts. Please login again.</string>
+    <string name="aiims_error_max_attempts_reached">Max attempts reached. Logging out...</string>
+    <string name="aiims_error_incorrect_pin_attempts">Incorrect PIN. %d attempts remaining.</string>
+    <string name="aiims_error_manual_config_missing">Please enter both Base URL and Project ID</string>
+    <string name="aiims_error_saving_project">Error saving project: %s</string>
+    <string name="aiims_error_invalid_url_format">Invalid Project URL format</string>
 
-    <!-- PIN Setup -->
+    <!-- PIN and Permissions -->
     <string name="aiims_pin_create_title">Create PIN</string>
     <string name="aiims_pin_create_message">Create a 4-6 digit PIN for quick access</string>
     <string name="aiims_pin_confirm_title">Confirm PIN</string>
     <string name="aiims_pin_confirm_message">Re-enter your PIN to confirm</string>
     <string name="aiims_pin_mismatch">PINs do not match</string>
     <string name="aiims_pin_weak">PIN is too simple. Use different digits.</string>
+    <string name="aiims_pin_setup_title">Setup PIN</string>
+    <string name="aiims_pin_setup_message">Create a 4-digit PIN for quick access</string>
+    <string name="aiims_pin_setup_success">PIN setup successful!</string>
+    <string name="aiims_pin_changed_success">PIN changed successfully!</string>
+    <string name="aiims_enter_pin_message">Enter your 4-digit PIN to continue</string>
+    <string name="aiims_session_expired_title">Session Expired</string>
+    <string name="aiims_session_expired_message">Server is reachable. Please re-login to refresh your session.\nOr work offline for now.</string>
+    <string name="aiims_location_access_granted">✓ Location Access Granted</string>
+    <string name="aiims_location_access_required">✗ Location Access Required</string>
+    <string name="aiims_notifications_enabled">✓ Notifications Enabled</string>
+    <string name="aiims_notifications_disabled">✗ Notifications Disabled</string>
 
     <!-- Biometric -->
     <string name="aiims_biometric_title">AIIMS Authentication</string>
     <string name="aiims_biometric_subtitle">Use your fingerprint to authenticate</string>
     <string name="aiims_biometric_negative">Cancel</string>
+
+    <string name="aiims_manual_configuration_title">Manual Configuration</string>
+    <string name="aiims_auth_settings_title">Authentication Settings</string>
 
     <!-- Offline Status -->
     <string name="aiims_offline_banner">Working offline</string>

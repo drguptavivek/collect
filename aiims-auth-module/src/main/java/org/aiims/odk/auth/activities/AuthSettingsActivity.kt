@@ -43,7 +43,7 @@ class AuthSettingsActivity : AppCompatActivity() {
 
         // Title
         val title = TextView(this).apply {
-            text = "Authentication Settings"
+            text = getString(org.aiims.odk.auth.R.string.aiims_auth_settings_title)
             textSize = 24f
             setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(0, 0, 0, 40)
@@ -51,7 +51,7 @@ class AuthSettingsActivity : AppCompatActivity() {
 
         // User Details Section
         val userDetailsTitle = TextView(this).apply {
-            text = "User Details"
+            text = getString(org.aiims.odk.auth.R.string.aiims_user_details_title)
             textSize = 18f
             setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(0, 20, 0, 16)
@@ -64,7 +64,7 @@ class AuthSettingsActivity : AppCompatActivity() {
 
         // Device Token Section
         val tokenTitle = TextView(this).apply {
-            text = "Device Token"
+            text = getString(org.aiims.odk.auth.R.string.aiims_device_token_title)
             textSize = 18f
             setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(0, 20, 0, 16)
@@ -80,14 +80,14 @@ class AuthSettingsActivity : AppCompatActivity() {
         tokenText.setOnClickListener {
             // Copy token to clipboard
             val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-            val clip = android.content.ClipData.newPlainText("Device Token", tokenText.text.toString())
+            val clip = android.content.ClipData.newPlainText(getString(org.aiims.odk.auth.R.string.aiims_device_token_title), tokenText.text.toString())
             clipboard.setPrimaryClip(clip)
-            android.widget.Toast.makeText(this@AuthSettingsActivity, "Token copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(this@AuthSettingsActivity, getString(org.aiims.odk.auth.R.string.aiims_token_copied), android.widget.Toast.LENGTH_SHORT).show()
         }
 
         // Device ID Section
         val deviceIdTitle = TextView(this).apply {
-            text = "Device ID"
+            text = getString(org.aiims.odk.auth.R.string.aiims_device_id_title)
             textSize = 18f
             setTypeface(null, android.graphics.Typeface.BOLD)
             setPadding(0, 20, 0, 16)
@@ -101,14 +101,14 @@ class AuthSettingsActivity : AppCompatActivity() {
 
         deviceIdText.setOnClickListener {
             val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-            val clip = android.content.ClipData.newPlainText("Device ID", deviceIdText.text.toString())
+            val clip = android.content.ClipData.newPlainText(getString(org.aiims.odk.auth.R.string.aiims_device_id_title), deviceIdText.text.toString())
             clipboard.setPrimaryClip(clip)
-            android.widget.Toast.makeText(this@AuthSettingsActivity, "Device ID copied", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(this@AuthSettingsActivity, getString(org.aiims.odk.auth.R.string.aiims_device_id_copied), android.widget.Toast.LENGTH_SHORT).show()
         }
 
         // Change PIN Button
         val changePinButton = Button(this).apply {
-            text = "Change PIN"
+            text = getString(org.aiims.odk.auth.R.string.aiims_button_change)
             textSize = 16f
             setPadding(0, 30, 0, 30)
             setOnClickListener {
@@ -118,7 +118,7 @@ class AuthSettingsActivity : AppCompatActivity() {
 
         // Logout Button
         val logoutButton = Button(this).apply {
-            text = "Log Out"
+            text = getString(org.aiims.odk.auth.R.string.aiims_logout)
             textSize = 16f
             setBackgroundColor(android.graphics.Color.parseColor("#FF5252"))
             setTextColor(android.graphics.Color.WHITE)
@@ -130,7 +130,7 @@ class AuthSettingsActivity : AppCompatActivity() {
 
         // Back Button
         val backButton = Button(this).apply {
-            text = "Back to ODK"
+            text = getString(org.aiims.odk.auth.R.string.aiims_button_back_to_odk)
             textSize = 16f
             setBackgroundColor(android.graphics.Color.TRANSPARENT)
             setTextColor(android.graphics.Color.BLUE)
@@ -175,16 +175,16 @@ class AuthSettingsActivity : AppCompatActivity() {
         }
 
         // Get device token from Auth Manager
-        val token = authManager.getActiveProjectToken() ?: "No token found"
+        val token = authManager.getActiveProjectToken() ?: getString(org.aiims.odk.auth.R.string.aiims_error_server)
         tokenText.text = token
 
         // Add hint about tap to copy
-        tokenText.append("\n\n(Tap to copy to clipboard)")
+        tokenText.append("\n\n" + getString(org.aiims.odk.auth.R.string.aiims_copy_to_clipboard_hint))
 
         // Device ID comes from Collect meta prefs
         val deviceId = getSharedPreferences("meta", MODE_PRIVATE).getString("metadata_installid", "No device ID found")
         deviceIdText.text = deviceId ?: "No device ID found"
-        deviceIdText.append("\n\n(Tap to copy to clipboard)")
+        deviceIdText.append("\n\n" + getString(org.aiims.odk.auth.R.string.aiims_copy_to_clipboard_hint))
     }
 
     private fun changePin() {
