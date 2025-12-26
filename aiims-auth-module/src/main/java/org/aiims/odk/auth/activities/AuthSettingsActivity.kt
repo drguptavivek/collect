@@ -8,21 +8,22 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import org.aiims.odk.auth.injection.AiimsAuthDependencyComponentProvider
 import org.aiims.odk.auth.managers.AiimsAuthManager
+import javax.inject.Inject
 
 /**
  * Authentication Settings Activity
  * Displays user details, device token, and options to log out or change PIN
  */
-class AuthSettingsActivity : AppCompatActivity() {
+class AuthSettingsActivity : AiimsBaseActivity() {
 
-    private lateinit var authManager: AiimsAuthManager
+    override fun injectDependencies() {
+        (application as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.inject(this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Initialize auth manager
-        authManager = AiimsAuthManager.getInstance(this)
 
         // Create layout
         val layout = ScrollView(this).apply {

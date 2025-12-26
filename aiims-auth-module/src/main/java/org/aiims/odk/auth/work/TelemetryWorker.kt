@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import org.aiims.odk.auth.injection.AiimsAuthDependencyComponentProvider
 import org.aiims.odk.auth.managers.AiimsAuthManager
 
 class TelemetryWorker(
@@ -17,7 +18,8 @@ class TelemetryWorker(
             // Note: passing null for location.
             // The Manager handles this by sending "unknown" location.
             // This is primarily for presence/heartbeat.
-            AiimsAuthManager.getInstance(applicationContext).submitTelemetry(null)
+            val authManager = (applicationContext as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.authManager
+            authManager.submitTelemetry(null)
             Result.success()
         } catch (e: Exception) {
             Log.e("TelemetryWorker", "Failed to send telemetry", e)

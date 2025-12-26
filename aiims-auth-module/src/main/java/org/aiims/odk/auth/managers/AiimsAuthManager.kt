@@ -24,42 +24,25 @@ import org.aiims.odk.auth.api.User
 import org.aiims.odk.auth.work.TelemetryWorker
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Authentication Manager for Central Backend.
  * Supports Multi-Project Isolation.
  */
-class AiimsAuthManager private constructor(
+@Singleton
+class AiimsAuthManager @Inject constructor(
     private val context: Context,
-    private val projectCleaner: ProjectCleaner
+    private val projectCleaner: ProjectCleaner,
+    private val pinManager: org.aiims.odk.auth.utils.PinManager
 ) {
 
     companion object {
-        @Volatile
-        private var INSTANCE: AiimsAuthManager? = null
         private const val PREFS_NAME = "aiims_auth_prefs"
 
         // Global keys
         private const val KEY_ACTIVE_PROJECT_ID = "active_project_id"
-
-        @JvmStatic
-        fun getInstance(context: Context): AiimsAuthManager {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: throw IllegalStateException("AiimsAuthManager must be initialized with ProjectCleaner first")
-            }
-        }
-
-        @JvmStatic
-        fun init(context: Context, projectCleaner: ProjectCleaner): AiimsAuthManager {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: AiimsAuthManager(context.applicationContext, projectCleaner).also { INSTANCE = it }
-            }
-        }
-
-        @androidx.annotation.VisibleForTesting
-        fun resetInstanceForTesting() {
-            INSTANCE = null
-        }
     }
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -261,7 +244,7 @@ class AiimsAuthManager private constructor(
         val oldUser = getPersistedUser(projectId)
         if (oldUser != null && oldUser.id != newUser.id) {
             android.util.Log.d("AiimsAuthManager", "User changed from ${oldUser.id} to ${newUser.id}. Clearing PIN.")
-            org.aiims.odk.auth.utils.PinManager.getInstance(context).clearPin()
+            pinManager.clearPin()
         }
     }
 
@@ -321,7 +304,7 @@ class AiimsAuthManager private constructor(
         }
 
         // Clear local PIN
-        org.aiims.odk.auth.utils.PinManager.getInstance(context).clearPin()
+        pinManager.clearPin()
 
         if (activeProjectId == projectId) {
             refreshState()

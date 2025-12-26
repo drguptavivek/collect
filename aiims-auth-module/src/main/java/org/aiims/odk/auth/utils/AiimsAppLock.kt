@@ -14,7 +14,11 @@ import org.aiims.odk.auth.managers.AuthState
 /**
  * Watches app foreground/background transitions and forces PIN entry when returning to the app.
  */
-class AiimsAppLock(private val application: Application) : Application.ActivityLifecycleCallbacks {
+class AiimsAppLock(
+    private val application: Application,
+    private val authManager: AiimsAuthManager,
+    private val pinManager: PinManager
+) : Application.ActivityLifecycleCallbacks {
 
     private var startedActivities = 0
     private var shouldRequirePin = false
@@ -29,8 +33,6 @@ class AiimsAppLock(private val application: Application) : Application.ActivityL
             return
         }
 
-        val authManager = AiimsAuthManager.getInstance(application)
-        val pinManager = PinManager.getInstance(application)
         val authState = authManager.getCurrentAuthState()
 
         if (authState == AuthState.LOGGED_IN) {

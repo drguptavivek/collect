@@ -8,20 +8,25 @@ import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import org.aiims.odk.auth.managers.AiimsAuthManager
+import org.aiims.odk.auth.injection.AiimsAuthDependencyComponentProvider
 import org.aiims.odk.auth.utils.PinManager
+import javax.inject.Inject
 
 /**
  * PIN Setup Activity
  * Required after initial login for two-factor authentication
  */
-class SetupPinActivity : AppCompatActivity() {
+class SetupPinActivity : AiimsBaseActivity() {
 
-    private lateinit var authManager: AiimsAuthManager
-    private lateinit var pinManager: PinManager
+    @Inject
+    lateinit var pinManager: PinManager
+
+    override fun injectDependencies() {
+        (application as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.inject(this)
+    }
+
     private lateinit var pinField: EditText
     private lateinit var confirmPinField: EditText
     private lateinit var setupButton: Button
@@ -34,10 +39,6 @@ class SetupPinActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Initialize auth manager and pin manager
-        authManager = AiimsAuthManager.getInstance(this)
-        pinManager = PinManager.getInstance(this)
 
         // Get token data from intent
         authToken = intent.getStringExtra("authToken") ?: ""

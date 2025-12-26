@@ -9,15 +9,17 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import org.aiims.odk.auth.injection.AiimsAuthDependencyComponentProvider
 import org.aiims.odk.auth.managers.AiimsAuthManager
+import javax.inject.Inject
 
 /**
  * Base activity for AIIMS authentication with Location capabilities
  */
 abstract class AiimsBaseActivity : AppCompatActivity() {
 
-    protected lateinit var authManager: AiimsAuthManager
-        private set
+    @Inject
+    lateinit var authManager: AiimsAuthManager
 
     companion object {
         const val PERMISSION_REQUEST_CODE = 1001
@@ -25,10 +27,10 @@ abstract class AiimsBaseActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Initialize auth manager
-        authManager = AiimsAuthManager.getInstance(this)
+        injectDependencies()
     }
+
+    protected abstract fun injectDependencies()
 
     private var permissionRequestInProgress = false
 

@@ -18,14 +18,25 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.aiims.odk.auth.api.AuthResult
+import org.aiims.odk.auth.injection.AiimsAuthDependencyComponentProvider
+import org.aiims.odk.auth.managers.AiimsAuthManager
 import org.aiims.odk.auth.utils.AiimsProjectUtils
+import org.aiims.odk.auth.utils.PinManager
 import org.aiims.odk.auth.utils.TokenRevocationManager
+import javax.inject.Inject
 
 /**
  * AIIMS Login Activity (Central Backend Version)
  * Automatically detects the current ODK Project and authenticates against it.
  */
 class AiimsLoginActivity : AiimsBaseActivity() {
+
+    @Inject
+    lateinit var pinManager: PinManager
+
+    override fun injectDependencies() {
+        (application as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.inject(this)
+    }
 
     // authManager is inherited
     private lateinit var usernameField: EditText
@@ -184,7 +195,6 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                     }
 
                     // Check for PIN
-                    val pinManager = org.aiims.odk.auth.utils.PinManager.getInstance(this@AiimsLoginActivity)
                     if (pinManager.isPinSet()) {
                         navigateToMain()
                     } else {

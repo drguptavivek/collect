@@ -19,10 +19,9 @@ class PinManagerTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
         // Reset Singleton and Prefs to ensure clean state
-        PinManager.resetInstanceForTesting()
         context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE).edit().clear().commit()
 
-        pinManager = PinManager.getInstance(context)
+        pinManager = PinManager(context)
     }
 
     @Test

@@ -10,17 +10,24 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import org.aiims.odk.auth.injection.AiimsAuthDependencyComponentProvider
 import org.aiims.odk.auth.managers.AiimsAuthManager
 import org.aiims.odk.auth.utils.PinManager
+import javax.inject.Inject
 
 /**
  * Change PIN Activity
  * Allows users to change their existing 4-digit PIN
  */
-class ChangePinActivity : AppCompatActivity() {
+class ChangePinActivity : AiimsBaseActivity() {
 
-    private lateinit var authManager: AiimsAuthManager
-    private lateinit var pinManager: PinManager
+    @Inject
+    lateinit var pinManager: PinManager
+
+    override fun injectDependencies() {
+        (application as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.inject(this)
+    }
+
     private lateinit var currentPinField: EditText
     private lateinit var newPinField: EditText
     private lateinit var confirmPinField: EditText
@@ -30,10 +37,6 @@ class ChangePinActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Initialize auth manager and pin manager
-        authManager = AiimsAuthManager.getInstance(this)
-        pinManager = PinManager.getInstance(this)
 
         // Create layout
         val layout = android.widget.LinearLayout(this).apply {

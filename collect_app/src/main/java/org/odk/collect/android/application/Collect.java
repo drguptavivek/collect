@@ -23,11 +23,15 @@ import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.aiims.odk.auth.injection.AiimsAuthDependencyComponent;
+import org.aiims.odk.auth.injection.AiimsAuthDependencyComponentProvider;
+import org.aiims.odk.auth.injection.DaggerAiimsAuthDependencyComponent;
 import org.aiims.odk.auth.utils.AiimsAppLock;
 import org.jetbrains.annotations.NotNull;
 import org.odk.collect.android.dynamicpreload.ExternalDataManager;
 import org.odk.collect.android.injection.DaggerUtils;
 import org.odk.collect.android.injection.config.AppDependencyComponent;
+import org.odk.collect.android.injection.config.CollectAiimsAuthDependencyModule;
 import org.odk.collect.android.injection.config.CollectDrawDependencyModule;
 import org.odk.collect.android.injection.config.CollectGeoDependencyModule;
 import org.odk.collect.android.injection.config.CollectGoogleMapsDependencyModule;
@@ -106,7 +110,8 @@ public class Collect extends Application implements
         SelfieCameraDependencyComponentProvider,
         GoogleMapsDependencyComponentProvider,
         DrawDependencyComponentProvider,
-        LocationDependencyComponentProvider {
+        LocationDependencyComponentProvider,
+        AiimsAuthDependencyComponentProvider {
 
     public static String defaultSysLanguage;
     private static Collect singleton;
@@ -125,6 +130,7 @@ public class Collect extends Application implements
     private SelfieCameraDependencyComponent selfieCameraDependencyComponent;
     private GoogleMapsDependencyComponent googleMapsDependencyComponent;
     private DrawDependencyComponent drawDependencyComponent;
+    private AiimsAuthDependencyComponent aiimsAuthDependencyComponent;
 
     /**
      * @deprecated we shouldn't have to reference a static singleton of the
@@ -162,11 +168,13 @@ public class Collect extends Application implements
                     CollectStrictMode.enable();
                     MlKitBarcodeScannerViewFactory.init(this);
 
-                    // Initialize Auth Manager with Project Cleaner
-                    org.aiims.odk.auth.managers.AiimsAuthManager.init(this, applicationComponent.projectCleaner());
-
                     if (getResources().getBoolean(R.bool.aiims_auth_enabled)) {
-                        registerActivityLifecycleCallbacks(new AiimsAppLock(this));
+                        AiimsAuthDependencyComponent aiimsAuthComponent = getAiimsAuthDependencyComponent();
+                        registerActivityLifecycleCallbacks(new AiimsAppLock(
+                                this,
+                                aiimsAuthComponent.getAuthManager(),
+                                aiimsAuthComponent.getPinManager()
+                        ));
                     }
                 });
     }
@@ -367,6 +375,19 @@ public class Collect extends Application implements
     @Override
     public DrawDependencyComponent getDrawDependencyComponent() {
         return drawDependencyComponent;
+    }
+
+    @NonNull
+    @Override
+    public AiimsAuthDependencyComponent getAiimsAuthDependencyComponent() {
+        if (aiimsAuthDependencyComponent == null) {
+            aiimsAuthDependencyComponent = DaggerAiimsAuthDependencyComponent.builder()
+                    .application(this)
+                    .aiimsAuthDependencyModule(new CollectAiimsAuthDependencyModule(applicationComponent))
+                    .build();
+        }
+
+        return aiimsAuthDependencyComponent;
     }
 
     @Override

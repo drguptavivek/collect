@@ -49,24 +49,23 @@ class AiimsAuthManagerTest {
         context = ApplicationProvider.getApplicationContext()
 
         // Ensure clean state
-        AiimsAuthManager.resetInstanceForTesting()
         context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE).edit().clear().commit()
 
         // Initialize Managers
-        authManager = AiimsAuthManager.init(context, projectCleaner)
+        pinManager = PinManager(context)
+        authManager = AiimsAuthManager(context, projectCleaner, pinManager)
         authManager.setAuthClient(authClient)
         // Note: We don't attach testScheduler here because setUp runs outside runTest
         // But StandardTestDispatcher() works.
         authManager.setIoDispatcher(StandardTestDispatcher())
 
-        pinManager = PinManager.getInstance(context)
+        pinManager = PinManager(context)
         pinManager.clearPin()
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-        AiimsAuthManager.resetInstanceForTesting()
     }
 
     @Test
@@ -190,8 +189,7 @@ class AiimsAuthManagerTest {
             doReturn(false).whenever(authClient).checkReachability()
         }
 
-        AiimsAuthManager.resetInstanceForTesting()
-        val newAuthManager = AiimsAuthManager.init(context, projectCleaner)
+        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
 
@@ -219,11 +217,10 @@ class AiimsAuthManagerTest {
         whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
         authManager.login(projectId, "user", "pass", "url")
 
-        // Even if server is unreachable, hard deadline kills it (actually code doesn't check reachability for hard deadline)
+        // even if server is unreachable, hard deadline kills it (actually code doesn't check reachability for hard deadline)
         // refreshState checks hard deadline first
 
-        AiimsAuthManager.resetInstanceForTesting()
-        val newAuthManager = AiimsAuthManager.init(context, projectCleaner)
+        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
 
@@ -255,8 +252,7 @@ class AiimsAuthManagerTest {
             doReturn(true).whenever(authClient).checkReachability()
         }
 
-        AiimsAuthManager.resetInstanceForTesting()
-        val newAuthManager = AiimsAuthManager.init(context, projectCleaner)
+        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
 

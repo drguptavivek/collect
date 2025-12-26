@@ -14,7 +14,9 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import org.aiims.odk.auth.injection.AiimsAuthDependencyComponentProvider
 import org.aiims.odk.auth.utils.PinManager
+import javax.inject.Inject
 
 /**
  * PIN Entry Activity
@@ -22,8 +24,9 @@ import org.aiims.odk.auth.utils.PinManager
  */
 class PinEntryActivity : AiimsBaseActivity() {
 
-    // authManager is inherited
-    private lateinit var pinManager: PinManager
+    @Inject
+    lateinit var pinManager: PinManager
+
     private lateinit var pinField: EditText
     private lateinit var enterButton: Button
     private lateinit var progressBar: ProgressBar
@@ -40,13 +43,12 @@ class PinEntryActivity : AiimsBaseActivity() {
         updatePermissionStatusUI()
     }
 
+    override fun injectDependencies() {
+        (application as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.inject(this)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Initialize auth manager and pin manager
-        // Initialize pin manager
-        // authManager is initialized in super.onCreate()
-        pinManager = PinManager.getInstance(this)
 
         // Check permissions for Telemetry/Notifications
         checkAndRequestPermissions()
@@ -122,8 +124,6 @@ class PinEntryActivity : AiimsBaseActivity() {
 
         // Update initial state
         updatePermissionStatusUI()
-
-        // Progress bar (initially hidden)
 
         // Progress bar (initially hidden)
         progressBar = ProgressBar(this).apply {

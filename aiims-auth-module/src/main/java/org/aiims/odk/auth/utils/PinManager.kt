@@ -2,11 +2,14 @@ package org.aiims.odk.auth.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Utility class for managing PIN storage and verification
  */
-class PinManager private constructor(private val context: Context) {
+@Singleton
+class PinManager @Inject constructor(private val context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -16,20 +19,6 @@ class PinManager private constructor(private val context: Context) {
         private const val KEY_PIN_UPDATED_AT = "pin_updated_at"
         private const val KEY_PIN_ATTEMPTS = "pin_attempts"
         private const val MAX_ATTEMPTS = 3
-
-        @Volatile
-        private var INSTANCE: PinManager? = null
-
-        fun getInstance(context: Context): PinManager {
-            return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: PinManager(context.applicationContext).also { INSTANCE = it }
-            }
-        }
-
-        @androidx.annotation.VisibleForTesting
-        fun resetInstanceForTesting() {
-            INSTANCE = null
-        }
     }
 
     /**
