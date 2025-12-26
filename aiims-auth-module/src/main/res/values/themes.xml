@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Base AIIMS theme -->
-    <style name="Theme.AiimsAuth" parent="Theme.Material3.DayNight">
+    <style name="Theme.Aiims.Auth" parent="Theme.Material3.DayNight">
         <!-- Primary brand color -->
         <item name="colorPrimary">@color/aiims_primary</item>
         <item name="colorOnPrimary">@color/white</item>
@@ -36,13 +36,13 @@
     </style>
 
     <!-- Theme for activities without action bar -->
-    <style name="Theme.AiimsAuth.NoActionBar" parent="Theme.AiimsAuth">
+    <style name="Theme.Aiims.Auth.NoActionBar" parent="Theme.Aiims.Auth">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
 
     <!-- Theme for settings screen -->
-    <style name="Theme.AiimsAuth.Settings" parent="Theme.AiimsAuth">
+    <style name="Theme.Aiims.Auth.Settings" parent="Theme.Aiims.Auth">
         <item name="preferenceTheme">@style/PreferenceThemeOverlay.v14.Material</item>
     </style>
 </resources>
