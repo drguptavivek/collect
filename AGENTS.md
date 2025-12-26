@@ -4,6 +4,37 @@
 
 This project uses `agentic_kb` as a git submodule for reusable knowledge.
 
+### ⚠️ CRITICAL: Branch Configuration
+
+**PREVENT CONFUSION**: This is a TWO-REPOSITORY setup with DIFFERENT BRANCHES:
+
+| Repository | Branch | Purpose | Remote |
+|-----------|--------|---------|--------|
+| **collect** (parent) | `vg-work` | Main project development | `origin` → github.com/drguptavivek/collect.git |
+| **agentic_kb** (submodule) | `main` | Knowledge documentation | `origin` → github.com/drguptavivek/agentic_kb.git |
+
+**RULES TO FOLLOW**:
+- ✅ **Always commit/push collect repo to `vg-work` branch**
+- ✅ **Always commit/push agentic_kb to `main` branch**
+- ❌ **NEVER push collect repo changes to agentic_kb repository**
+- ❌ **NEVER push agentic_kb knowledge to collect repository**
+- ⚠️ **Always verify remote URL before pushing**: Check `git remote -v` shows correct repository
+
+**Verify Setup Before Working**:
+```bash
+# In collect repo (parent)
+git remote -v  # Should show: origin → https://github.com/drguptavivek/collect.git
+git branch -v  # Should show: * vg-work
+
+# In agentic_kb (submodule)
+cd agentic_kb
+git remote -v  # Should show: origin → https://github.com/drguptavivek/agentic_kb.git
+git branch -v  # Should show: * main
+cd ..
+```
+
+---
+
 **Direct KB Usage** (no skill required): These instructions show how to use the KB directly via scripts and tools. Agents work with the KB using standard bash commands and Python scripts.
 
 **IMPORTANT**: Before answering questions, agents MUST:
@@ -131,8 +162,17 @@ For search setup and examples:
 
 ## Agent Workflow
 
-**At session start**:
-1. **Update KB submodule**: Pull latest knowledge and update pointer in parent project:
+### ✅ Session Start Checklist
+
+**BEFORE starting work**:
+1. **Verify you're in the right repository**: `pwd` should show `/collect`
+2. **Verify remote URLs**:
+   ```bash
+   git remote -v
+   # Must show: origin → https://github.com/drguptavivek/collect.git (NOT agentic_kb!)
+   ```
+3. **Verify branch**: `git branch` should show `* vg-work`
+4. **Update KB submodule**:
    ```bash
    # Recommended: Use the update script
    agentic_kb/scripts/update_kb.sh
@@ -141,11 +181,48 @@ For search setup and examples:
    git submodule update --remote agentic_kb
    git add agentic_kb
    git commit -m "Update: agentic_kb submodule to latest"
-   git push
+   git push origin vg-work  # Push to COLLECT repo vg-work, not agentic_kb!
    ```
 
-**During work**:
-2. **Search KB first**: Use smart search (Typesense → FAISS fallback) for best results
-3. **Read full files**: Never rely on search snippets alone - always read complete files
-4. **Follow project conventions**: Apply project-specific rules from sections above
-5. **Document learnings**: Capture reusable knowledge in the KB (see agentic_kb/KNOWLEDGE_CONVENTIONS.md)
+### During Work
+
+1. **Search KB first**: Use smart search (Typesense → FAISS fallback) for best results
+2. **Read full files**: Never rely on search snippets alone - always read complete files
+3. **Follow project conventions**: Apply project-specific rules from sections above
+4. **Document learnings**: Capture reusable knowledge in the KB (see agentic_kb/KNOWLEDGE_CONVENTIONS.md)
+
+### When Adding Knowledge to KB
+
+**CRITICAL**: Knowledge commits go ONLY to agentic_kb/main, NEVER to collect/vg-work
+
+```bash
+# 1. Make changes in agentic_kb/
+cd agentic_kb
+git checkout main
+# ... create/edit knowledge files ...
+
+# 2. Commit to agentic_kb/main
+git add knowledge/...
+git commit -m "Add: Knowledge about ..."
+git push origin main  # Push to AGENTIC_KB, not collect!
+
+# 3. Return to parent and update submodule reference
+cd ..
+git add agentic_kb
+git commit -m "Update: agentic_kb submodule with new knowledge"
+git push origin vg-work  # Push to COLLECT vg-work
+```
+
+### ⚠️ Common Mistakes to Avoid
+
+❌ **WRONG**: `cd agentic_kb && git push origin vg-work`
+   - This pushes to agentic_kb repository vg-work branch (mixing repos)
+
+✅ **RIGHT**:
+   - From agentic_kb: `git push origin main` (knowledge goes to agentic_kb/main)
+   - From collect: `git push origin vg-work` (project code goes to collect/vg-work)
+
+❌ **WRONG**: Having parent repo's origin point to agentic_kb
+   - Check: `git remote -v` must show collect repository
+
+✅ **RIGHT**: Parent repo origin always points to collect repository
