@@ -107,6 +107,8 @@
     <string name="aiims_pin_setup_message">Create a 4-digit PIN for quick access</string>
     <string name="aiims_pin_setup_success">PIN setup successful!</string>
     <string name="aiims_pin_changed_success">PIN changed successfully!</string>
+    <string name="aiims_change_pin_title">Change PIN</string>
+    <string name="aiims_change_pin_message">Update your 4-digit PIN for quick access</string>
     <string name="aiims_enter_pin_message">Enter your 4-digit PIN to continue</string>
     <string name="aiims_session_expired_title">Session Expired</string>
     <string name="aiims_session_expired_message">Server is reachable. Please re-login to refresh your session.\nOr work offline for now.</string>

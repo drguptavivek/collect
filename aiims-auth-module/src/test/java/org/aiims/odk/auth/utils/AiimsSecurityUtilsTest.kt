@@ -3,10 +3,10 @@ package org.aiims.odk.auth.utils
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.not
+import org.hamcrest.Matchers.notNullValue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -25,25 +25,25 @@ class AiimsSecurityUtilsTest {
     }
 
     @Test
-    fun generateSalt_returnsNonEmptyString() {
+    fun `#generateSalt returns non-empty string`() {
         val salt = securityUtils.generateSalt()
-        assertNotNull(salt)
-        assertTrue(salt.isNotEmpty())
+        assertThat(salt, notNullValue())
+        assertThat(salt.isNotEmpty(), equalTo(true))
     }
 
     @Test
-    fun hashPin_returnsConsistentHash() {
+    fun `#hashPin returns consistent hash`() {
         val pin = "1234"
         val salt = securityUtils.generateSalt()
 
         val hash1 = securityUtils.hashPin(pin, salt)
         val hash2 = securityUtils.hashPin(pin, salt)
 
-        assertEquals(hash1, hash2)
+        assertThat(hash1, equalTo(hash2))
     }
 
     @Test
-    fun hashPin_returnsDifferentHashForDifferentSalts() {
+    fun `#hashPin returns different hash for different salts`() {
         val pin = "1234"
         val salt1 = securityUtils.generateSalt()
         val salt2 = securityUtils.generateSalt()
@@ -52,29 +52,29 @@ class AiimsSecurityUtilsTest {
         val hash2 = securityUtils.hashPin(pin, salt2)
 
         // Theoretically possible to collide, but astronomically unlikely
-        assertFalse(hash1 == hash2)
+        assertThat(hash1, not(equalTo(hash2)))
     }
 
     @Test
-    fun verifyPin_returnsTrueForCorrectPin() {
+    fun `#verifyPin returns true for correct PIN`() {
         val pin = "1234"
         val salt = securityUtils.generateSalt()
         val hash = securityUtils.hashPin(pin, salt)
 
-        assertTrue(securityUtils.verifyPin(pin, hash, salt))
+        assertThat(securityUtils.verifyPin(pin, hash, salt), equalTo(true))
     }
 
     @Test
-    fun verifyPin_returnsFalseForIncorrectPin() {
+    fun `#verifyPin returns false for incorrect PIN`() {
         val pin = "1234"
         val salt = securityUtils.generateSalt()
         val hash = securityUtils.hashPin(pin, salt)
 
-        assertFalse(securityUtils.verifyPin("9999", hash, salt))
+        assertThat(securityUtils.verifyPin("9999", hash, salt), equalTo(false))
     }
 
     @Test
-    fun encryptDecrypt_roundTripWorks() {
+    fun `#encrypt and #decrypt round-trip works`() {
         // We'll manually create a key since Keystore operations might be flaky in pure Robolectric
         // without more complex shadowing, but let's try the pure crypto logic first.
 
@@ -86,23 +86,23 @@ class AiimsSecurityUtilsTest {
         val encrypted = securityUtils.encrypt(originalText, secretKey)
         val decrypted = securityUtils.decrypt(encrypted, secretKey)
 
-        assertEquals(originalText, decrypted)
+        assertThat(decrypted, equalTo(originalText))
     }
 
     @Test
-    fun validatePinStrength_checkRules() {
-        assertEquals(PinStrength.TOO_SHORT, securityUtils.validatePinStrength("123"))
-        assertEquals(PinStrength.TOO_LONG, securityUtils.validatePinStrength("1".repeat(50)))
-        assertEquals(PinStrength.TOO_SIMPLE, securityUtils.validatePinStrength("1111"))
-        assertEquals(PinStrength.WEAK, securityUtils.validatePinStrength("1234")) // Matches \d+
-        assertEquals(PinStrength.MEDIUM, securityUtils.validatePinStrength("abcd")) // Matches alphanumeric
-        assertEquals(PinStrength.STRONG, securityUtils.validatePinStrength("Pin!")) // Special chars
+    fun `#validatePinStrength checks rules correctly`() {
+        assertThat(securityUtils.validatePinStrength("123"), equalTo(PinStrength.TOO_SHORT))
+        assertThat(securityUtils.validatePinStrength("1".repeat(50)), equalTo(PinStrength.TOO_LONG))
+        assertThat(securityUtils.validatePinStrength("1111"), equalTo(PinStrength.TOO_SIMPLE))
+        assertThat(securityUtils.validatePinStrength("1234"), equalTo(PinStrength.WEAK)) // Matches \d+
+        assertThat(securityUtils.validatePinStrength("abcd"), equalTo(PinStrength.MEDIUM)) // Matches alphanumeric
+        assertThat(securityUtils.validatePinStrength("Pin!"), equalTo(PinStrength.STRONG)) // Special chars
     }
 
     // --- Negative Tests ---
 
     @Test(expected = javax.crypto.AEADBadTagException::class)
-    fun decrypt_throwsExceptionWithWrongKey() {
+    fun `#decrypt throws exception with wrong key`() {
         // Generate two different keys
         val keyBytes1 = ByteArray(32) { i -> i.toByte() }
         val key1 = SecretKeySpec(keyBytes1, "AES")
@@ -118,7 +118,7 @@ class AiimsSecurityUtilsTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun verifyPin_throwsOnInvalidSalt() {
+    fun `#verifyPin throws on invalid salt`() {
         securityUtils.verifyPin("1234", "someHash", "NotBase64!!")
     }
 }

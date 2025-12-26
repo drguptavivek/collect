@@ -3,9 +3,8 @@ package org.aiims.odk.auth.utils
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.equalTo
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,7 +26,7 @@ class PinManagerTest {
     }
 
     @Test
-    fun savePin_storesPinAndResetsAttempts() {
+    fun `#savePin stores PIN and resets attempts`() {
         // Arrange
         val pin = "1234"
 
@@ -35,60 +34,60 @@ class PinManagerTest {
         pinManager.savePin(pin)
 
         // Assert
-        assertTrue(pinManager.isPinSet())
-        assertTrue(pinManager.verifyPin(pin))
-        assertEquals(0, pinManager.getFailedAttempts())
+        assertThat(pinManager.isPinSet(), equalTo(true))
+        assertThat(pinManager.verifyPin(pin), equalTo(true))
+        assertThat(pinManager.getFailedAttempts(), equalTo(0))
     }
 
     @Test
-    fun verifyPin_success_resetsAttempts() {
+    fun `#verifyPin resets attempts when success`() {
         // Arrange
         pinManager.savePin("1234")
         // Simulate a failed attempt first
         pinManager.verifyPin("0000") // 1 failure
-        assertEquals(1, pinManager.getFailedAttempts())
+        assertThat(pinManager.getFailedAttempts(), equalTo(1))
 
         // Act
         val result = pinManager.verifyPin("1234")
 
         // Assert
-        assertTrue(result)
-        assertEquals("Successful verification should clear attempts", 0, pinManager.getFailedAttempts())
+        assertThat(result, equalTo(true))
+        assertThat(pinManager.getFailedAttempts(), equalTo(0))
     }
 
     @Test
-    fun verifyPin_failure_incrementsAttempts() {
+    fun `#verifyPin increments attempts when failure`() {
         // Arrange
         pinManager.savePin("1234")
 
         // Act & Assert
-        assertFalse(pinManager.verifyPin("0000"))
-        assertEquals(1, pinManager.getFailedAttempts())
+        assertThat(pinManager.verifyPin("0000"), equalTo(false))
+        assertThat(pinManager.getFailedAttempts(), equalTo(1))
 
-        assertFalse(pinManager.verifyPin("9999"))
-        assertEquals(2, pinManager.getFailedAttempts())
+        assertThat(pinManager.verifyPin("9999"), equalTo(false))
+        assertThat(pinManager.getFailedAttempts(), equalTo(2))
     }
 
     @Test
-    fun isMaxAttemptsReached_returnsTrueAfterLimit() {
+    fun `#isMaxAttemptsReached returns true after limit`() {
         // Arrange
         pinManager.savePin("1234")
 
         // Act: Fail 3 times
         pinManager.verifyPin("0000") // 1
-        assertFalse(pinManager.isMaxAttemptsReached())
+        assertThat(pinManager.isMaxAttemptsReached(), equalTo(false))
 
         pinManager.verifyPin("0000") // 2
-        assertFalse(pinManager.isMaxAttemptsReached())
+        assertThat(pinManager.isMaxAttemptsReached(), equalTo(false))
 
         pinManager.verifyPin("0000") // 3
 
         // Assert
-        assertTrue("Should be locked out after 3 attempts", pinManager.isMaxAttemptsReached())
+        assertThat(pinManager.isMaxAttemptsReached(), equalTo(true))
     }
 
     @Test
-    fun clearPin_removesAllData() {
+    fun `#clearPin removes all data`() {
         // Arrange
         pinManager.savePin("1234")
         pinManager.verifyPin("0000") // Add some dirty state (attempts)
@@ -97,8 +96,7 @@ class PinManagerTest {
         pinManager.clearPin()
 
         // Assert
-        assertFalse(pinManager.isPinSet())
-        assertEquals(0, pinManager.getFailedAttempts())
-        // Verify underlying prefs are actually gone logic (implied by isPinSet)
+        assertThat(pinManager.isPinSet(), equalTo(false))
+        assertThat(pinManager.getFailedAttempts(), equalTo(0))
     }
 }

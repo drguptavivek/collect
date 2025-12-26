@@ -7,16 +7,15 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.aiims.odk.auth.api.AuthClient
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.nullValue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -46,17 +45,17 @@ class TokenRevocationManagerTest {
     }
 
     @Test
-    fun markPending_savesToPrefs() {
+    fun `#markPending saves to shared preferences`() {
         // Act
         TokenRevocationManager.markPending(context, "p1", "u1", "url", "token", "logout")
 
         // Assert
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        assertEquals("p1", prefs.getString(KEY_PENDING_PROJECT_ID, null))
+        assertThat(prefs.getString(KEY_PENDING_PROJECT_ID, null), equalTo("p1"))
     }
 
     @Test
-    fun processPending_doesNothingIfOffline() = runTest {
+    fun `#processPending does nothing when offline`() = runTest {
         // Arrange
         TokenRevocationManager.markPending(context, "p1", "u1", "url", "token", "logout")
         TokenRevocationManager.setNetworkAvailable(false) // Offline
@@ -65,16 +64,16 @@ class TokenRevocationManagerTest {
         val result = TokenRevocationManager.processPending(context)
 
         // Assert
-        assertFalse(result)
+        assertThat(result, equalTo(false))
         verify(authClient, never()).revokeSession(any(), any(), any(), any())
 
         // Ensure data is still pending
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        assertEquals("p1", prefs.getString(KEY_PENDING_PROJECT_ID, null))
+        assertThat(prefs.getString(KEY_PENDING_PROJECT_ID, null), equalTo("p1"))
     }
 
     @Test
-    fun processPending_callsRevokeAndClearsOnSuccess() = runTest {
+    fun `#processPending calls revoke and clears when success`() = runTest {
         // Arrange
         TokenRevocationManager.markPending(context, "p1", "u1", "url", "token", "logout")
         TokenRevocationManager.setNetworkAvailable(true) // Online
@@ -84,16 +83,16 @@ class TokenRevocationManagerTest {
         val result = TokenRevocationManager.processPending(context)
 
         // Assert
-        assertTrue(result)
+        assertThat(result, equalTo(true))
         verify(authClient).revokeSession(org.mockito.kotlin.eq("p1"), org.mockito.kotlin.eq("u1"), org.mockito.kotlin.eq("token"), any())
 
         // Ensure data is cleared
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        assertEquals(null, prefs.getString(KEY_PENDING_PROJECT_ID, null))
+        assertThat(prefs.getString(KEY_PENDING_PROJECT_ID, null), nullValue())
     }
 
     @Test
-    fun processPending_keepsDataOnFailure() = runTest {
+    fun `#processPending keeps data when failure`() = runTest {
         // Arrange
         TokenRevocationManager.markPending(context, "p1", "u1", "url", "token", "logout")
         TokenRevocationManager.setNetworkAvailable(true) // Online
@@ -103,11 +102,11 @@ class TokenRevocationManagerTest {
         val result = TokenRevocationManager.processPending(context)
 
         // Assert
-        assertFalse(result)
+        assertThat(result, equalTo(false))
         verify(authClient).revokeSession(org.mockito.kotlin.eq("p1"), org.mockito.kotlin.eq("u1"), org.mockito.kotlin.eq("token"), any())
 
         // Ensure data is RETAINED for retry
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        assertEquals("p1", prefs.getString(KEY_PENDING_PROJECT_ID, null))
+        assertThat(prefs.getString(KEY_PENDING_PROJECT_ID, null), equalTo("p1"))
     }
 }
