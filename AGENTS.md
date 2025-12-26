@@ -1,8 +1,5 @@
 # Agent Instructions for ODK Collect
 
-## Knowledge Base Integration
-
-This project uses `agentic_kb` as a git submodule for reusable knowledge.
 
 ### ⚠️ CRITICAL: Branch Configuration
 
@@ -33,7 +30,29 @@ git branch -v  # Should show: * main
 cd ..
 ```
 
+## Project-Specific Instructions
+
+### Project Context
+
+- **Language**: Kotlin (primary), Java (legacy)
+- **Framework**: Android SDK
+- **Architecture**: MVVM, Clean Architecture principles
+- **Key Modules**:
+    - `collect_app`: Main application module
+    - `aiims_auth_module`: Custom authentication module for AIIMS integration
+
+### Project Workflows
+
+- **Building**: `./gradlew assembleDebug`
+- **Testing**: `./gradlew test` (Unit tests), `./gradlew connectedCheck` (Instrumentation tests)
+
 ---
+
+---
+## Knowledge Base Integration
+
+This project uses `agentic_kb` as a git submodule for reusable knowledge.
+
 
 **Direct KB Usage** (no skill required): These instructions show how to use the KB directly via scripts and tools. Agents work with the KB using standard bash commands and Python scripts.
 
@@ -142,23 +161,6 @@ For search setup and examples:
 
 ---
 
-## Project-Specific Instructions
-
-### Project Context
-
-- **Language**: Kotlin (primary), Java (legacy)
-- **Framework**: Android SDK
-- **Architecture**: MVVM, Clean Architecture principles
-- **Key Modules**:
-    - `collect_app`: Main application module
-    - `aiims_auth_module`: Custom authentication module for AIIMS integration
-
-### Project Workflows
-
-- **Building**: `./gradlew assembleDebug`
-- **Testing**: `./gradlew test` (Unit tests), `./gradlew connectedCheck` (Instrumentation tests)
-
----
 
 ## Agent Workflow
 

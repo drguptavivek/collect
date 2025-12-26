@@ -4,6 +4,8 @@
 > **This is a customized fork of ODK Collect.**
 > It diverges from the official "master" branch to support **Custom Authentication** (Bearer Tokens), **Local Networking** (Emulator DNS), and **Strict Data Isolation** (Project Cleanup).
 
+Based off - v2025.3.3 [NOv 1, 2025]
+
 ### Key Divergences & Rationale
 
 1.  **AIIMS Authentication Module**: 
