@@ -41,7 +41,7 @@ include ':web-page'
 include ':db'
 include ':open-rosa'
 include ':mobile-device-management'
-include ':aiims_auth_module'
+include ':aiims-auth-module'
 
 apply from: 'secrets.gradle'
 if (getSecrets().getProperty('MAPBOX_DOWNLOADS_TOKEN', '') != '') {
