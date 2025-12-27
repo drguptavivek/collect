@@ -64,6 +64,25 @@ Tests for the Find-or-Create project pattern used when configuring projects.
 
 ---
 
+### AiimsAppLockTest.kt
+**Location**: `aiims-auth-module/src/test/java/org/aiims/odk/auth/utils/`
+
+Tests for the app lock mechanism that manages PIN requirement on app resume.
+
+| Test | Scenario | Expected |
+|------|----------|----------|
+| `does not require PIN when not returning from background` | First start | No PIN |
+| `sets shouldRequirePin when app goes to background` | Home button | Sets flag |
+| `launches PinEntryActivity when returning from background with PIN set` | Resume after background | PIN required |
+| `does not launch PIN when user is not logged in` | Logged out | No PIN |
+| `does not launch PIN when PIN is not set` | No PIN configured | No PIN |
+| `launches LoginActivity for reauth when soft expiry` | Token expired | Login screen |
+| `skips PIN for auth flow activities` | Already on PinEntry | No redirect |
+| `skips PIN for login activity` | Already on Login | No redirect |
+| `multiple activities do not trigger background state` | Navigation in app | No PIN |
+
+---
+
 ## Key Behaviors Tested
 
 ### Option B: Clear Nothing on Logout

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@drawable/aiims_auth_background">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/margin_large">
+
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/logo_view"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_marginTop="16dp"
+            android:contentDescription="@string/aiims_app_name"
+            android:src="@drawable/aiims_logo"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/progress_bar" />
+
+        <TextView
+            android:id="@+id/title_text"
+            style="@style/TextAppearance.Aiims.HeadlineMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_medium"
+            android:text="@string/aiims_pin_setup_title"
+            android:textAlignment="center"
+            android:textColor="@color/aiims_primary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/logo_view" />
+
+        <TextView
+            android:id="@+id/subtitle_text"
+            style="@style/TextAppearance.Aiims.BodyLarge"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_medium"
+            android:text="@string/aiims_pin_setup_message"
+            android:textAlignment="center"
+            android:textColor="@color/aiims_on_surface_variant"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/title_text" />
+
+        <TextView
+            android:id="@+id/user_text_view"
+            style="@style/TextAppearance.Aiims.BodyMedium"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_large"
+            android:textAlignment="center"
+            android:textColor="@color/aiims_on_surface_variant"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/subtitle_text"
+            tools:text="Welcome, User" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/pin_layout"
+            style="@style/Widget.Aiims.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_large"
+            android:hint="@string/aiims_new_pin_hint"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/user_text_view"
+            app:startIconDrawable="@drawable/ic_outline_lock_24">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/pin_field"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="1234"
+                android:inputType="numberPassword"
+                android:maxLength="4"
+                android:maxLines="1"
+                android:textColor="@color/aiims_on_surface" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/confirm_pin_layout"
+            style="@style/Widget.Aiims.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_medium"
+            android:hint="@string/aiims_confirm_new_pin_hint"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/pin_layout"
+            app:startIconDrawable="@drawable/ic_outline_lock_24">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/confirm_pin_field"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="1234"
+                android:inputType="numberPassword"
+                android:maxLength="4"
+                android:maxLines="1"
+                android:textColor="@color/aiims_on_surface" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/setup_button"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/button_height_large"
+            android:layout_marginTop="@dimen/margin_large"
+            android:text="@string/aiims_button_setup"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/confirm_pin_layout" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

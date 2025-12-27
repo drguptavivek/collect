@@ -3,8 +3,6 @@ package org.aiims.odk.auth.activities
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -27,9 +25,9 @@ class SetupPinActivity : AiimsBaseActivity() {
         (application as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.inject(this)
     }
 
-    private lateinit var pinField: EditText
-    private lateinit var confirmPinField: EditText
-    private lateinit var setupButton: Button
+    private lateinit var pinField: com.google.android.material.textfield.TextInputEditText
+    private lateinit var confirmPinField: com.google.android.material.textfield.TextInputEditText
+    private lateinit var setupButton: com.google.android.material.button.MaterialButton
     private lateinit var progressBar: ProgressBar
     private lateinit var userTextView: TextView
 
@@ -39,100 +37,23 @@ class SetupPinActivity : AiimsBaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(org.aiims.odk.auth.R.layout.activity_setup_pin)
 
         // Get token data from intent
         authToken = intent.getStringExtra("auth_token") ?: ""
         expiresAt = intent.getStringExtra("expires_at") ?: ""
 
-        // Create layout
-        val layout = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(50, 100, 50, 50)
+        // Initialize views
+        progressBar = findViewById(org.aiims.odk.auth.R.id.progress_bar)
+        userTextView = findViewById(org.aiims.odk.auth.R.id.user_text_view)
+        pinField = findViewById(org.aiims.odk.auth.R.id.pin_field)
+        confirmPinField = findViewById(org.aiims.odk.auth.R.id.confirm_pin_field)
+        setupButton = findViewById(org.aiims.odk.auth.R.id.setup_button)
+
+        // Set up button click listener
+        setupButton.setOnClickListener {
+            attemptPinSetup()
         }
-
-        // Title
-        val title = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_pin_setup_title)
-            textSize = 28f
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            setPadding(0, 0, 0, 20)
-            gravity = android.view.Gravity.CENTER
-        }
-
-        // Subtitle
-        val subtitle = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_pin_setup_message)
-            textSize = 16f
-            setTextColor(android.graphics.Color.GRAY)
-            setPadding(0, 0, 0, 20)
-            gravity = android.view.Gravity.CENTER
-        }
-
-        // User info
-        userTextView = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_welcome_user, "")
-            textSize = 16f
-            setTextColor(android.graphics.Color.DKGRAY)
-            setPadding(0, 0, 0, 40)
-            gravity = android.view.Gravity.CENTER
-        }
-
-        // Progress bar (initially hidden)
-        progressBar = ProgressBar(this).apply {
-            visibility = View.GONE
-            setPadding(0, 0, 0, 20)
-        }
-
-        // PIN field
-        val pinHint = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_pin_hint)
-            textSize = 16f
-            setPadding(0, 20, 0, 8)
-        }
-
-        pinField = EditText(this).apply {
-            hint = "1234"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            // Set max length via filters
-            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
-        }
-
-        // Confirm PIN field
-        val confirmPinHint = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_confirm_pin_hint)
-            textSize = 16f
-            setPadding(0, 20, 0, 8)
-        }
-
-        confirmPinField = EditText(this).apply {
-            hint = "1234"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            // Set max length via filters
-            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
-        }
-
-        // Setup Button
-        setupButton = Button(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_button_setup)
-            textSize = 18f
-            setPadding(0, 30, 0, 30)
-            setOnClickListener {
-                attemptPinSetup()
-            }
-        }
-
-        // Add all views to layout
-        layout.addView(title)
-        layout.addView(subtitle)
-        layout.addView(userTextView)
-        layout.addView(pinHint)
-        layout.addView(pinField)
-        layout.addView(confirmPinHint)
-        layout.addView(confirmPinField)
-        layout.addView(setupButton)
-        layout.addView(progressBar, 0) // Insert progress bar at the beginning
-
-        setContentView(layout)
 
         // Load user data
         loadUserData()

@@ -2,12 +2,9 @@ package org.aiims.odk.auth.activities
 
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.aiims.odk.auth.injection.AiimsAuthDependencyComponentProvider
@@ -28,134 +25,35 @@ class ChangePinActivity : AiimsBaseActivity() {
         (application as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.inject(this)
     }
 
-    private lateinit var currentPinField: EditText
-    private lateinit var newPinField: EditText
-    private lateinit var confirmPinField: EditText
-    private lateinit var changeButton: Button
+    private lateinit var currentPinField: com.google.android.material.textfield.TextInputEditText
+    private lateinit var newPinField: com.google.android.material.textfield.TextInputEditText
+    private lateinit var confirmPinField: com.google.android.material.textfield.TextInputEditText
+    private lateinit var changeButton: com.google.android.material.button.MaterialButton
+    private lateinit var cancelButton: com.google.android.material.button.MaterialButton
     private lateinit var progressBar: ProgressBar
     private lateinit var userTextView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(org.aiims.odk.auth.R.layout.activity_change_pin)
 
-        // Create layout
-        val layout = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(50, 80, 50, 50)
+        // Initialize views
+        progressBar = findViewById(org.aiims.odk.auth.R.id.progress_bar)
+        userTextView = findViewById(org.aiims.odk.auth.R.id.user_text_view)
+        currentPinField = findViewById(org.aiims.odk.auth.R.id.current_pin_field)
+        newPinField = findViewById(org.aiims.odk.auth.R.id.new_pin_field)
+        confirmPinField = findViewById(org.aiims.odk.auth.R.id.confirm_new_pin_field)
+        changeButton = findViewById(org.aiims.odk.auth.R.id.change_button)
+        cancelButton = findViewById(org.aiims.odk.auth.R.id.cancel_button)
+
+        // Set up button click listeners
+        changeButton.setOnClickListener {
+            attemptChangePin()
         }
-
-        // Title
-        val title = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_change_pin_title)
-            textSize = 28f
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            setPadding(0, 0, 0, 20)
-            gravity = android.view.Gravity.CENTER
+        
+        cancelButton.setOnClickListener {
+            finish()
         }
-
-        // Subtitle
-        val subtitle = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_change_pin_message)
-            textSize = 16f
-            setTextColor(android.graphics.Color.GRAY)
-            setPadding(0, 0, 0, 20)
-            gravity = android.view.Gravity.CENTER
-        }
-
-        // User info
-        userTextView = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_welcome_user, "")
-            textSize = 16f
-            setTextColor(android.graphics.Color.DKGRAY)
-            setPadding(0, 0, 0, 40)
-            gravity = android.view.Gravity.CENTER
-        }
-
-        // Progress bar (initially hidden)
-        progressBar = ProgressBar(this).apply {
-            visibility = View.GONE
-            setPadding(0, 0, 0, 20)
-        }
-
-        // Current PIN field
-        val currentPinHint = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_current_pin_hint)
-            textSize = 16f
-            setPadding(0, 20, 0, 8)
-        }
-
-        currentPinField = EditText(this).apply {
-            hint = "••••"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            // Set max length via filters
-            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
-        }
-
-        // New PIN field
-        val newPinHint = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_new_pin_hint)
-            textSize = 16f
-            setPadding(0, 20, 0, 8)
-        }
-
-        newPinField = EditText(this).apply {
-            hint = "1234"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            // Set max length via filters
-            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
-        }
-
-        // Confirm new PIN field
-        val confirmPinHint = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_confirm_new_pin_hint)
-            textSize = 16f
-            setPadding(0, 20, 0, 8)
-        }
-
-        confirmPinField = EditText(this).apply {
-            hint = "1234"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            // Set max length via filters
-            filters = arrayOf(android.text.InputFilter.LengthFilter(4))
-        }
-
-        // Change PIN Button
-        changeButton = Button(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_button_change)
-            textSize = 18f
-            setPadding(0, 30, 0, 30)
-            setOnClickListener {
-                attemptChangePin()
-            }
-        }
-
-        // Cancel Button
-        val cancelButton = Button(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_button_cancel)
-            textSize = 16f
-            setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            setTextColor(android.graphics.Color.GRAY)
-            setPadding(0, 10, 0, 10)
-            setOnClickListener {
-                finish()
-            }
-        }
-
-        // Add all views to layout
-        layout.addView(title)
-        layout.addView(subtitle)
-        layout.addView(userTextView)
-        layout.addView(progressBar)
-        layout.addView(currentPinHint)
-        layout.addView(currentPinField)
-        layout.addView(newPinHint)
-        layout.addView(newPinField)
-        layout.addView(confirmPinHint)
-        layout.addView(confirmPinField)
-        layout.addView(changeButton)
-        layout.addView(cancelButton)
-
-        setContentView(layout)
 
         // Load user data
         loadUserData()
@@ -235,7 +133,7 @@ class ChangePinActivity : AiimsBaseActivity() {
                     getString(org.aiims.odk.auth.R.string.aiims_error_pin_incorrect),
                     Toast.LENGTH_LONG
                 ).show()
-                currentPinField.text.clear()
+                currentPinField.text?.clear()
                 currentPinField.requestFocus()
                 return@launch
             }

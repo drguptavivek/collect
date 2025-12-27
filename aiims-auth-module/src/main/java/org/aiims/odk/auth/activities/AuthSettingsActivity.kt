@@ -2,10 +2,7 @@ package org.aiims.odk.auth.activities
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
-import android.widget.ScrollView
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.aiims.odk.auth.injection.AiimsAuthDependencyComponentProvider
@@ -24,80 +21,30 @@ class AuthSettingsActivity : AiimsBaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(org.aiims.odk.auth.R.layout.activity_auth_settings)
 
-        // Create layout
-        val layout = ScrollView(this).apply {
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT
-            )
-            setPadding(40, 60, 40, 60)
+        // Initialize views
+        val userDetailsText: TextView = findViewById(org.aiims.odk.auth.R.id.user_details_text)
+        val tokenText: TextView = findViewById(org.aiims.odk.auth.R.id.token_text)
+        val deviceIdText: TextView = findViewById(org.aiims.odk.auth.R.id.device_id_text)
+        val changePinButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.change_pin_button)
+        val logoutButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.logout_button)
+
+        // Set up click listeners
+        changePinButton.setOnClickListener {
+            changePin()
         }
 
-        val container = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-            )
+        logoutButton.setOnClickListener {
+            logout()
         }
 
-        // Title
-        val title = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_auth_settings_title)
-            textSize = 24f
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            setPadding(0, 0, 0, 40)
-        }
-
-        // User Details Section
-        val userDetailsTitle = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_user_details_title)
-            textSize = 18f
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            setPadding(0, 20, 0, 16)
-        }
-
-        val userDetailsText = TextView(this).apply {
-            textSize = 16f
-            setPadding(0, 0, 0, 24)
-        }
-
-        // Device Token Section
-        val tokenTitle = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_device_token_title)
-            textSize = 18f
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            setPadding(0, 20, 0, 16)
-        }
-
-        val tokenText = TextView(this).apply {
-            textSize = 14f
-            typeface = android.graphics.Typeface.MONOSPACE
-            setPadding(0, 0, 0, 24)
-        }
-
-        // Set click listener after creation to avoid 'text' property issue
+        // Token and device ID click to copy
         tokenText.setOnClickListener {
-            // Copy token to clipboard
             val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
             val clip = android.content.ClipData.newPlainText(getString(org.aiims.odk.auth.R.string.aiims_device_token_title), tokenText.text.toString())
             clipboard.setPrimaryClip(clip)
             android.widget.Toast.makeText(this@AuthSettingsActivity, getString(org.aiims.odk.auth.R.string.aiims_token_copied), android.widget.Toast.LENGTH_SHORT).show()
-        }
-
-        // Device ID Section
-        val deviceIdTitle = TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_device_id_title)
-            textSize = 18f
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            setPadding(0, 20, 0, 16)
-        }
-
-        val deviceIdText = TextView(this).apply {
-            textSize = 14f
-            typeface = android.graphics.Typeface.MONOSPACE
-            setPadding(0, 0, 0, 24)
         }
 
         deviceIdText.setOnClickListener {
@@ -106,56 +53,6 @@ class AuthSettingsActivity : AiimsBaseActivity() {
             clipboard.setPrimaryClip(clip)
             android.widget.Toast.makeText(this@AuthSettingsActivity, getString(org.aiims.odk.auth.R.string.aiims_device_id_copied), android.widget.Toast.LENGTH_SHORT).show()
         }
-
-        // Change PIN Button
-        val changePinButton = Button(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_button_change)
-            textSize = 16f
-            setPadding(0, 30, 0, 30)
-            setOnClickListener {
-                changePin()
-            }
-        }
-
-        // Logout Button
-        val logoutButton = Button(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_logout)
-            textSize = 16f
-            setBackgroundColor(android.graphics.Color.parseColor("#FF5252"))
-            setTextColor(android.graphics.Color.WHITE)
-            setPadding(0, 30, 0, 30)
-            setOnClickListener {
-                logout()
-            }
-        }
-
-        // Back Button
-        val backButton = Button(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_button_back_to_odk)
-            textSize = 16f
-            setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            setTextColor(android.graphics.Color.BLUE)
-            setPadding(0, 20, 0, 0)
-            setOnClickListener {
-                finish()
-            }
-        }
-
-        // Add all views to container
-        container.addView(title)
-        container.addView(userDetailsTitle)
-        container.addView(userDetailsText)
-        container.addView(tokenTitle)
-        container.addView(tokenText)
-        container.addView(deviceIdTitle)
-        container.addView(deviceIdText)
-        container.addView(changePinButton)
-        container.addView(logoutButton)
-        container.addView(backButton)
-
-        // Add container to scroll view
-        layout.addView(container)
-        setContentView(layout)
 
         // Load user data
         loadUserData(userDetailsText, tokenText, deviceIdText)
