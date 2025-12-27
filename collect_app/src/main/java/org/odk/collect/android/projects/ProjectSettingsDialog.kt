@@ -9,6 +9,7 @@ import android.view.View.VISIBLE
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import org.odk.collect.android.BuildConfig
 import org.odk.collect.android.activities.AboutActivity
 import org.odk.collect.android.activities.ActivityUtils
 import org.odk.collect.android.databinding.ProjectSettingsDialogLayoutBinding
@@ -49,13 +50,29 @@ class ProjectSettingsDialog(private val viewModelFactory: ViewModelProvider.Fact
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         binding = ProjectSettingsDialogLayoutBinding.inflate(layoutInflater)
 
+        val isAiimsFlavor = BuildConfig.FLAVOR == "aiims"
+        val aiimsAuthEnabled = requireContext().resources.getBoolean(org.odk.collect.android.R.bool.aiims_auth_enabled)
+        val shouldRestrict = isAiimsFlavor || aiimsAuthEnabled
+
+        android.util.Log.e("AiimsRestrict", "onCreateDialog: flavor=${BuildConfig.FLAVOR}, shouldRestrict=$shouldRestrict")
+        // ToastUtils.showShortToast(requireContext(), "Flavor: ${BuildConfig.FLAVOR}")
+
+        if (shouldRestrict) {
+            binding.topDivider.visibility = android.view.View.GONE
+            binding.bottomDivider.visibility = android.view.View.GONE
+            binding.addProjectButton.visibility = android.view.View.GONE
+            binding.projectListContainer.visibility = android.view.View.GONE
+        }
+
         currentProjectViewModel.currentProject.observe(this) {
             if (it != null) {
                 binding.currentProject.setupView(it, settingsProvider.getUnprotectedSettings())
                 binding.currentProject.contentDescription =
                     getString(org.odk.collect.strings.R.string.using_project, it.name)
 
-                inflateListOfInActiveProjects(requireContext(), it)
+                if (!shouldRestrict) {
+                    inflateListOfInActiveProjects(requireContext(), it)
+                }
             }
         }
 
@@ -88,6 +105,15 @@ class ProjectSettingsDialog(private val viewModelFactory: ViewModelProvider.Fact
 
     private fun inflateListOfInActiveProjects(context: Context, currentProject: Project.Saved) {
         binding.projectList.removeAllViews()
+
+        val aiimsAuthEnabled = context.resources.getBoolean(org.odk.collect.android.R.bool.aiims_auth_enabled)
+        val isAiimsPackage = context.packageName.contains("aiims")
+        val shouldRestrict = aiimsAuthEnabled || isAiimsPackage
+
+        if (shouldRestrict) {
+            binding.topDivider.visibility = android.view.View.GONE
+            return
+        }
 
         if (projectsRepository.getAll().none { it.uuid != currentProject.uuid }) {
             binding.topDivider.visibility = INVISIBLE

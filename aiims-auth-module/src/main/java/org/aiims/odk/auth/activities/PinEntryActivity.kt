@@ -400,7 +400,7 @@ class PinEntryActivity : AiimsBaseActivity() {
 
         val intent = Intent()
 
-        intent.setClassName("org.odk.collect.android", "org.odk.collect.android.mainmenu.MainMenuActivity")
+        intent.setClassName(this.packageName, "org.odk.collect.android.mainmenu.MainMenuActivity")
 
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
 

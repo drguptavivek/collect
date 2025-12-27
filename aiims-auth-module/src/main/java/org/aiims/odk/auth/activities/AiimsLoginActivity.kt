@@ -225,7 +225,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
     private fun navigateToMain() {
         val intent = Intent()
-        intent.setClassName("org.odk.collect.android", "org.odk.collect.android.mainmenu.MainMenuActivity")
+        intent.setClassName(this.packageName, "org.odk.collect.android.mainmenu.MainMenuActivity")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
@@ -334,7 +334,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                     org.odk.collect.settings.keys.MetaKeys.KEY_PROJECTS
                 )
 
-                // Check for existing project
+                // FIND OR CREATE PROJECT: Preserve multi-user data
                 var targetProjectUuid: String? = null
                 val allProjects = projectsRepo.getAll()
 
@@ -343,19 +343,21 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                     val projUrl = projPrefs.getString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, null)
                     if (projUrl == url) {
                         targetProjectUuid = proj.uuid
+                        android.util.Log.d("AiimsLogin", "Found existing project for URL $url: $targetProjectUuid")
                         break
                     }
                 }
 
-                // Create if not exists
+                // Create new if not found
                 if (targetProjectUuid == null) {
                     val newProject = org.odk.collect.projects.Project.New(
-                        "Manual Project $centralPid",
-                        "M",
+                        "AIIMS Project $centralPid",
+                        "A",
                         "#3e9fcc"
                     )
                     val saved = projectsRepo.save(newProject)
                     targetProjectUuid = saved.uuid
+                    android.util.Log.d("AiimsLogin", "Created fresh project for URL $url: $targetProjectUuid")
                 }
 
                 // FORCE UPDATE SETTINGS (Existing or New)

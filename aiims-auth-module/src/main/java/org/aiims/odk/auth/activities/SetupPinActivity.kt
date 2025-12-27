@@ -41,8 +41,8 @@ class SetupPinActivity : AiimsBaseActivity() {
         super.onCreate(savedInstanceState)
 
         // Get token data from intent
-        authToken = intent.getStringExtra("authToken") ?: ""
-        expiresAt = intent.getStringExtra("expiresAt") ?: ""
+        authToken = intent.getStringExtra("auth_token") ?: ""
+        expiresAt = intent.getStringExtra("expires_at") ?: ""
 
         // Create layout
         val layout = android.widget.LinearLayout(this).apply {
@@ -207,7 +207,7 @@ class SetupPinActivity : AiimsBaseActivity() {
     private fun navigateToMain() {
         // Launch main ODK activity
         val intent = Intent()
-        intent.setClassName("org.odk.collect.android", "org.odk.collect.android.mainmenu.MainMenuActivity")
+        intent.setClassName(this.packageName, "org.odk.collect.android.mainmenu.MainMenuActivity")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
