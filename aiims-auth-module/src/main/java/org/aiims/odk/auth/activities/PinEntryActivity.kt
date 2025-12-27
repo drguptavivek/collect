@@ -180,9 +180,56 @@ class PinEntryActivity : AiimsBaseActivity() {
 
         loadUserData()
         observeTokenExpiry()
+        setupPinBoxLogic()
     }
 
 
+
+    private fun setupPinBoxLogic() {
+        // Set focus to the hidden field on container click or box click
+        val focusRequester = View.OnClickListener {
+            binding.pinField.requestFocus()
+            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            imm.showSoftInput(binding.pinField, 0)
+        }
+
+        binding.pinBoxesContainer.setOnClickListener(focusRequester)
+        binding.pinBox1.setOnClickListener(focusRequester)
+        binding.pinBox2.setOnClickListener(focusRequester)
+        binding.pinBox3.setOnClickListener(focusRequester)
+        binding.pinBox4.setOnClickListener(focusRequester)
+
+        binding.pinField.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val pin = s?.toString() ?: ""
+                updatePinBoxes(pin)
+                
+                // Auto-submit if 4 digits entered
+                if (pin.length == 4) {
+                    attemptPinEntry()
+                }
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
+        // Request initial focus
+        binding.pinField.postDelayed({ focusRequester.onClick(null) }, 300)
+    }
+
+    private fun updatePinBoxes(pin: String) {
+        val boxes = arrayOf(binding.pinBox1, binding.pinBox2, binding.pinBox3, binding.pinBox4)
+        for (i in 0 until 4) {
+            if (i < pin.length) {
+                boxes[i].text = "•"
+            } else {
+                boxes[i].text = ""
+            }
+            
+            // Highlight focused box (visual indicator for which square is current)
+            boxes[i].isActivated = (i == pin.length)
+        }
+    }
 
     private fun observeTokenExpiry() {
         lifecycleScope.launch {
@@ -255,41 +302,19 @@ class PinEntryActivity : AiimsBaseActivity() {
 
 
     private fun attemptPinEntry() {
-
         val pin = binding.pinField.text.toString().trim()
 
-
-
         // Validation
-
         when {
-
             pin.isEmpty() -> {
-
-                binding.pinLayout.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_required)
-
+                Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_pin_required), Toast.LENGTH_SHORT).show()
                 binding.pinField.requestFocus()
-
                 return
-
             }
-
             pin.length != 4 -> {
-
-                binding.pinLayout.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_digits)
-
                 binding.pinField.requestFocus()
-
                 return
-
             }
-
-            else -> {
-
-                binding.pinLayout.error = null
-
-            }
-
         }
 
 
@@ -531,13 +556,9 @@ class PinEntryActivity : AiimsBaseActivity() {
 
 
     private fun setLoading(loading: Boolean) {
-
         binding.progressBar.visibility = if (loading) View.VISIBLE else View.GONE
-
         binding.enterButton.isEnabled = !loading
-
         binding.pinField.isEnabled = !loading
-
     }
 
 

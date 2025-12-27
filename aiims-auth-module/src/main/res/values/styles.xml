@@ -61,4 +61,14 @@
         <item name="startIconTint">@color/aiims_on_surface_variant</item>
         <item name="endIconTint">@color/aiims_on_surface_variant</item>
     </style>
+
+    <style name="PinBoxStyle">
+        <item name="android:layout_width">@dimen/pin_box_size</item>
+        <item name="android:layout_height">@dimen/pin_box_size</item>
+        <item name="android:background">@drawable/pin_box_background</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/aiims_on_surface</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
 </resources>
