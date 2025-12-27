@@ -179,10 +179,60 @@ class PinEntryActivity : AiimsBaseActivity() {
         // Load user data
 
         loadUserData()
-
+        observeTokenExpiry()
     }
 
 
+
+    private fun observeTokenExpiry() {
+        lifecycleScope.launch {
+            authManager.isExpiringSoon.collect { expiringSoon ->
+                // Update styling based on urgency
+                val color = if (expiringSoon) {
+                    binding.expiryReminderCard.setCardBackgroundColor(ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.offline_background))
+                    binding.expiryReminderCard.strokeColor = ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.offline_border)
+                    binding.expiryReminderText.text = getString(org.aiims.odk.auth.R.string.aiims_token_expiry_reminder)
+                    ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.offline_text)
+                } else {
+                    binding.expiryReminderCard.setCardBackgroundColor(ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_surface_variant))
+                    binding.expiryReminderCard.strokeColor = ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.gray_medium)
+                    binding.expiryReminderText.text = getString(org.aiims.odk.auth.R.string.aiims_token_status_title)
+                    ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_on_surface_variant)
+                }
+                
+                binding.expiryReminderText.setTextColor(color)
+                binding.expiryTimeText.setTextColor(color)
+                binding.refreshTokenButton.setTextColor(color)
+            }
+        }
+
+        lifecycleScope.launch {
+            authManager.tokenExpiryTime.collect { expiryTime ->
+                if (expiryTime > 0) {
+                    binding.expiryReminderCard.visibility = View.VISIBLE
+                    val remainingMs = expiryTime - System.currentTimeMillis()
+                    if (remainingMs > 0) {
+                        val hours = java.util.concurrent.TimeUnit.MILLISECONDS.toHours(remainingMs)
+                        val minutes = java.util.concurrent.TimeUnit.MILLISECONDS.toMinutes(remainingMs) % 60
+                        
+                        val timeStr = if (hours > 0) {
+                            "${hours}h ${minutes}m"
+                        } else {
+                            "${minutes}m"
+                        }
+                        binding.expiryTimeText.text = getString(org.aiims.odk.auth.R.string.aiims_token_expires_in, timeStr)
+                    }
+                }
+            }
+        }
+
+        binding.refreshTokenButton.setOnClickListener {
+            // Take user to login screen to refresh session
+            val intent = Intent(this, AiimsLoginActivity::class.java)
+            // Optional: Pass target project context if needed, though AuthManager handles it
+            startActivity(intent)
+        }
+    }
 
     private fun loadUserData() {
 

@@ -59,7 +59,10 @@
     <string name="aiims_dev_server_clear">Clear</string>
     <string name="aiims_token_status_title">Token Status</string>
     <string name="aiims_button_refresh_token">Refresh Token</string>
+    <string name="aiims_button_refresh_now">Refresh Now</string>
     <string name="aiims_button_get_project_details">Get Project Details</string>
+    <string name="aiims_token_expiry_reminder">Your session will expire soon. Please refresh to avoid interruptions.</string>
+    <string name="aiims_token_expires_in">Expires in: %s</string>
 
     <!-- User Information -->
     <string name="aiims_user_info">User Information</string>

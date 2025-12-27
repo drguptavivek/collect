@@ -120,11 +120,19 @@ class AiimsAuthManager @Inject constructor(
     private val _isSoftExpiry = MutableStateFlow(false)
     val isSoftExpiry: Flow<Boolean> = _isSoftExpiry.asStateFlow()
 
+    private val _isExpiringSoon = MutableStateFlow(false)
+    val isExpiringSoon: Flow<Boolean> = _isExpiringSoon.asStateFlow()
+
+    private val _tokenExpiryTime = MutableStateFlow(0L)
+    val tokenExpiryTime: Flow<Long> = _tokenExpiryTime.asStateFlow()
+
     // Current active project context
     private var activeProjectId: String? = null
 
     // 6 Hours in Milliseconds
     private val GRACE_PERIOD_MS = 6L * 60 * 60 * 1000
+    // 24 Hours in Milliseconds for reminder
+    private val EXPIRATION_THRESHOLD_MS = 24L * 60 * 60 * 1000
 
     init {
         // Restore last active project or default state
@@ -163,8 +171,12 @@ class AiimsAuthManager @Inject constructor(
 
         if (token != null && user != null) {
             val expiryTime = parseExpiryTime(expiresAt)
+            _tokenExpiryTime.value = expiryTime
             val currentTime = System.currentTimeMillis()
             val hardDeadline = expiryTime + GRACE_PERIOD_MS
+
+            // Check if expiring soon (within 24 hours)
+            _isExpiringSoon.value = currentTime + EXPIRATION_THRESHOLD_MS > expiryTime
 
             if (currentTime > hardDeadline) {
                 // HARD LOGOUT: Exceeded 6-hour grace
@@ -219,6 +231,8 @@ class AiimsAuthManager @Inject constructor(
             _authState.value = AuthState.LOGGED_OUT
             _currentUser.value = null
             _isSoftExpiry.value = false
+            _isExpiringSoon.value = false
+            _tokenExpiryTime.value = 0L
         }
     }
 
