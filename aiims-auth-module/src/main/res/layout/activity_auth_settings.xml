@@ -12,29 +12,18 @@
         android:layout_height="wrap_content"
         android:padding="@dimen/margin_large">
 
-        <ImageView
-            android:id="@+id/logo_view"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:layout_marginTop="16dp"
-            android:contentDescription="@string/aiims_app_name"
-            android:src="@drawable/aiims_logo"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
         <TextView
             android:id="@+id/title_text"
             style="@style/TextAppearance.Aiims.HeadlineMedium"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_medium"
+            android:layout_marginTop="16dp"
             android:text="@string/aiims_auth_settings_title"
             android:textAlignment="center"
             android:textColor="@color/aiims_primary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/logo_view" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <!-- User Details Card -->
         <com.google.android.material.card.MaterialCardView
@@ -68,11 +57,11 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:textColor="@color/aiims_on_surface"
-                    tools:text="Username: user@example.com\nProject: 1" />
+                    tools:text="Username: user@example.com\nProject: Project Name" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Device Token Card -->
+        <!-- Token Status Card -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/token_card"
             android:layout_width="0dp"
@@ -94,28 +83,35 @@
                     style="@style/TextAppearance.Aiims.TitleMedium"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/aiims_device_token_title"
+                    android:text="@string/aiims_token_status_title"
                     android:textColor="@color/aiims_primary" />
 
                 <TextView
-                    android:id="@+id/token_text"
-                    style="@style/TextAppearance.Aiims.BodySmall"
+                    android:id="@+id/token_status_text"
+                    style="@style/TextAppearance.Aiims.BodyMedium"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:fontFamily="monospace"
-                    android:textColor="@color/aiims_on_surface_variant"
-                    android:textIsSelectable="true"
-                    tools:text="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+                    android:textColor="@color/aiims_on_surface"
+                    tools:text="Valid until: 2024-12-27 22:30" />
 
                 <TextView
+                    android:id="@+id/token_validity_text"
                     style="@style/TextAppearance.Aiims.BodySmall"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="@string/aiims_copy_to_clipboard_hint"
                     android:textColor="@color/aiims_secondary"
-                    android:textStyle="italic" />
+                    tools:text="Token is valid" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/refresh_token_button"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/aiims_button_refresh_token"
+                    android:textColor="@color/aiims_primary" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

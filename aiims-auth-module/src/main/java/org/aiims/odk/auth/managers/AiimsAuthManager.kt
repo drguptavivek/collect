@@ -377,6 +377,11 @@ class AiimsAuthManager @Inject constructor(
     // --- Legacy / Compatibility ---
     fun getCurrentAuthState(): AuthState = _authState.value
     fun getIsSoftExpiry(): Boolean = _isSoftExpiry.value
+    
+    fun getActiveProjectTokenExpiry(): String? {
+        val pid = activeProjectId ?: return null
+        return getPersistedExpiresAt(pid)
+    }
 
     fun updateAuthState(state: AuthState) {
         _authState.value = state

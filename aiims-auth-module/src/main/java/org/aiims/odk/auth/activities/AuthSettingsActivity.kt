@@ -25,9 +25,11 @@ class AuthSettingsActivity : AiimsBaseActivity() {
 
         // Initialize views
         val userDetailsText: TextView = findViewById(org.aiims.odk.auth.R.id.user_details_text)
-        val tokenText: TextView = findViewById(org.aiims.odk.auth.R.id.token_text)
+        val tokenStatusText: TextView = findViewById(org.aiims.odk.auth.R.id.token_status_text)
+        val tokenValidityText: TextView = findViewById(org.aiims.odk.auth.R.id.token_validity_text)
         val deviceIdText: TextView = findViewById(org.aiims.odk.auth.R.id.device_id_text)
         val changePinButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.change_pin_button)
+        val refreshTokenButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.refresh_token_button)
         val logoutButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.logout_button)
 
         // Set up click listeners
@@ -35,18 +37,15 @@ class AuthSettingsActivity : AiimsBaseActivity() {
             changePin()
         }
 
+        refreshTokenButton.setOnClickListener {
+            refreshToken()
+        }
+
         logoutButton.setOnClickListener {
             logout()
         }
 
-        // Token and device ID click to copy
-        tokenText.setOnClickListener {
-            val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-            val clip = android.content.ClipData.newPlainText(getString(org.aiims.odk.auth.R.string.aiims_device_token_title), tokenText.text.toString())
-            clipboard.setPrimaryClip(clip)
-            android.widget.Toast.makeText(this@AuthSettingsActivity, getString(org.aiims.odk.auth.R.string.aiims_token_copied), android.widget.Toast.LENGTH_SHORT).show()
-        }
-
+        // Device ID click to copy
         deviceIdText.setOnClickListener {
             val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
             val clip = android.content.ClipData.newPlainText(getString(org.aiims.odk.auth.R.string.aiims_device_id_title), deviceIdText.text.toString())
@@ -55,10 +54,10 @@ class AuthSettingsActivity : AiimsBaseActivity() {
         }
 
         // Load user data
-        loadUserData(userDetailsText, tokenText, deviceIdText)
+        loadUserData(userDetailsText, tokenStatusText, tokenValidityText, deviceIdText)
     }
 
-    private fun loadUserData(userDetailsText: TextView, tokenText: TextView, deviceIdText: TextView) {
+    private fun loadUserData(userDetailsText: TextView, tokenStatusText: TextView, tokenValidityText: TextView, deviceIdText: TextView) {
         lifecycleScope.launch {
             authManager.currentUser.collect { user ->
                 user?.let {
@@ -72,17 +71,51 @@ class AuthSettingsActivity : AiimsBaseActivity() {
             }
         }
 
-        // Get device token from Auth Manager
-        val token = authManager.getActiveProjectToken() ?: getString(org.aiims.odk.auth.R.string.aiims_error_server)
-        tokenText.text = token
-
-        // Add hint about tap to copy
-        tokenText.append("\n\n" + getString(org.aiims.odk.auth.R.string.aiims_copy_to_clipboard_hint))
+        // Get token expiry from Auth Manager
+        val expiresAt = authManager.getActiveProjectTokenExpiry()
+        if (expiresAt != null) {
+            try {
+                val expiryDate = org.aiims.odk.auth.utils.ApiDateFormat.parse(expiresAt)
+                
+                if (expiryDate != null) {
+                    val displayFormatter = java.text.SimpleDateFormat("MMM dd, yyyy HH:mm", java.util.Locale.getDefault())
+                    tokenStatusText.text = "Valid until: ${displayFormatter.format(expiryDate)}"
+                    
+                    // Check if token is still valid
+                    val now = java.util.Date()
+                    if (expiryDate.after(now)) {
+                        val hoursLeft = ((expiryDate.time - now.time) / (1000 * 60 * 60)).toInt()
+                        tokenValidityText.text = "✓ Token is valid ($hoursLeft hours remaining)"
+                        tokenValidityText.setTextColor(getColor(org.aiims.odk.auth.R.color.aiims_success))
+                    } else {
+                        tokenValidityText.text = "⚠ Token has expired"
+                        tokenValidityText.setTextColor(getColor(org.aiims.odk.auth.R.color.aiims_error))
+                    }
+                } else {
+                    tokenStatusText.text = "Token expiry: $expiresAt"
+                    tokenValidityText.text = "Unable to parse expiry date"
+                }
+            } catch (e: Exception) {
+                tokenStatusText.text = "Token expiry: $expiresAt"
+                tokenValidityText.text = "Error: ${e.message}"
+            }
+        } else {
+            tokenStatusText.text = "No token information available"
+            tokenValidityText.text = ""
+        }
 
         // Device ID comes from Collect meta prefs
         val deviceId = getSharedPreferences("meta", MODE_PRIVATE).getString("metadata_installid", "No device ID found")
         deviceIdText.text = deviceId ?: "No device ID found"
-        deviceIdText.append("\n\n" + getString(org.aiims.odk.auth.R.string.aiims_copy_to_clipboard_hint))
+    }
+
+    private fun refreshToken() {
+        // Navigate to login screen for re-authentication
+        val intent = Intent()
+        intent.setClass(this@AuthSettingsActivity, org.aiims.odk.auth.activities.AiimsLoginActivity::class.java)
+        intent.putExtra("is_reauth", true)
+        startActivity(intent)
+        finish()
     }
 
     private fun changePin() {

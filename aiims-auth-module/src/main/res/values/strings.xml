@@ -57,6 +57,8 @@
     <string name="aiims_dev_server_label">🔧 Dev Server IP (DEBUG)</string>
     <string name="aiims_dev_server_hint">e.g. 192.168.1.100:8383</string>
     <string name="aiims_dev_server_clear">Clear</string>
+    <string name="aiims_token_status_title">Token Status</string>
+    <string name="aiims_button_refresh_token">Refresh Token</string>
 
     <!-- User Information -->
     <string name="aiims_user_info">User Information</string>
