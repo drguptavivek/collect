@@ -25,8 +25,8 @@ class SetupPinActivity : AiimsBaseActivity() {
         (application as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.inject(this)
     }
 
-    private lateinit var pinField: com.google.android.material.textfield.TextInputEditText
-    private lateinit var confirmPinField: com.google.android.material.textfield.TextInputEditText
+    private lateinit var pinField: android.widget.EditText
+    private lateinit var confirmPinField: android.widget.EditText
     private lateinit var setupButton: com.google.android.material.button.MaterialButton
     private lateinit var progressBar: ProgressBar
     private lateinit var userTextView: TextView
@@ -57,6 +57,84 @@ class SetupPinActivity : AiimsBaseActivity() {
 
         // Load user data
         loadUserData()
+
+        // Setup PIN box logic
+        setupPinBoxLogic()
+    }
+
+    private fun setupPinBoxLogic() {
+        val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+
+        // Setup for main PIN field
+        val pinBoxesContainer = findViewById<View>(org.aiims.odk.auth.R.id.pin_boxes_container)
+        val pinBoxes = arrayOf<TextView>(
+            findViewById(org.aiims.odk.auth.R.id.pin_box_1),
+            findViewById(org.aiims.odk.auth.R.id.pin_box_2),
+            findViewById(org.aiims.odk.auth.R.id.pin_box_3),
+            findViewById(org.aiims.odk.auth.R.id.pin_box_4)
+        )
+
+        val pinFocusRequester = View.OnClickListener {
+            pinField.requestFocus()
+            imm.showSoftInput(pinField, 0)
+        }
+        pinBoxesContainer.setOnClickListener(pinFocusRequester)
+        pinBoxes.forEach { it.setOnClickListener(pinFocusRequester) }
+
+        pinField.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val pin = s?.toString() ?: ""
+                updateBoxes(pin, pinBoxes)
+                if (pin.length == 4) {
+                    confirmPinField.requestFocus()
+                    imm.showSoftInput(confirmPinField, 0)
+                }
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
+        // Setup for confirm PIN field
+        val confirmPinBoxesContainer = findViewById<View>(org.aiims.odk.auth.R.id.confirm_pin_boxes_container)
+        val confirmPinBoxes = arrayOf<TextView>(
+            findViewById(org.aiims.odk.auth.R.id.confirm_pin_box_1),
+            findViewById(org.aiims.odk.auth.R.id.confirm_pin_box_2),
+            findViewById(org.aiims.odk.auth.R.id.confirm_pin_box_3),
+            findViewById(org.aiims.odk.auth.R.id.confirm_pin_box_4)
+        )
+
+        val confirmFocusRequester = View.OnClickListener {
+            confirmPinField.requestFocus()
+            imm.showSoftInput(confirmPinField, 0)
+        }
+        confirmPinBoxesContainer.setOnClickListener(confirmFocusRequester)
+        confirmPinBoxes.forEach { it.setOnClickListener(confirmFocusRequester) }
+
+        confirmPinField.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val pin = s?.toString() ?: ""
+                updateBoxes(pin, confirmPinBoxes)
+                if (pin.length == 4) {
+                    // Stay here or submit
+                }
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
+        // Initial focus
+        pinField.postDelayed({ pinFocusRequester.onClick(null) }, 300)
+    }
+
+    private fun updateBoxes(pin: String, boxes: Array<TextView>) {
+        for (i in 0 until 4) {
+            if (i < pin.length) {
+                boxes[i].text = "•"
+            } else {
+                boxes[i].text = ""
+            }
+            boxes[i].isActivated = (i == pin.length)
+        }
     }
 
     private fun loadUserData() {
@@ -76,22 +154,22 @@ class SetupPinActivity : AiimsBaseActivity() {
         // Validation
         when {
             pin.isEmpty() -> {
-                pinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_required)
+                Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_pin_required), Toast.LENGTH_SHORT).show()
                 pinField.requestFocus()
                 return
             }
             pin.length != 4 -> {
-                pinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_digits)
+                Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_pin_digits), Toast.LENGTH_SHORT).show()
                 pinField.requestFocus()
                 return
             }
             confirmPin.isEmpty() -> {
-                confirmPinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_confirm)
+                Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_pin_confirm), Toast.LENGTH_SHORT).show()
                 confirmPinField.requestFocus()
                 return
             }
             pin != confirmPin -> {
-                confirmPinField.error = getString(org.aiims.odk.auth.R.string.aiims_error_pin_mismatch)
+                Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_pin_mismatch), Toast.LENGTH_SHORT).show()
                 confirmPinField.requestFocus()
                 return
             }
@@ -139,5 +217,5 @@ class SetupPinActivity : AiimsBaseActivity() {
         setupButton.isEnabled = !loading
         pinField.isEnabled = !loading
         confirmPinField.isEnabled = !loading
-    }
+        }
 }
