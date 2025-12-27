@@ -176,6 +176,9 @@ class AuthSettingsActivity : AiimsBaseActivity() {
                 progressDialog?.dismiss()
 
                 if (projectInfo != null) {
+                    // Update project name in Collect settings
+                    authManager.updateCollectProjectName(user.projectId, projectInfo.name)
+
                     // Show project details in dialog
                     val message = """
                         Project ID: ${projectInfo.id}

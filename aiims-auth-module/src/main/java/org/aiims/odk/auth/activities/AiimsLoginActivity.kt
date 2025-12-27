@@ -153,8 +153,11 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
             if (centralProjectId != null && serverUrl != null) {
                 // Set Active Project in Auth Manager
-                authManager.setActiveProject(centralProjectId)
-                binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, currentSystemProjectId, serverUrl)
+                authManager.setActiveProject(centralProjectId!!)
+                // Ensure mapping is established
+                authManager.setProjectMapping(centralProjectId!!, currentSystemProjectId!!)
+                
+                binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, centralProjectId, serverUrl)
                 binding.statusText.visibility = View.VISIBLE
                 enableLoginUi(true)
             } else {
@@ -411,6 +414,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 centralProjectId = centralPid
 
                 authManager.setActiveProject(centralPid)
+                authManager.setProjectMapping(centralPid, targetProjectUuid)
 
                 binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, centralPid, url)
                 binding.statusText.visibility = View.VISIBLE

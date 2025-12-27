@@ -281,21 +281,18 @@ class RealAuthClient private constructor(
             try {
                 val header = "Bearer $authToken"
                 
-                // Use the projects listing endpoint which is more accessible (avoids 403)
-                val response = getApiService().getProjects(header)
+                // Use the specific project endpoint (now allowed by server modification)
+                val response = getApiService().getProject(projectId, header)
 
                 if (response.isSuccessful) {
-                    val projects = response.body()
-                    // Find the project that matches the requested ID
-                    // ODK Central project IDs are integers, but we might receive them as strings
-                    projects?.find { it.id.toString() == projectId }
+                    response.body()
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    Log.e("AiimsAuthClient", "Fetch projects list failed: ${response.code()} Body: $errorBody")
+                    Log.e("AiimsAuthClient", "Fetch project failed: ${response.code()} Body: $errorBody")
                     null
                 }
             } catch (e: Exception) {
-                Log.e("AiimsAuthClient", "Fetch projects list exception: ${e.message}", e)
+                Log.e("AiimsAuthClient", "Fetch project exception: ${e.message}", e)
                 null
             }
         }

@@ -27,6 +27,11 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.google.gson.Gson
+import org.odk.collect.projects.Project
+import org.odk.collect.projects.SharedPreferencesProjectsRepository
+import org.odk.collect.shared.strings.UUIDGenerator
+import org.odk.collect.settings.keys.MetaKeys
 
 /**
  * Authentication Manager for Central Backend.
@@ -60,6 +65,43 @@ class AiimsAuthManager @Inject constructor(
     @androidx.annotation.VisibleForTesting
     fun setIoDispatcher(dispatcher: CoroutineDispatcher) {
         ioDispatcherForTesting = dispatcher
+    }
+
+    private fun getProjectsRepository(): SharedPreferencesProjectsRepository {
+        val metaPrefs = context.getSharedPreferences("meta", Context.MODE_PRIVATE)
+        val metaSettings = object : org.odk.collect.shared.settings.Settings {
+            override fun save(key: String, value: Any?) {
+                when (value) {
+                    is String -> metaPrefs.edit().putString(key, value).apply()
+                    is Boolean -> metaPrefs.edit().putBoolean(key, value).apply()
+                    is Long -> metaPrefs.edit().putLong(key, value).apply()
+                    is Int -> metaPrefs.edit().putInt(key, value).apply()
+                    is Float -> metaPrefs.edit().putFloat(key, value).apply()
+                    is Set<*> -> metaPrefs.edit().putStringSet(key, value as Set<String>).apply()
+                }
+            }
+            override fun getString(key: String): String? = metaPrefs.getString(key, null)
+            override fun getBoolean(key: String): Boolean = metaPrefs.getBoolean(key, false)
+            override fun getLong(key: String): Long = metaPrefs.getLong(key, 0L)
+            override fun getInt(key: String): Int = metaPrefs.getInt(key, 0)
+            override fun getFloat(key: String): Float = metaPrefs.getFloat(key, 0f)
+            override fun getStringSet(key: String): Set<String>? = metaPrefs.getStringSet(key, null)
+            override fun getAll(): Map<String, *> = metaPrefs.all
+            override fun contains(key: String): Boolean = metaPrefs.contains(key)
+            override fun remove(key: String) { metaPrefs.edit().remove(key).apply() }
+            override fun clear() { metaPrefs.edit().clear().apply() }
+            override fun setDefaultForAllSettingsWithoutValues() {}
+            override fun saveAll(prefs: Map<String, Any?>) {}
+            override fun reset(key: String) {}
+            override fun registerOnSettingChangeListener(listener: org.odk.collect.shared.settings.Settings.OnSettingChangeListener) {}
+            override fun unregisterOnSettingChangeListener(listener: org.odk.collect.shared.settings.Settings.OnSettingChangeListener) {}
+        }
+        return SharedPreferencesProjectsRepository(
+            UUIDGenerator(),
+            Gson(),
+            metaSettings,
+            MetaKeys.KEY_PROJECTS
+        )
     }
 
     // Reactive state for the *Active* Project
@@ -226,6 +268,9 @@ class AiimsAuthManager @Inject constructor(
                             // Store project name in shared preferences for this project
                             prefs.edit().putString("project_name_$projectId", projectInfo.name).apply()
                             Log.d("AiimsAuthManager", "Stored project name: ${projectInfo.name} for project $projectId")
+                            
+                            // SYNC TO ODK SETTINGS
+                            updateCollectProjectName(projectId, projectInfo.name)
                         }
                     } catch (e: Exception) {
                         Log.e("AiimsAuthManager", "Failed to fetch project name: ${e.message}")
@@ -353,6 +398,49 @@ class AiimsAuthManager @Inject constructor(
     }
 
     // --- Helpers for Persistence keys ---
+    fun setProjectMapping(centralPid: String, systemUuid: String) {
+        prefs.edit().putString("central_to_odk_$centralPid", systemUuid).apply()
+        Log.d("AiimsAuthManager", "Mapped Central ID $centralPid to ODK UUID $systemUuid")
+    }
+
+    fun updateCollectProjectName(centralPid: String, newName: String) {
+        var systemUuid = prefs.getString("central_to_odk_$centralPid", null)
+        
+        try {
+            val repository = getProjectsRepository()
+            
+            // Backfill: If mapping is missing, look it up by URL
+            if (systemUuid == null) {
+                Log.d("AiimsAuthManager", "Mapping missing for Central ID $centralPid. Searching by URL...")
+                val allProjects = repository.getAll()
+                for (project in allProjects) {
+                    val projPrefs = context.getSharedPreferences("general_prefs${project.uuid}", Context.MODE_PRIVATE)
+                    val url = projPrefs.getString("server_url", "") ?: ""
+                    if (url.contains("/v1/projects/$centralPid")) {
+                        systemUuid = project.uuid
+                        setProjectMapping(centralPid, systemUuid)
+                        Log.d("AiimsAuthManager", "Backfilled mapping: Central $centralPid -> ODK $systemUuid")
+                        break
+                    }
+                }
+            }
+
+            if (systemUuid == null) {
+                Log.w("AiimsAuthManager", "Could not find ODK project for Central ID $centralPid")
+                return
+            }
+
+            val existingProject = repository.get(systemUuid)
+            if (existingProject != null && existingProject.name != newName) {
+                val updatedProject = existingProject.copy(name = newName)
+                repository.save(updatedProject)
+                Log.d("AiimsAuthManager", "Updated ODK project $systemUuid name to: $newName")
+            }
+        } catch (e: Exception) {
+            Log.e("AiimsAuthManager", "Error updating ODK project name", e)
+        }
+    }
+
     private fun keyToken(pid: String) = "auth_token_$pid"
     private fun keyUser(pid: String) = "user_data_$pid"
     private fun keyExpiresAt(pid: String) = "expires_at_$pid"
@@ -362,6 +450,11 @@ class AiimsAuthManager @Inject constructor(
     private fun getPersistedToken(pid: String): String? = prefs.getString(keyToken(pid), null)
     private fun getPersistedExpiresAt(pid: String): String? = prefs.getString(keyExpiresAt(pid), null)
     private fun getApiUrlForProject(pid: String): String? = prefs.getString(keyApiUrl(pid), null)
+
+    fun getActiveProjectApiUrl(): String? {
+        val pid = activeProjectId ?: return null
+        return getApiUrlForProject(pid)
+    }
 
     private fun getPersistedUser(pid: String): User? {
         val jsonStr = prefs.getString(keyUser(pid), null) ?: return null

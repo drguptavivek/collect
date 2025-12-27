@@ -59,6 +59,7 @@
     <string name="aiims_dev_server_clear">Clear</string>
     <string name="aiims_token_status_title">Token Status</string>
     <string name="aiims_button_refresh_token">Refresh Token</string>
+    <string name="aiims_button_get_project_details">Get Project Details</string>
 
     <!-- User Information -->
     <string name="aiims_user_info">User Information</string>
