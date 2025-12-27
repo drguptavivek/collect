@@ -61,9 +61,13 @@ class AuthSettingsActivity : AiimsBaseActivity() {
         lifecycleScope.launch {
             authManager.currentUser.collect { user ->
                 user?.let {
+                    // Get project name from storage (fetched during login)
+                    val projectName = getSharedPreferences("aiims_auth", MODE_PRIVATE)
+                        .getString("project_name_${it.projectId}", null) ?: it.projectId
+                    
                     val userDetails = """
                         Username: ${it.username}
-                        Project ID: ${it.projectId}
+                        Project: $projectName
                     """.trimIndent()
 
                     userDetailsText.text = userDetails

@@ -276,6 +276,25 @@ class RealAuthClient private constructor(
         }
     }
 
+    override suspend fun fetchProject(projectId: String, authToken: String): ProjectResponse? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val header = "Bearer $authToken"
+                val response = getApiService().getProject(projectId, header)
+
+                if (response.isSuccessful) {
+                    response.body()
+                } else {
+                    Log.e("AiimsAuthClient", "Fetch project failed: ${response.code()}")
+                    null
+                }
+            } catch (e: Exception) {
+                Log.e("AiimsAuthClient", "Fetch project exception: ${e.message}", e)
+                null
+            }
+        }
+    }
+
     /**
      * Generate or retrieve device ID
      */

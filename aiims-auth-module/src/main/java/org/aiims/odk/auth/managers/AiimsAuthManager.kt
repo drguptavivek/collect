@@ -1,5 +1,6 @@
 package org.aiims.odk.auth.managers
 
+import android.util.Log
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.work.Constraints
@@ -216,6 +217,19 @@ class AiimsAuthManager @Inject constructor(
                     // If this matches the active project, update state immediately
                     if (activeProjectId == projectId) {
                         refreshState()
+                    }
+
+                    // Fetch and store project name
+                    try {
+                        val projectInfo = client.fetchProject(projectId, result.token)
+                        if (projectInfo != null) {
+                            // Store project name in shared preferences for this project
+                            prefs.edit().putString("project_name_$projectId", projectInfo.name).apply()
+                            Log.d("AiimsAuthManager", "Stored project name: ${projectInfo.name} for project $projectId")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("AiimsAuthManager", "Failed to fetch project name: ${e.message}")
+                        // Non-critical, continue with login
                     }
 
                     // Trigger Telemetry

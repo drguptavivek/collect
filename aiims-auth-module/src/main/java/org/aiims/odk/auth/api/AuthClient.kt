@@ -9,4 +9,5 @@ interface AuthClient {
     suspend fun revokeSession(projectId: String, userId: String, authToken: String, deviceId: String): Boolean
     suspend fun checkReachability(): Boolean
     suspend fun submitTelemetry(projectId: String, authToken: String, request: TelemetryRequest): TelemetryResponse?
+    suspend fun fetchProject(projectId: String, authToken: String): ProjectResponse?
 }

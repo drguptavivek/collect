@@ -25,4 +25,15 @@ class SimpleAuthClient {
             AuthResult.Error("Invalid credentials")
         }
     }
+
+    suspend fun fetchProject(projectId: String, authToken: String): ProjectResponse? {
+        // Stub implementation for testing
+        return ProjectResponse(
+            id = projectId.toIntOrNull() ?: 1,
+            name = "Test Project",
+            description = "Test project description",
+            keyId = null,
+            archived = false
+        )
+    }
 }

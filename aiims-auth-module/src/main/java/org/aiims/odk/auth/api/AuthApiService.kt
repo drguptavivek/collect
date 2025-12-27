@@ -34,6 +34,12 @@ interface AuthApiService {
         @Header("Authorization") authHeader: String,
         @Body request: TelemetryRequest
     ): Response<TelemetryResponse>
+
+    @retrofit2.http.GET("projects/{projectId}")
+    suspend fun getProject(
+        @Path("projectId") projectId: String,
+        @Header("Authorization") authHeader: String
+    ): Response<ProjectResponse>
 }
 
 /**
@@ -90,4 +96,12 @@ data class RevokeResponse(
 data class TelemetryResponse(
     val id: Int,
     val dateTime: String
+)
+
+data class ProjectResponse(
+    val id: Int,
+    val name: String,
+    val description: String?,
+    val keyId: Int?,
+    val archived: Boolean
 )
