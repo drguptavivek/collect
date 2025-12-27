@@ -261,40 +261,56 @@ class AiimsLoginActivity : AiimsBaseActivity() {
     }
 
     private fun showManualUrlDialog() {
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(50, 40, 50, 10)
-        }
+        // Inflate the styled dialog layout
+        val dialogView = layoutInflater.inflate(org.aiims.odk.auth.R.layout.dialog_manual_config, null)
+        
+        // Get references to views
+        val baseUrlInput = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(org.aiims.odk.auth.R.id.baseUrlInput)
+        val projectIdInput = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(org.aiims.odk.auth.R.id.projectIdInput)
+        val devServerSection = dialogView.findViewById<LinearLayout>(org.aiims.odk.auth.R.id.devServerSection)
+        val devServerInput = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(org.aiims.odk.auth.R.id.devServerInput)
 
-        val baseUrlInput = EditText(this).apply {
-            hint = getString(org.aiims.odk.auth.R.string.aiims_base_url_hint)
-            // Use existing base if feasible, or default
-            val current = serverUrl ?: "https://central.local"
-            // Strip project part if present for cleaner default
-            setText(if (current.contains("/v1/projects")) current.substringBefore("/v1/projects") else current)
-        }
+        // Load saved dev server IP (DEBUG only)
+        val devServerPrefs = getSharedPreferences("aiims_dev_prefs", Context.MODE_PRIVATE)
+        val savedDevIp = devServerPrefs.getString(org.aiims.odk.auth.utils.AiimsConstants.KEY_DEV_SERVER_IP, null)
 
-        val projectIdInput = EditText(this).apply {
-            hint = getString(org.aiims.odk.auth.R.string.aiims_project_id_hint)
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setText(centralProjectId ?: "1")
-        }
+        // Set default values
+        val currentUrl = serverUrl ?: "https://central.local"
+        baseUrlInput.setText(if (currentUrl.contains("/v1/projects")) currentUrl.substringBefore("/v1/projects") else currentUrl)
+        projectIdInput.setText(centralProjectId ?: "1")
 
-        layout.addView(TextView(this).apply { text = getString(org.aiims.odk.auth.R.string.aiims_server_base_url) })
-        layout.addView(baseUrlInput)
-        layout.addView(TextView(this).apply {
-            text = getString(org.aiims.odk.auth.R.string.aiims_project_id_label)
-            setPadding(0, 30, 0, 0)
-        })
-        layout.addView(projectIdInput)
+        // DEBUG ONLY: Show dev server section
+        if (org.aiims.odk.auth.BuildConfig.DEBUG) {
+            devServerSection.visibility = View.VISIBLE
+            devServerInput.setText(savedDevIp ?: "")
+        }
 
         try {
-            AlertDialog.Builder(this)
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
                 .setTitle(getString(org.aiims.odk.auth.R.string.aiims_manual_configuration_title))
-                .setView(layout)
+                .setView(dialogView)
                 .setPositiveButton(getString(org.aiims.odk.auth.R.string.aiims_button_set)) { _, _ ->
-                    val baseUrl = baseUrlInput.text.toString().trim().trimEnd('/')
+                    var baseUrl = baseUrlInput.text.toString().trim().trimEnd('/')
                     val pid = projectIdInput.text.toString().trim()
+
+                    // DEBUG: Override with dev server IP if set
+                    if (org.aiims.odk.auth.BuildConfig.DEBUG) {
+                        val devIp = devServerInput.text.toString().trim()
+                        if (devIp.isNotEmpty()) {
+                            // Save for future use
+                            devServerPrefs.edit()
+                                .putString(org.aiims.odk.auth.utils.AiimsConstants.KEY_DEV_SERVER_IP, devIp)
+                                .apply()
+                            // Override base URL with dev server
+                            baseUrl = if (devIp.startsWith("http")) devIp else "https://$devIp"
+                            android.util.Log.d("AiimsLogin", "DEBUG: Using dev server: $baseUrl")
+                        } else {
+                            // Clear saved dev IP
+                            devServerPrefs.edit()
+                                .remove(org.aiims.odk.auth.utils.AiimsConstants.KEY_DEV_SERVER_IP)
+                                .apply()
+                        }
+                    }
 
                     if (baseUrl.isNotEmpty() && pid.isNotEmpty()) {
                         // Construct full URL: Base + /v1/projects/ + ID

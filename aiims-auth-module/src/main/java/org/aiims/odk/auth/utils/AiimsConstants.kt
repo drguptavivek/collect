@@ -28,6 +28,7 @@ object AiimsConstants {
     // API Configuration
     const val KEY_API_URL = "api_url"
     const val KEY_API_VERSION = "api_version"
+    const val KEY_DEV_SERVER_IP = "dev_server_ip" // DEBUG only - overrides base URL
 
     // Feature Flags
     const val KEY_AIIMS_AUTH_ENABLED = "aiims_auth_enabled"

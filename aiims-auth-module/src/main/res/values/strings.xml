@@ -54,6 +54,9 @@
     <string name="aiims_offline_period">Offline Access Period</string>
     <string name="aiims_auto_logout">Auto-logout Timeout</string>
     <string name="aiims_biometric">Use Biometric</string>
+    <string name="aiims_dev_server_label">🔧 Dev Server IP (DEBUG)</string>
+    <string name="aiims_dev_server_hint">e.g. 192.168.1.100:8383</string>
+    <string name="aiims_dev_server_clear">Clear</string>
 
     <!-- User Information -->
     <string name="aiims_user_info">User Information</string>

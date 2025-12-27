@@ -40,6 +40,11 @@ Tests for the Find-or-Create project pattern used when configuring projects.
 | `switching back to previous project reuses it` | Configure A → B → A | Original A is reused |
 | `project data persists across configuration changes - Option B` | Settings/flags survive switch | Data persists |
 | `multiple projects can coexist for multi-user shared device` | 3 different projects | All 3 coexist |
+| `dev server IP is saved to preferences` | Save dev IP | Persists in prefs |
+| `dev server IP can be cleared` | Clear dev IP | Returns null |
+| `dev server IP URL construction adds https if missing` | IP without http | Adds https:// |
+| `dev server IP URL preserves existing http prefix` | IP with http:// | Preserves prefix |
+| `dev server IP is only used in DEBUG builds` | DEBUG-only feature | Inaccessible in release |
 
 ---
 

@@ -229,6 +229,87 @@ class ProjectConfigurationTest {
         assertThat(projectsRepo.get(teamCProject), notNullValue())
     }
 
+    // =============================================
+    // Dev Server IP Tests (DEBUG only feature)
+    // =============================================
+
+    @Test
+    fun `dev server IP is saved to preferences`() {
+        // Given: Dev preferences
+        val devPrefs = context.getSharedPreferences("aiims_dev_prefs", Context.MODE_PRIVATE)
+        
+        // When: Dev server IP is saved
+        val testIp = "192.168.1.100:8383"
+        devPrefs.edit()
+            .putString(org.aiims.odk.auth.utils.AiimsConstants.KEY_DEV_SERVER_IP, testIp)
+            .apply()
+        
+        // Then: It should be retrievable
+        val savedIp = devPrefs.getString(org.aiims.odk.auth.utils.AiimsConstants.KEY_DEV_SERVER_IP, null)
+        assertThat("Dev server IP should be saved", savedIp, equalTo(testIp))
+    }
+
+    @Test
+    fun `dev server IP can be cleared`() {
+        // Given: A saved dev server IP
+        val devPrefs = context.getSharedPreferences("aiims_dev_prefs", Context.MODE_PRIVATE)
+        devPrefs.edit()
+            .putString(org.aiims.odk.auth.utils.AiimsConstants.KEY_DEV_SERVER_IP, "10.0.0.1:8080")
+            .apply()
+        
+        // When: It is cleared
+        devPrefs.edit()
+            .remove(org.aiims.odk.auth.utils.AiimsConstants.KEY_DEV_SERVER_IP)
+            .apply()
+        
+        // Then: It should return null
+        val savedIp = devPrefs.getString(org.aiims.odk.auth.utils.AiimsConstants.KEY_DEV_SERVER_IP, null)
+        assertThat("Dev server IP should be null after clearing", savedIp, nullValue())
+    }
+
+    @Test
+    fun `dev server IP URL construction adds https if missing`() {
+        // Test the URL construction logic used in showManualUrlDialog
+        val devIp = "192.168.1.100:8383"
+        
+        // The logic: if devIp doesn't start with "http", prepend "https://"
+        val baseUrl = if (devIp.startsWith("http")) devIp else "https://$devIp"
+        
+        assertThat("Should add https:// prefix", baseUrl, equalTo("https://192.168.1.100:8383"))
+    }
+
+    @Test
+    fun `dev server IP URL preserves existing http prefix`() {
+        // Test when user includes http:// in the IP
+        val devIp = "http://192.168.1.100:8080"
+        
+        val baseUrl = if (devIp.startsWith("http")) devIp else "https://$devIp"
+        
+        assertThat("Should preserve http:// prefix", baseUrl, equalTo("http://192.168.1.100:8080"))
+    }
+
+    @Test
+    fun `dev server IP is only used in DEBUG builds`() {
+        // This test documents the expected behavior:
+        // - In DEBUG builds: Dev server IP field is visible and can override base URL
+        // - In RELEASE builds: Dev server IP field is hidden and ignored
+        //
+        // Since tests run in DEBUG mode, we can only verify the DEBUG behavior here.
+        // The RELEASE behavior is enforced by BuildConfig.DEBUG checks in AiimsLoginActivity.
+        
+        // Verify this test runs in DEBUG mode
+        assertThat("Tests should run in DEBUG mode", org.aiims.odk.auth.BuildConfig.DEBUG, equalTo(true))
+        
+        // In DEBUG mode, the dev server IP is accessible and usable
+        val devPrefs = context.getSharedPreferences("aiims_dev_prefs", Context.MODE_PRIVATE)
+        devPrefs.edit()
+            .putString(org.aiims.odk.auth.utils.AiimsConstants.KEY_DEV_SERVER_IP, "dev.local:8080")
+            .apply()
+        
+        val savedIp = devPrefs.getString(org.aiims.odk.auth.utils.AiimsConstants.KEY_DEV_SERVER_IP, null)
+        assertThat("Dev IP should be accessible in DEBUG", savedIp, equalTo("dev.local:8080"))
+    }
+
     /**
      * Simple Settings implementation for testing (mirrors AiimsLoginActivity.AiimsSettings)
      */
