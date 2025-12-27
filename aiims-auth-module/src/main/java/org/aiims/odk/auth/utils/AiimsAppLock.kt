@@ -26,15 +26,16 @@ class AiimsAppLock(
     override fun onActivityStarted(activity: Activity) {
         startedActivities++
 
-        if (!shouldRequirePin) return
+        // Skip PIN check if already on an auth screen
         if (activity.isAuthFlowActivity()) {
-            // Already on an auth screen; no need to launch PIN entry again.
             shouldRequirePin = false
             return
         }
 
         val authState = authManager.getCurrentAuthState()
 
+        // Require PIN on every start if logged in and PIN is set
+        // This covers both: resume from background AND fresh app start
         if (authState == AuthState.LOGGED_IN) {
             if (authManager.getIsSoftExpiry()) {
                 shouldRequirePin = false
@@ -47,11 +48,15 @@ class AiimsAppLock(
             }
 
             if (pinManager.isPinSet()) {
-                shouldRequirePin = false
-                val intent = Intent(application, PinEntryActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                // Only require PIN if we haven't already checked it in this session
+                // (i.e., if shouldRequirePin is true OR this is the first activity start)
+                if (shouldRequirePin || startedActivities == 1) {
+                    shouldRequirePin = false
+                    val intent = Intent(application, PinEntryActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }
+                    application.startActivity(intent)
                 }
-                application.startActivity(intent)
             } else {
                 shouldRequirePin = false
             }
