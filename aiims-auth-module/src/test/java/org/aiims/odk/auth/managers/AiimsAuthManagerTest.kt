@@ -149,7 +149,7 @@ class AiimsAuthManagerTest {
     }
 
     @Test
-    fun `#logout revokes token and clears data`() = runTest {
+    fun `#logout revokes token but preserves project data - Option B`() = runTest {
         val projectId = "1"
 
         val user = User("100", "testuser", projectId, "2099-01-01T00:00:00.000Z")
@@ -165,10 +165,55 @@ class AiimsAuthManagerTest {
         authManager.logout()
         advanceUntilIdle()
 
+        // Token revocation should be called
         verify(authClient, org.mockito.kotlin.atLeastOnce()).revokeSession(any(), any(), any(), any())
-        verify(projectCleaner).clearProjectData(projectId)
+        
+        // OPTION B: Project data should NOT be cleared on logout
+        // This preserves forms and instances for shared device scenarios
+        verify(projectCleaner, org.mockito.kotlin.never()).clearProjectData(any())
+        
         assertThat(authManager.authState.first(), equalTo(AuthState.LOGGED_OUT))
         assertThat(authManager.getActiveProjectToken(), nullValue())
+    }
+
+    @Test
+    fun `#logout preserves project data for next user on shared device - Option B`() = runTest {
+        // This test verifies the intentional behavior for AIIMS shared device deployments:
+        // When User A logs out, their forms and instances remain on device
+        // so User B logging into the same project can access them.
+        val projectId = "1"
+
+        val userA = User("A", "userA", projectId, "2099-01-01T00:00:00.000Z")
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(userA, "tokenA", userA.expiresAt!!))
+        whenever(authClient.revokeSession(any(), any(), any(), any())).thenReturn(true)
+
+        // User A logs in
+        authManager.login(projectId, "userA", "pass", "url")
+        authManager.setActiveProject(projectId)
+        advanceUntilIdle()
+        
+        // User A logs out
+        authManager.logout()
+        advanceUntilIdle()
+
+        // Verify: projectCleaner should NEVER be called (Option B)
+        // This ensures forms, instances, and cache are preserved
+        verify(projectCleaner, org.mockito.kotlin.never()).clearProjectData(any())
+
+        // User B can now log into the same project and see User A's data
+        val userB = User("B", "userB", projectId, "2099-01-01T00:00:00.000Z")
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(userB, "tokenB", userB.expiresAt!!))
+        
+        authManager.login(projectId, "userB", "pass", "url")
+        authManager.setActiveProject(projectId)
+        advanceUntilIdle()
+
+        // User B is successfully logged in to the same project
+        assertThat(authManager.authState.first(), equalTo(AuthState.LOGGED_IN))
+        assertThat(authManager.currentUser.first()?.username, equalTo("userB"))
+        
+        // Still no project data cleared
+        verify(projectCleaner, org.mockito.kotlin.never()).clearProjectData(any())
     }
 
     @Test
@@ -229,7 +274,8 @@ class AiimsAuthManagerTest {
         advanceUntilIdle() // Coroutine for logout
 
         assertThat(newAuthManager.authState.first(), equalTo(AuthState.LOGGED_OUT))
-        verify(projectCleaner).clearProjectData(projectId)
+        // OPTION B: Even on hard deadline, project data is NOT cleared
+        verify(projectCleaner, org.mockito.kotlin.never()).clearProjectData(any())
         // Reachability should NOT have been called
         verify(authClient, org.mockito.kotlin.never()).checkReachability()
     }

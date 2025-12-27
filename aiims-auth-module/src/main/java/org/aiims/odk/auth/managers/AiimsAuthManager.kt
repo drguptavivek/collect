@@ -292,16 +292,11 @@ class AiimsAuthManager @Inject constructor(
         // Clear persistence
         clearSession(projectId)
 
-        // Clear ODK forms and instances for this project (Isolation)
-        kotlinx.coroutines.withContext(ioDispatcherForTesting ?: kotlinx.coroutines.Dispatchers.IO) {
-            android.util.Log.d("AiimsAuth", "Attempting to clear project data for: $projectId")
-            try {
-                projectCleaner.clearProjectData(projectId)
-                android.util.Log.d("AiimsAuth", "Finished clearing project data for: $projectId")
-            } catch (e: Exception) {
-                android.util.Log.e("AiimsAuth", "Failed to clear project data", e)
-            }
-        }
+        // OPTION B: Do NOT clear project data on logout
+        // Forms, instances, and cache persist across user sessions for shared device scenarios.
+        // This allows User B to see forms/drafts from User A when logging into the same project.
+        // See docs/vg-user-behaviour.md for rationale.
+        android.util.Log.d("AiimsAuth", "Logout: Preserving project data for: $projectId (Option B - shared device)")
 
         // Clear local PIN
         pinManager.clearPin()
