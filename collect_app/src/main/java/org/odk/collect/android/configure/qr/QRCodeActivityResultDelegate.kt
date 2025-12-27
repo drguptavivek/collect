@@ -37,10 +37,16 @@ class QRCodeActivityResultDelegate(
                         ProjectConfigurationResult.SUCCESS -> {
                             log(AnalyticsEvents.RECONFIGURE_PROJECT)
                             showToast(org.odk.collect.strings.R.string.successfully_imported_settings)
-                            ActivityUtils.startActivityAndCloseAllOthers(
-                                activity,
-                                MainMenuActivity::class.java
-                            )
+                            
+                            // Check if AIIMS auth is enabled - if so, just finish to return to login
+                            if (isAiimsAuthEnabled()) {
+                                activity.finish()
+                            } else {
+                                ActivityUtils.startActivityAndCloseAllOthers(
+                                    activity,
+                                    MainMenuActivity::class.java
+                                )
+                            }
                         }
                         ProjectConfigurationResult.INVALID_SETTINGS -> showToast(org.odk.collect.strings.R.string.invalid_qrcode)
                         ProjectConfigurationResult.GD_PROJECT -> showToast(org.odk.collect.strings.R.string.settings_with_gd_protocol)
@@ -54,7 +60,17 @@ class QRCodeActivityResultDelegate(
         }
     }
 
+    private fun isAiimsAuthEnabled(): Boolean {
+        return try {
+            val resId = activity.resources.getIdentifier("aiims_auth_enabled", "bool", activity.packageName)
+            if (resId != 0) activity.resources.getBoolean(resId) else false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     private fun showToast(string: Int) {
         Toast.makeText(activity, activity.getString(string), Toast.LENGTH_LONG).show()
     }
 }
+

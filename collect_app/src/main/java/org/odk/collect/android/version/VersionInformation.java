@@ -44,11 +44,16 @@ public class VersionInformation {
     public Integer getCommitCount() {
         String[] components = getVersionDescriptionComponents();
 
-        if (isBeta() && components.length > 3) {
-            return Integer.parseInt(components[2]);
-        } else if (!isBeta() && components.length > 2) {
-            return Integer.parseInt(components[1]);
-        } else {
+        try {
+            if (isBeta() && components.length > 3) {
+                return Integer.parseInt(components[2]);
+            } else if (!isBeta() && components.length > 2) {
+                return Integer.parseInt(components[1]);
+            } else {
+                return null;
+            }
+        } catch (NumberFormatException e) {
+            // Handle non-numeric version components like "RC1"
             return null;
         }
     }

@@ -1,0 +1,68 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="1080dp"
+    android:height="1920dp"
+    android:viewportWidth="1080"
+    android:viewportHeight="1920">
+    
+  <!-- Dark mode background with glassmorphism effect -->
+  
+  <!-- Base dark gradient -->
+  <path android:pathData="M0,0h1080v1920h-1080z">
+    <aapt:attr name="android:fillColor">
+      <gradient 
+          android:startY="0" 
+          android:startX="0" 
+          android:endY="1920" 
+          android:endX="0"
+          android:type="linear">
+        <item android:offset="0" android:color="#FF0D1117"/> <!-- GitHub dark -->
+        <item android:offset="0.5" android:color="#FF161B22"/> <!-- Mid dark -->
+        <item android:offset="1" android:color="#FF0D1117"/> <!-- Bottom dark -->
+      </gradient>
+    </aapt:attr>
+  </path>
+  
+  <!-- Glassy blur overlay top left -->
+  <path
+      android:pathData="M0,0 H500 Q350,400 0,550 Z"
+      android:fillColor="#12FFFFFF"/>
+  
+  <!-- Glassy blur blob center -->
+  <path
+      android:pathData="M400,600 Q700,500 800,800 Q600,1100 300,900 Q200,700 400,600 Z"
+      android:fillColor="#0AFFFFFF"/>
+      
+  <!-- Glassy blur overlay bottom right -->
+  <path
+      android:pathData="M1080,1920 H580 Q780,1520 1080,1370 Z"
+      android:fillColor="#10FFFFFF"/>
+      
+  <!-- Primary accent glow top -->
+  <path
+      android:pathData="M200,100 m-150,0 a150,150 0 1,1 300,0 a150,150 0 1,1 -300,0"
+      android:fillColor="#154DA6D3"/>
+      
+  <!-- Secondary accent glow bottom -->
+  <path
+      android:pathData="M880,1700 m-120,0 a120,120 0 1,1 240,0 a120,120 0 1,1 -240,0"
+      android:fillColor="#15A6D34D"/>
+      
+  <!-- Subtle noise texture simulation with scattered dots -->
+  <path
+      android:pathData="M100,300 m-3,0 a3,3 0 1,1 6,0 a3,3 0 1,1 -6,0"
+      android:fillColor="#08FFFFFF"/>
+  <path
+      android:pathData="M500,200 m-2,0 a2,2 0 1,1 4,0 a2,2 0 1,1 -4,0"
+      android:fillColor="#06FFFFFF"/>
+  <path
+      android:pathData="M800,500 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"
+      android:fillColor="#07FFFFFF"/>
+  <path
+      android:pathData="M300,1200 m-3,0 a3,3 0 1,1 6,0 a3,3 0 1,1 -6,0"
+      android:fillColor="#05FFFFFF"/>
+  <path
+      android:pathData="M700,1500 m-2,0 a2,2 0 1,1 4,0 a2,2 0 1,1 -4,0"
+      android:fillColor="#08FFFFFF"/>
+
+</vector>

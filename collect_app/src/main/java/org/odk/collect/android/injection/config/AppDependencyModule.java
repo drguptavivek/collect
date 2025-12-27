@@ -183,26 +183,9 @@ public class AppDependencyModule {
             Application application, VersionInformation versionInformation) {
         String cacheDir = application.getCacheDir().getAbsolutePath();
 
-        // TOKEN PROVIDER: Read from aiims_auth_prefs
-        org.odk.collect.openrosa.http.okhttp.TokenProvider tokenProvider = () -> {
-            try {
-                android.content.SharedPreferences authPrefs = application.getSharedPreferences("aiims_auth_prefs",
-                        Context.MODE_PRIVATE);
-
-                // Try active project first
-                String activePid = authPrefs.getString("active_project_id", null);
-                if (activePid != null) {
-                    String token = authPrefs.getString("auth_token_" + activePid, null);
-                    if (token != null)
-                        return token;
-                }
-
-                // Fallback to legacy/default token
-                return authPrefs.getString("auth_token", null);
-            } catch (Exception e) {
-                return null;
-            }
-        };
+        // TOKEN PROVIDER: Delegate to AiimsTokenProvider (centralized token access)
+        org.odk.collect.openrosa.http.okhttp.TokenProvider tokenProvider = () ->
+            org.aiims.odk.auth.storage.AiimsTokenProvider.Companion.getInstance(application).getActiveProjectToken();
 
         return new OkHttpConnection(
                 cacheDir,

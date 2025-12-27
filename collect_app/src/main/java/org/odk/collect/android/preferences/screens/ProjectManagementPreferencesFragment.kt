@@ -28,6 +28,21 @@ class ProjectManagementPreferencesFragment :
 
         findPreference<Preference>(IMPORT_SETTINGS_KEY)!!.onPreferenceClickListener = this
         findPreference<Preference>(DELETE_PROJECT_KEY)!!.onPreferenceClickListener = this
+        
+        // Hide QR import and delete project options for AIIMS auth
+        if (isAiimsAuthEnabled()) {
+            findPreference<Preference>(IMPORT_SETTINGS_KEY)?.isVisible = false
+            findPreference<Preference>(DELETE_PROJECT_KEY)?.isVisible = false
+        }
+    }
+
+    private fun isAiimsAuthEnabled(): Boolean {
+        return try {
+            val resId = resources.getIdentifier("aiims_auth_enabled", "bool", requireContext().packageName)
+            if (resId != 0) resources.getBoolean(resId) else false
+        } catch (e: Exception) {
+            false
+        }
     }
 
     override fun onDisplayPreferenceDialog(preference: Preference) {

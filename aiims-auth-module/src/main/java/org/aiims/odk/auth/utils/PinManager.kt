@@ -6,40 +6,63 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Utility class for managing PIN storage and verification
+ * Utility class for managing PIN storage and verification.
+ * 
+ * PINs are stored as PBKDF2 hashes with a unique salt for security.
+ * Never stores plaintext PIN.
  */
 @Singleton
 class PinManager @Inject constructor(private val context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val securityUtils: AiimsSecurityUtils = AiimsSecurityUtils.getInstance(context)
 
     companion object {
         private const val PREFS_NAME = "aiims_auth_prefs"
-        private const val KEY_USER_PIN = "user_pin"
+        private const val KEY_PIN_HASH = "pin_hash"
+        private const val KEY_PIN_SALT = "pin_salt"
         private const val KEY_PIN_UPDATED_AT = "pin_updated_at"
         private const val KEY_PIN_ATTEMPTS = "pin_attempts"
         private const val MAX_ATTEMPTS = 3
+        
+        // Legacy key for migration detection
+        private const val KEY_USER_PIN_LEGACY = "user_pin"
     }
 
     /**
-     * Save the user's PIN
+     * Save the user's PIN securely using PBKDF2 hashing.
      */
     fun savePin(pin: String) {
+        val salt = securityUtils.generateSalt()
+        val hash = securityUtils.hashPin(pin, salt)
+        
         prefs.edit().apply {
-            putString(KEY_USER_PIN, pin)
+            putString(KEY_PIN_HASH, hash)
+            putString(KEY_PIN_SALT, salt)
             putLong(KEY_PIN_UPDATED_AT, System.currentTimeMillis())
             remove(KEY_PIN_ATTEMPTS) // Reset attempts on successful PIN save
+            // Remove legacy plaintext PIN if it exists
+            remove(KEY_USER_PIN_LEGACY)
             apply()
         }
-        android.util.Log.d("PinManager", "PIN saved successfully")
+        android.util.Log.d("PinManager", "PIN saved securely (hashed)")
     }
 
     /**
-     * Verify if the entered PIN matches the stored PIN
+     * Verify if the entered PIN matches the stored hash.
      */
     fun verifyPin(enteredPin: String): Boolean {
-        val storedPin = getStoredPin()
-        return if (storedPin == enteredPin) {
+        val storedHash = prefs.getString(KEY_PIN_HASH, null)
+        val storedSalt = prefs.getString(KEY_PIN_SALT, null)
+        
+        if (storedHash == null || storedSalt == null) {
+            android.util.Log.w("PinManager", "No PIN hash/salt found for verification")
+            return false
+        }
+        
+        val matches = securityUtils.verifyPin(enteredPin, storedHash, storedSalt)
+        
+        return if (matches) {
             resetAttempts()
             true
         } else {
@@ -49,38 +72,33 @@ class PinManager @Inject constructor(private val context: Context) {
     }
 
     /**
-     * Check if a PIN is already set
+     * Check if a PIN is already set (has valid hash and salt).
      */
     fun isPinSet(): Boolean {
-        val hasPin = prefs.contains(KEY_USER_PIN)
-        val pin = prefs.getString(KEY_USER_PIN, "")
-        android.util.Log.d("PinManager", "isPinSet: $hasPin, PIN: ${if (pin.isNullOrEmpty()) "null/empty" else "***"}")
-        return hasPin
+        val hasHash = prefs.contains(KEY_PIN_HASH) && prefs.contains(KEY_PIN_SALT)
+        val hash = prefs.getString(KEY_PIN_HASH, null)
+        val salt = prefs.getString(KEY_PIN_SALT, null)
+        val isValid = hasHash && !hash.isNullOrEmpty() && !salt.isNullOrEmpty()
+        android.util.Log.d("PinManager", "isPinSet: $isValid")
+        return isValid
     }
 
     /**
-     * Get the stored PIN
-     */
-    private fun getStoredPin(): String {
-        return prefs.getString(KEY_USER_PIN, "") ?: ""
-    }
-
-    /**
-     * Get the number of failed attempts
+     * Get the number of failed attempts.
      */
     fun getFailedAttempts(): Int {
         return prefs.getInt(KEY_PIN_ATTEMPTS, 0)
     }
 
     /**
-     * Check if max attempts reached
+     * Check if max attempts reached.
      */
     fun isMaxAttemptsReached(): Boolean {
         return getFailedAttempts() >= MAX_ATTEMPTS
     }
 
     /**
-     * Increment failed attempts
+     * Increment failed attempts.
      */
     private fun incrementFailedAttempts() {
         val attempts = getFailedAttempts() + 1
@@ -91,7 +109,7 @@ class PinManager @Inject constructor(private val context: Context) {
     }
 
     /**
-     * Reset failed attempts
+     * Reset failed attempts.
      */
     private fun resetAttempts() {
         prefs.edit().apply {
@@ -101,19 +119,23 @@ class PinManager @Inject constructor(private val context: Context) {
     }
 
     /**
-     * Clear all PIN data (used during logout)
+     * Clear all PIN data (used during logout).
      */
     fun clearPin() {
         prefs.edit().apply {
-            remove(KEY_USER_PIN)
+            remove(KEY_PIN_HASH)
+            remove(KEY_PIN_SALT)
             remove(KEY_PIN_UPDATED_AT)
             remove(KEY_PIN_ATTEMPTS)
+            // Also clear legacy key if exists
+            remove(KEY_USER_PIN_LEGACY)
             apply()
         }
+        android.util.Log.d("PinManager", "PIN cleared")
     }
 
     /**
-     * Get when the PIN was last updated
+     * Get when the PIN was last updated.
      */
     fun getPinUpdatedAt(): Long {
         return prefs.getLong(KEY_PIN_UPDATED_AT, 0L)

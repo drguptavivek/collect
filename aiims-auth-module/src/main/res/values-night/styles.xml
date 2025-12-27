@@ -1,22 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Placeholder styles to avoid resource linking errors -->
+    <!-- Dark mode styles override for better visibility -->
+    
     <style name="TextAppearance.Aiims.HeadlineLarge" parent="">
         <item name="android:textSize">32sp</item>
         <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/white</item>
     </style>
 
     <style name="TextAppearance.Aiims.HeadlineMedium" parent="">
         <item name="android:textSize">28sp</item>
         <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/white</item>
     </style>
 
     <style name="TextAppearance.Aiims.BodyLarge" parent="">
         <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/aiims_on_surface</item>
     </style>
 
     <style name="TextAppearance.Aiims.BodyMedium" parent="">
         <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/aiims_on_surface</item>
     </style>
 
     <style name="Widget.Aiims.Button" parent="Widget.MaterialComponents.Button">
@@ -32,24 +37,27 @@
         <item name="android:textColor">@color/aiims_primary</item>
     </style>
 
-    <!-- TextInputLayout with FilledBox style for better visibility -->
+    <!-- TextInputLayout with FilledBox style for better visibility in dark mode -->
     <style name="Widget.Aiims.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.FilledBox">
-        <item name="boxStrokeColor">@color/aiims_primary</item>
-        <item name="hintTextColor">@color/aiims_primary</item>
-        <item name="boxBackgroundColor">@color/aiims_surface</item>
+        <item name="boxStrokeColor">@color/aiims_primary_light</item>
+        <item name="boxStrokeWidth">2dp</item>
+        <item name="boxStrokeWidthFocused">3dp</item>
+        <item name="hintTextColor">@color/aiims_primary_light</item>
+        <item name="boxBackgroundColor">@color/aiims_surface_variant</item>
         <item name="android:textColorHint">@color/aiims_on_surface_variant</item>
-        <item name="startIconTint">@color/aiims_on_surface_variant</item>
-        <item name="endIconTint">@color/aiims_on_surface_variant</item>
+        <item name="startIconTint">@color/aiims_on_surface</item>
+        <item name="endIconTint">@color/aiims_on_surface</item>
     </style>
 
-    <!-- OutlinedBox variant with visible border -->
+    <!-- OutlinedBox variant with HIGH VISIBILITY border for dark mode -->
     <style name="Widget.Aiims.TextInputLayout.OutlinedBox" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-        <item name="boxStrokeColor">@color/aiims_primary</item>
+        <item name="boxStrokeColor">@color/aiims_primary_light</item>
         <item name="boxStrokeWidth">2dp</item>
-        <item name="hintTextColor">@color/aiims_primary</item>
-        <item name="boxBackgroundColor">@color/aiims_surface</item>
+        <item name="boxStrokeWidthFocused">3dp</item>
+        <item name="hintTextColor">@color/aiims_primary_light</item>
+        <item name="boxBackgroundColor">#2A2A2A</item>
         <item name="android:textColorHint">@color/aiims_on_surface_variant</item>
-        <item name="startIconTint">@color/aiims_on_surface_variant</item>
-        <item name="endIconTint">@color/aiims_on_surface_variant</item>
+        <item name="startIconTint">@color/aiims_on_surface</item>
+        <item name="endIconTint">@color/aiims_on_surface</item>
     </style>
 </resources>

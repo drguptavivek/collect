@@ -48,6 +48,8 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         checkAndRequestPermissions()
         // Update UI status
         updatePermissionStatusUI()
+        // Re-detect project in case user scanned QR code
+        detectCurrentProject()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,6 +64,9 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
         // UI Setup
         setupListeners()
+
+        // Apply brightness filter to logo in dark mode
+        applyLogoFilter()
 
         // Update initial state
         updatePermissionStatusUI()
@@ -120,8 +125,8 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 return
             }
 
-            // Read Project Settings
-            val prefsName = "org.odk.collect.android_preferences_$currentSystemProjectId"
+            // Read Project Settings (ODK uses "general_prefs" + projectId)
+            val prefsName = "general_prefs$currentSystemProjectId"
             val projectPrefs = getSharedPreferences(prefsName, Context.MODE_PRIVATE)
             serverUrl = projectPrefs.getString("server_url", null)
 
@@ -241,7 +246,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             intent.setClassName(this, "org.odk.collect.android.configure.qr.QRCodeTabsActivity")
             startActivity(intent)
         } catch (e: Exception) {
-            Toast.makeText(this, "Could not launch QR Scanner", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_qr_scanner_launch), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -430,6 +435,23 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         override fun unregisterOnSettingChangeListener(listener: org.odk.collect.shared.settings.Settings.OnSettingChangeListener) {}
     }
 
+    private fun applyLogoFilter() {
+        // Check if dark mode is enabled
+        val nightModeFlags = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        if (nightModeFlags == android.content.res.Configuration.UI_MODE_NIGHT_YES) {
+            // Apply brightness filter to make logo visible in dark mode
+            val colorMatrix = android.graphics.ColorMatrix().apply {
+                // Increase brightness by 40%
+                set(floatArrayOf(
+                    1.4f, 0f, 0f, 0f, 50f,   // Red
+                    0f, 1.4f, 0f, 0f, 50f,   // Green
+                    0f, 0f, 1.4f, 0f, 50f,   // Blue
+                    0f, 0f, 0f, 1f, 0f      // Alpha
+                ))
+            }
+            binding.logoView.colorFilter = android.graphics.ColorMatrixColorFilter(colorMatrix)
+        }
+    }
     private fun updatePermissionStatusUI() {
         // Location Status
         val hasLocation = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
@@ -437,10 +459,10 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
         if (hasLocation) {
             binding.locationStatus.text = getString(org.aiims.odk.auth.R.string.aiims_location_access_granted)
-            binding.locationStatus.setTextColor(android.graphics.Color.parseColor("#2E7D32")) // Green
+            binding.locationStatus.setTextColor(ContextCompat.getColor(this, org.aiims.odk.auth.R.color.aiims_success))
         } else {
             binding.locationStatus.text = getString(org.aiims.odk.auth.R.string.aiims_location_access_required)
-            binding.locationStatus.setTextColor(android.graphics.Color.parseColor("#C62828")) // Red
+            binding.locationStatus.setTextColor(ContextCompat.getColor(this, org.aiims.odk.auth.R.color.aiims_error))
         }
 
         // Notification Status (Android 13+)
@@ -449,10 +471,10 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             hasNotif = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
             if (hasNotif) {
                 binding.notificationStatus.text = getString(org.aiims.odk.auth.R.string.aiims_notifications_enabled)
-                binding.notificationStatus.setTextColor(android.graphics.Color.parseColor("#2E7D32")) // Green
+                binding.notificationStatus.setTextColor(ContextCompat.getColor(this, org.aiims.odk.auth.R.color.aiims_success))
             } else {
                 binding.notificationStatus.text = getString(org.aiims.odk.auth.R.string.aiims_notifications_disabled)
-                binding.notificationStatus.setTextColor(android.graphics.Color.parseColor("#C62828")) // Red
+                binding.notificationStatus.setTextColor(ContextCompat.getColor(this, org.aiims.odk.auth.R.color.aiims_error))
             }
         }
 

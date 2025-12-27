@@ -25,9 +25,9 @@
 
         <ImageView
             android:id="@+id/logo_view"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_marginTop="32dp"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_marginTop="16dp"
             android:contentDescription="@string/aiims_app_name"
             android:src="@drawable/aiims_logo"
             app:layout_constraintEnd_toEndOf="parent"
@@ -39,7 +39,7 @@
             style="@style/TextAppearance.Aiims.HeadlineMedium"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_medium"
+            android:layout_marginTop="8dp"
             android:text="@string/aiims_app_name"
             android:textAlignment="center"
             android:textColor="@color/aiims_primary"
@@ -47,23 +47,32 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/logo_view" />
 
-        <TextView
-            android:id="@+id/status_text"
-            style="@style/TextAppearance.Aiims.BodyMedium"
+        <!-- Username Field - RIGHT AFTER TITLE -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/username_layout"
+            style="@style/Widget.Aiims.TextInputLayout.OutlinedBox"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_medium"
-            android:text="@string/aiims_initializing"
-            android:textAlignment="center"
-            android:textColor="@color/aiims_on_surface_variant"
+            android:layout_marginTop="@dimen/margin_large"
+            android:hint="@string/aiims_username_hint"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/app_title" />
+            app:layout_constraintTop_toBottomOf="@id/app_title"
+            app:startIconDrawable="@drawable/ic_person_24dp">
 
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/username_field"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textNoSuggestions"
+                android:textColor="@color/aiims_on_surface"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Password Field -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/password_layout"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            style="@style/Widget.Aiims.TextInputLayout.OutlinedBox"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/margin_medium"
@@ -94,6 +103,7 @@
             app:layout_constraintTop_toBottomOf="@id/password_layout"
             tools:visibility="visible" />
 
+        <!-- LOGIN BUTTON - Right after password -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/login_button"
             android:layout_width="0dp"
@@ -119,9 +129,35 @@
             app:layout_constraintTop_toBottomOf="@id/login_button"
             tools:visibility="visible" />
 
-       
-       
-               <!-- Status Container for Permissions -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/offline_button"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_medium"
+            android:text="@string/aiims_button_work_offline_grace"
+            android:textColor="@color/aiims_secondary"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/scan_qr_button"
+            tools:visibility="visible" />
+
+        <!-- STATUS TEXT - Now BELOW login button -->
+        <TextView
+            android:id="@+id/status_text"
+            style="@style/TextAppearance.Aiims.BodyMedium"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_large"
+            android:text="@string/aiims_initializing"
+            android:textAlignment="center"
+            android:textColor="@color/aiims_on_surface_variant"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/offline_button" />
+
+        <!-- Status Container for Permissions - Now BELOW status text -->
         <LinearLayout
             android:id="@+id/permission_status_container"
             android:layout_width="0dp"
@@ -160,42 +196,6 @@
                 android:visibility="gone"
                 tools:visibility="visible" />
         </LinearLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/username_layout"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_large"
-            android:hint="@string/aiims_username_hint"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/permission_status_container"
-            app:startIconDrawable="@drawable/ic_person_24dp">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/username_field"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textNoSuggestions"
-                android:textColor="@color/aiims_on_surface"
-                android:maxLines="1" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/offline_button"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_medium"
-            android:text="@string/aiims_button_work_offline_grace"
-            android:textColor="@color/aiims_secondary"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/scan_qr_button"
-            tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

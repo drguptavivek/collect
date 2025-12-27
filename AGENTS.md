@@ -337,4 +337,49 @@ git push                # Push to remote
 - Use descriptive titles and set appropriate priority/type
 - Always `bd sync` before ending session
 
+### Closing Issues with Detailed Resolution
+
+When closing beads issues, provide comprehensive resolution details:
+
+```bash
+bd close <id> --reason "RESOLUTION:
+
+**Problem:** [Brief description of the issue]
+
+**Root Cause:** [What was causing the problem]
+
+**Solution:**
+1. [Step 1 - specific action taken]
+2. [Step 2 - specific action taken]
+3. [Step 3 - specific action taken]
+
+**Files Changed:**
+- path/to/file1.kt - [what was changed]
+- path/to/file2.xml - [what was changed]
+
+**Verification:** [How it was tested - build, tests, manual check]"
+```
+
+**Example:**
+```bash
+bd close collect-abc --reason "RESOLUTION:
+
+**Problem:** Dark mode input fields not visible (white on white)
+
+**Root Cause:** TextInputLayout using default Material colors which don't adapt to dark theme
+
+**Solution:**
+1. Created values-night/colors.xml with inverted color palette
+2. Added Widget.Aiims.TextInputLayout.OutlinedBox style with boxBackgroundColor
+3. Updated layouts to use AIIMS styles instead of Material defaults
+
+**Files Changed:**
+- values-night/colors.xml - Dark mode color palette (#FFFFFF text, #2A2A2A backgrounds)
+- values-night/styles.xml - TextInputLayout with 2dp border, light gray background
+- activity_aiims_login.xml - Applied Widget.Aiims.TextInputLayout.OutlinedBox
+
+**Verification:** Built and installed on emulator, tested both light and dark modes"
+```
+
 <!-- end-bd-agent-instructions -->
+

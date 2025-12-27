@@ -6,8 +6,6 @@ import android.content.Intent
 
 import android.content.pm.PackageManager
 
-import android.graphics.Color
-
 import android.os.Bundle
 
 import android.view.View
@@ -428,13 +426,13 @@ class PinEntryActivity : AiimsBaseActivity() {
 
             binding.locationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_location_access_granted)
 
-            binding.locationStatusView.setTextColor(Color.parseColor("#2E7D32")) // Green
+            binding.locationStatusView.setTextColor(ContextCompat.getColor(this, org.aiims.odk.auth.R.color.aiims_success))
 
         } else {
 
             binding.locationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_location_access_required)
 
-            binding.locationStatusView.setTextColor(Color.parseColor("#C62828")) // Red
+            binding.locationStatusView.setTextColor(ContextCompat.getColor(this, org.aiims.odk.auth.R.color.aiims_error))
 
         }
 
@@ -452,13 +450,13 @@ class PinEntryActivity : AiimsBaseActivity() {
 
                 binding.notificationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_notifications_enabled)
 
-                binding.notificationStatusView.setTextColor(Color.parseColor("#2E7D32")) // Green
+                binding.notificationStatusView.setTextColor(ContextCompat.getColor(this, org.aiims.odk.auth.R.color.aiims_success))
 
             } else {
 
                 binding.notificationStatusView.text = getString(org.aiims.odk.auth.R.string.aiims_notifications_disabled)
 
-                binding.notificationStatusView.setTextColor(Color.parseColor("#C62828")) // Red
+                binding.notificationStatusView.setTextColor(ContextCompat.getColor(this, org.aiims.odk.auth.R.color.aiims_error))
 
             }
 

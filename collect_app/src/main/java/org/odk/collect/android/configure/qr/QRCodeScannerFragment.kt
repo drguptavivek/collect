@@ -14,6 +14,8 @@ import org.odk.collect.androidshared.ui.ToastUtils.showShortToast
 import org.odk.collect.androidshared.utils.CompressionUtils
 import org.odk.collect.projects.ProjectConfigurationResult
 import org.odk.collect.settings.ODKAppSettingsImporter
+import org.odk.collect.settings.SettingsProvider
+import org.odk.collect.settings.keys.ProjectKeys
 import org.odk.collect.strings.R
 import java.io.File
 import javax.inject.Inject
@@ -29,6 +31,9 @@ class QRCodeScannerFragment : BarCodeScannerFragment() {
     @Inject
     lateinit var storagePathProvider: StoragePathProvider
 
+    @Inject
+    lateinit var settingsProvider: SettingsProvider
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         DaggerUtils.getComponent(context).inject(this)
@@ -36,6 +41,10 @@ class QRCodeScannerFragment : BarCodeScannerFragment() {
 
     override fun handleScanningResult(result: String) {
         val oldProjectName = projectsDataService.requireCurrentProject().name
+        
+        // Capture old settings for AIIMS logout-on-change detection
+        val oldServerUrl = settingsProvider.getUnprotectedSettings().getString(ProjectKeys.KEY_SERVER_URL)
+        val oldUsername = settingsProvider.getUnprotectedSettings().getString(ProjectKeys.KEY_USERNAME)
 
         try {
             val settingsImportingResult = settingsImporter.fromJSON(
@@ -56,10 +65,27 @@ class QRCodeScannerFragment : BarCodeScannerFragment() {
                     showLongToast(
                         getString(R.string.successfully_imported_settings)
                     )
-                    ActivityUtils.startActivityAndCloseAllOthers(
-                        requireActivity(),
-                        MainMenuActivity::class.java
-                    )
+                    
+                    // Check if AIIMS auth is enabled
+                    if (isAiimsAuthEnabled()) {
+                        // Check if critical settings changed - trigger logout if so
+                        val newServerUrl = settingsProvider.getUnprotectedSettings().getString(ProjectKeys.KEY_SERVER_URL)
+                        val newUsername = settingsProvider.getUnprotectedSettings().getString(ProjectKeys.KEY_USERNAME)
+                        
+                        if (oldServerUrl != newServerUrl || oldUsername != newUsername) {
+                            // Clear AIIMS auth tokens on server/username change
+                            clearAiimsAuthTokens()
+                            showLongToast("Configuration changed. Please login again.")
+                        }
+                        
+                        // Just finish to return to AIIMS login
+                        requireActivity().finish()
+                    } else {
+                        ActivityUtils.startActivityAndCloseAllOthers(
+                            requireActivity(),
+                            MainMenuActivity::class.java
+                        )
+                    }
                 }
 
                 ProjectConfigurationResult.INVALID_SETTINGS -> {
@@ -84,7 +110,26 @@ class QRCodeScannerFragment : BarCodeScannerFragment() {
         }
     }
 
+    private fun isAiimsAuthEnabled(): Boolean {
+        return try {
+            val resId = resources.getIdentifier("aiims_auth_enabled", "bool", requireContext().packageName)
+            if (resId != 0) resources.getBoolean(resId) else false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun clearAiimsAuthTokens() {
+        try {
+            val prefs = requireContext().getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE)
+            prefs.edit().clear().apply()
+        } catch (e: Exception) {
+            // Ignore - tokens may not exist
+        }
+    }
+
     override fun isQrOnly(): Boolean {
         return true
     }
 }
+

@@ -95,6 +95,7 @@
     <string name="aiims_error_manual_config_missing">Please enter both Base URL and Project ID</string>
     <string name="aiims_error_saving_project">Error saving project: %s</string>
     <string name="aiims_error_invalid_url_format">Invalid Project URL format</string>
+    <string name="aiims_error_qr_scanner_launch">Could not launch QR Scanner</string>
 
     <!-- PIN and Permissions -->
     <string name="aiims_pin_create_title">Create PIN</string>
