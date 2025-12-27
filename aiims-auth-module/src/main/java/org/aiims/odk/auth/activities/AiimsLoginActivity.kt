@@ -79,7 +79,25 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         // Detect Project
         detectCurrentProject()
 
-        // Handle Re-Auth Mode
+        // Handle Re-Auth Mode (token refresh)
+        val isReauth = intent.getBooleanExtra("EXTRA_IS_REAUTH", false)
+        if (isReauth) {
+            val username = intent.getStringExtra("EXTRA_REAUTH_USERNAME")
+            binding.appTitle.text = "Re-authenticate"
+            binding.statusText.text = "Please enter your password to refresh your session"
+            
+            // Pre-fill username and make it read-only
+            if (username != null) {
+                binding.usernameField.setText(username)
+                binding.usernameField.isEnabled = false
+                binding.usernameField.alpha = 0.6f
+            }
+            
+            // Focus on password field
+            binding.passwordField.requestFocus()
+        }
+        
+        // Handle legacy soft expiry mode
         if (intent.getBooleanExtra("is_reauth", false)) {
             binding.appTitle.text = getString(org.aiims.odk.auth.R.string.aiims_session_expired_title)
             binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_session_expired_message)

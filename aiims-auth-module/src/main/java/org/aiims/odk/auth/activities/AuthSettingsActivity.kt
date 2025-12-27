@@ -110,16 +110,24 @@ class AuthSettingsActivity : AiimsBaseActivity() {
     }
 
     private fun refreshToken() {
-        // Logout first to clear current session, then navigate to login screen
+        // Get current username to pre-fill in login screen
         lifecycleScope.launch {
-            authManager.logout()
-            
-            // Navigate to login screen for re-authentication
-            val intent = Intent()
-            intent.setClass(this@AuthSettingsActivity, org.aiims.odk.auth.activities.AiimsLoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            finish()
+            // Collect once from the Flow to get current user
+            authManager.currentUser.collect { user ->
+                user?.let {
+                    // Navigate to login screen for re-authentication
+                    // Do NOT logout - preserve PIN and session data
+                    val intent = Intent()
+                    intent.setClass(this@AuthSettingsActivity, org.aiims.odk.auth.activities.AiimsLoginActivity::class.java)
+                    intent.putExtra("EXTRA_IS_REAUTH", true)
+                    intent.putExtra("EXTRA_REAUTH_USERNAME", it.username)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    finish()
+                }
+                // Cancel the flow collection after first emission
+                return@collect
+            }
         }
     }
 
