@@ -29,12 +29,18 @@ import org.odk.collect.android.database.forms.DatabaseFormColumns;
  */
 public final class FormsContract {
 
-    static final String AUTHORITY = "org.odk.collect.android.provider.odk.forms";
     public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.odk.form";
     public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.odk.form";
 
     /**
-     * The content:// style URL for accessing Forms.
+     * The authority for the forms provider.
+     * Note: This is now dynamic based on the application ID.
+     * We use BuildConfig.APPLICATION_ID to get the correct package name.
+     */
+    static final String AUTHORITY = org.odk.collect.android.BuildConfig.APPLICATION_ID + ".provider.odk.forms";
+
+    /**
+     * The content:// style URL for this table
      */
     public static Uri getUri(String projectId, Long formDbId) {
         return Uri.parse("content://" + AUTHORITY + "/forms/" + formDbId + "?projectId=" + projectId);

@@ -16,7 +16,7 @@
         <!-- AIIMS Login Activity - Entry point for authentication -->
         <activity
             android:name=".activities.AiimsLoginActivity"
-            android:exported="true"
+            android:exported="false"
             android:theme="@style/Theme.Aiims.Auth.NoActionBar"
             android:windowSoftInputMode="adjustResize"
             android:screenOrientation="portrait"

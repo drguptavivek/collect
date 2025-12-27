@@ -20,9 +20,19 @@ import android.net.Uri;
 
 public final class InstancesContract {
 
-    public static final String AUTHORITY = "org.odk.collect.android.provider.odk.instances";
     public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.odk.instance";
     public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.odk.instance";
+
+    /**
+     * The authority for the instances provider.
+     * Note: This is now dynamic based on the application ID.
+     */
+    public static final String AUTHORITY = org.odk.collect.android.BuildConfig.APPLICATION_ID + ".provider.odk.instances";
+
+    /**
+     * The content:// style URL for this table
+     */
+
 
     public static Uri getUri(String projectId) {
         return Uri.parse("content://" + AUTHORITY + "/instances?projectId=" + projectId);
