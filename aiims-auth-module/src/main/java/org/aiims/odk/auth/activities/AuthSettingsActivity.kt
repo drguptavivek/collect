@@ -28,11 +28,16 @@ class AuthSettingsActivity : AiimsBaseActivity() {
         val tokenStatusText: TextView = findViewById(org.aiims.odk.auth.R.id.token_status_text)
         val tokenValidityText: TextView = findViewById(org.aiims.odk.auth.R.id.token_validity_text)
         val deviceIdText: TextView = findViewById(org.aiims.odk.auth.R.id.device_id_text)
+        val getProjectDetailsButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.get_project_details_button)
         val changePinButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.change_pin_button)
         val refreshTokenButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.refresh_token_button)
         val logoutButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.logout_button)
 
         // Set up click listeners
+        getProjectDetailsButton.setOnClickListener {
+            showProjectDetails()
+        }
+
         changePinButton.setOnClickListener {
             changePin()
         }
@@ -111,6 +116,95 @@ class AuthSettingsActivity : AiimsBaseActivity() {
         // Device ID comes from Collect meta prefs
         val deviceId = getSharedPreferences("meta", MODE_PRIVATE).getString("metadata_installid", "No device ID found")
         deviceIdText.text = deviceId ?: "No device ID found"
+    }
+
+    private fun showProjectDetails() {
+        lifecycleScope.launch {
+            var progressDialog: android.app.ProgressDialog? = null
+            var currentUser: org.aiims.odk.auth.api.User? = null
+            
+            try {
+                // Show loading
+                progressDialog = android.app.ProgressDialog.show(
+                    this@AuthSettingsActivity,
+                    "Loading",
+                    "Fetching project details...",
+                    true
+                )
+
+                // Get current user and token
+                authManager.currentUser.collect { user ->
+                    currentUser = user
+                    // Cancel collection after first emission
+                    throw kotlinx.coroutines.CancellationException()
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                // Expected - used to break out of collect
+            }
+
+            try {
+                val token = authManager.getActiveProjectToken()
+                val user = currentUser  // Local copy for smart cast
+
+                if (user == null || token == null) {
+                    progressDialog?.dismiss()
+                    android.widget.Toast.makeText(
+                        this@AuthSettingsActivity,
+                        "Unable to fetch project details: Not logged in",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    return@launch
+                }
+
+                // Get API URL from AuthManager
+                val apiUrl = authManager.getActiveProjectApiUrl()
+
+                if (apiUrl == null) {
+                    progressDialog?.dismiss()
+                    android.widget.Toast.makeText(
+                        this@AuthSettingsActivity,
+                        "Unable to fetch project details: API URL not found",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    return@launch
+                }
+
+                // Fetch project details
+                val authClient = org.aiims.odk.auth.api.RealAuthClient.getInstance(this@AuthSettingsActivity, apiUrl)
+                val projectInfo = authClient.fetchProject(user.projectId, token)
+
+                progressDialog?.dismiss()
+
+                if (projectInfo != null) {
+                    // Show project details in dialog
+                    val message = """
+                        Project ID: ${projectInfo.id}
+                        Name: ${projectInfo.name}
+                        Description: ${projectInfo.description ?: "N/A"}
+                        Archived: ${if (projectInfo.archived) "Yes" else "No"}
+                    """.trimIndent()
+
+                    android.app.AlertDialog.Builder(this@AuthSettingsActivity)
+                        .setTitle("Project Details")
+                        .setMessage(message)
+                        .setPositiveButton("OK", null)
+                        .show()
+                } else {
+                    android.app.AlertDialog.Builder(this@AuthSettingsActivity)
+                        .setTitle("Fetch Failed")
+                        .setMessage("Failed to fetch project details for Project ID: ${user.projectId}. Please ensures your account has sufficient permissions in ODK Central.")
+                        .setPositiveButton("OK", null)
+                        .show()
+                }
+            } catch (e: Exception) {
+                progressDialog?.dismiss()
+                android.widget.Toast.makeText(
+                    this@AuthSettingsActivity,
+                    "Error: ${e.message}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     private fun refreshToken() {

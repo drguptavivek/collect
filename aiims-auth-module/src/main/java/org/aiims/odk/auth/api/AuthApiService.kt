@@ -40,6 +40,11 @@ interface AuthApiService {
         @Path("projectId") projectId: String,
         @Header("Authorization") authHeader: String
     ): Response<ProjectResponse>
+
+    @retrofit2.http.GET("projects")
+    suspend fun getProjects(
+        @Header("Authorization") authHeader: String
+    ): Response<List<ProjectResponse>>
 }
 
 /**
