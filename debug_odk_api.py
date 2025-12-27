@@ -9,7 +9,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # --- CONFIGURATION ---
 BASE_URL = "https://central.local"
 EMAIL = "newuser2"
-PASSWORD = "=
+PASSWORD = "="
 PROJECT_ID = "1"
 # ---------------------
 
