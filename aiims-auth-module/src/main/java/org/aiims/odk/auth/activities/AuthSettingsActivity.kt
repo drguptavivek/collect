@@ -110,12 +110,17 @@ class AuthSettingsActivity : AiimsBaseActivity() {
     }
 
     private fun refreshToken() {
-        // Navigate to login screen for re-authentication
-        val intent = Intent()
-        intent.setClass(this@AuthSettingsActivity, org.aiims.odk.auth.activities.AiimsLoginActivity::class.java)
-        intent.putExtra("is_reauth", true)
-        startActivity(intent)
-        finish()
+        // Logout first to clear current session, then navigate to login screen
+        lifecycleScope.launch {
+            authManager.logout()
+            
+            // Navigate to login screen for re-authentication
+            val intent = Intent()
+            intent.setClass(this@AuthSettingsActivity, org.aiims.odk.auth.activities.AiimsLoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        }
     }
 
     private fun changePin() {
