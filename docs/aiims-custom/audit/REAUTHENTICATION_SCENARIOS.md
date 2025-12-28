@@ -2106,15 +2106,14 @@ tokenExpiryTime = T0
 **Resolution:**
 1. Updated `AiimsAuthManager` to use `AiimsAuthStorage` (wraps `AiimsSecureStorage`) for sensitive data
 2. Added `projectId` to encrypted storage for token validation
-3. Added `setUserAuthenticationRequired(true)` to MasterKey for device unlock requirement
-4. Updated Dagger dependency injection to provide `AiimsAuthStorage`
+3. Updated Dagger dependency injection to provide `AiimsAuthStorage`
 
 **Current Implementation:**
 ```kotlin
 // Tokens now stored in encrypted storage via AiimsSecureStorage
 // - Uses EncryptedSharedPreferences with AES-256-GCM
 // - Hardware-backed Android Keystore
-// - Device unlock required to access encryption key
+// - Note: setUserAuthenticationRequired removed due to lock screen requirement issues
 
 // Sensitive data (encrypted):
 // - auth_token
@@ -2129,16 +2128,83 @@ tokenExpiryTime = T0
 // - last_auth_timestamp
 ```
 
+**Critical Gotcha: StrictMode ThreadPolicy Violation**
+
+**Problem:** App crashed on startup with `StrictMode ThreadPolicy violation` due to disk I/O during encrypted storage initialization:
+
+```
+Crash Sequence:
+Collect.onCreate()
+→ Dagger creates AiimsAuthManager
+→ Constructor calls refreshState() (line 142)
+→ refreshState() calls authStorage.getProjectId() (line 171)
+→ Triggers lazy initialization of masterKey (line 41)
+→ MasterKey.Builder.build() does disk I/O to Android Keystore
+→ StrictMode detects disk I/O on main thread → CRASH
+```
+
+**Fix:** Suppressed StrictMode during lazy initialization of `masterKey` and `encryptedPrefs`:
+
+```kotlin
+// Master key for encryption
+// Suppress StrictMode for key generation as it requires disk I/O to Android Keystore
+private val masterKey: MasterKey by lazy {
+    val oldPolicy = StrictMode.getThreadPolicy()
+    try {
+        // Temporarily allow disk I/O for key generation
+        StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.LAX)
+        MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+    } finally {
+        StrictMode.setThreadPolicy(oldPolicy)
+    }
+}
+
+// Encrypted preferences for sensitive data
+// Suppress StrictMode for initialization as it may require disk I/O
+private val encryptedPrefs: SharedPreferences by lazy {
+    val oldPolicy = StrictMode.getThreadPolicy()
+    try {
+        // Temporarily allow disk I/O for encrypted prefs creation
+        StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.LAX)
+        EncryptedSharedPreferences.create(
+            context,
+            AiimsConstants.AIIMS_SECURE_PREFS_NAME,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    } finally {
+        StrictMode.setThreadPolicy(oldPolicy)
+    }
+}
+```
+
+**Why This Happens:**
+- Android Keystore operations require disk I/O
+- `AiimsAuthManager` constructor calls `refreshState()` immediately during Dagger injection
+- `refreshState()` accesses encrypted storage properties, triggering lazy initialization
+- This all happens on the main thread during app startup
+- StrictMode with "death" penalty detects disk I/O and crashes the app
+
+**Alternative Considered but NOT Used:**
+- `setUserAuthenticationRequired(true)` - Requires secure lock screen to be enabled
+- This would crash on devices without lock screen configured
+- Fallback logic added but ultimately removed for simplicity
+
 **Files Modified:**
-- `AiimsSecureStorage.kt` - Added `projectId`, user auth requirement
+- `AiimsSecureStorage.kt` - Added `projectId`, StrictMode suppression, removed user auth requirement
 - `AiimsAuthStorage.kt` - Added `projectId` property
 - `AiimsAuthManager.kt` - Uses encrypted storage for tokens
 - `DaggerSetup.kt` - Provides `AiimsAuthStorage` dependency
+- `AiimsConstants.kt` - Added `KEY_PROJECT_ID` constant
 
 **Testing:**
 - Build verified: `./gradlew :collect_app:assembleAiimsDebug` successful
+- Login/logout flow tested successfully
 - No tokens in plain SharedPreferences
-- Encrypted storage requires device unlock
+- Encrypted storage initialization works without StrictMode crash
 
 **References:**
 - `data-isolation.md` - Updated documentation

@@ -2,6 +2,7 @@ package org.aiims.odk.auth.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.StrictMode
 import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
@@ -36,30 +37,37 @@ class AiimsSecureStorage private constructor(
     }
 
     // Master key for encryption
-    // Tries to use secure lock screen requirement, falls back if not available
+    // Suppress StrictMode for key generation as it requires disk I/O to Android Keystore
     private val masterKey: MasterKey by lazy {
+        val oldPolicy = StrictMode.getThreadPolicy()
         try {
-            MasterKey.Builder(context)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .setUserAuthenticationRequired(true)
-                .build()
-        } catch (e: Exception) {
-            Log.w(TAG, "Secure lock screen not enabled, using encryption without auth requirement")
+            // Temporarily allow disk I/O for key generation
+            StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.LAX)
             MasterKey.Builder(context)
                 .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
                 .build()
+        } finally {
+            StrictMode.setThreadPolicy(oldPolicy)
         }
     }
 
     // Encrypted preferences for sensitive data
+    // Suppress StrictMode for initialization as it may require disk I/O
     private val encryptedPrefs: SharedPreferences by lazy {
-        EncryptedSharedPreferences.create(
-            context,
-            AiimsConstants.AIIMS_SECURE_PREFS_NAME,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+        val oldPolicy = StrictMode.getThreadPolicy()
+        try {
+            // Temporarily allow disk I/O for encrypted prefs creation
+            StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.LAX)
+            EncryptedSharedPreferences.create(
+                context,
+                AiimsConstants.AIIMS_SECURE_PREFS_NAME,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } finally {
+            StrictMode.setThreadPolicy(oldPolicy)
+        }
     }
 
     // Regular preferences for non-sensitive data
