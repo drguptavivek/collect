@@ -161,6 +161,9 @@ class RealAuthClient private constructor(
                     if (body != null) {
                         Log.d("AiimsAuthClient", "Login successful")
 
+                        // Extract server time from Date header
+                        val serverTime = extractServerTime(response)
+
                         // Construct User object from response + input
                         val user = User(
                             id = body.id.toString(),
@@ -172,7 +175,8 @@ class RealAuthClient private constructor(
                         AuthResult.Success(
                             user = user,
                             token = body.token,
-                            expiresAt = body.expiresAt
+                            expiresAt = body.expiresAt,
+                            serverTime = serverTime
                         )
                     } else {
                         Log.e("AiimsAuthClient", "Empty response body")
@@ -194,6 +198,23 @@ class RealAuthClient private constructor(
                 Log.e("AiimsAuthClient", "Login exception: ${e.message}", e)
                 AuthResult.Error("Network error: ${e.message}")
             }
+        }
+    }
+
+    /**
+     * Extract server time from HTTP response Date header.
+     * Returns null if the header is missing or invalid.
+     */
+    private fun extractServerTime(response: retrofit2.Response<LoginResponse>): Long? {
+        val dateHeader = response.headers()["Date"] ?: return null
+        return try {
+            // HTTP Date format: "Wed, 21 Oct 2015 07:28:00 GMT"
+            val format = java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.US)
+            format.timeZone = java.util.TimeZone.getTimeZone("GMT")
+            format.parse(dateHeader)?.time
+        } catch (e: Exception) {
+            Log.w("AiimsAuthClient", "Failed to parse server Date header: $dateHeader")
+            null
         }
     }
 

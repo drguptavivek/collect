@@ -188,33 +188,6 @@ class ClockValidator private constructor(
     }
 
     /**
-     * Validate clock against server token expiry time.
-     *
-     * This is a specialized version of syncWithServerTime that handles token expiry.
-     * It calculates the server's current time based on the token expiry time.
-     *
-     * @param serverExpiryTime Token expiry time from server (milliseconds since epoch)
-     * @param tokenTtlMs Expected token TTL in milliseconds (default 3 days)
-     */
-    fun validateWithServerExpiry(serverExpiryTime: Long, tokenTtlMs: Long = 3L * 24 * 60 * 60 * 1000) {
-        val currentElapsed = SystemClock.elapsedRealtime()
-        val localTime = System.currentTimeMillis()
-
-        // Calculate what server time should be: server_time = server_expiry - token_ttl
-        val estimatedServerTime = serverExpiryTime - tokenTtlMs
-
-        // Use this as server time reference
-        syncWithServerTime(
-            serverTime = estimatedServerTime,
-            localTime = localTime,
-            forceSync = true // Always trust server time for validation
-        )
-
-        Log.d(TAG, "Clock validated with server expiry time")
-        Log.d(TAG, "Server expiry: $serverExpiryTime, Estimated server time: $estimatedServerTime")
-    }
-
-    /**
      * Reset the manipulation flag.
      *
      * Call this after user has corrected their device time.
