@@ -2525,3 +2525,152 @@ onPerformSync() {
 | High-risk scenarios | 5 |
 | Medium-risk scenarios | 10 |
 | Low-risk scenarios | 6 |
+
+---
+
+### Gap Category 11: PIN Setup and Authentication Flow Security
+
+#### SCENARIO 79: PIN Setup Bypass via Back Button ~~**RESOLVED**~~
+
+**Status:** ✅ **RESOLVED** (2025-12-28)
+
+**Conditions:**
+- User clicks "Forgot PIN" → logged out, PIN cleared
+- User logs in again
+- `SetupPinActivity` starts (PIN setup required)
+- User presses BACK button
+- User returns to main app **without setting PIN**
+
+**Attack Flow:**
+```
+1. User in MainMenuActivity, PIN set
+2. User clicks "Forgot PIN" → logoutDueToFailedPin() called
+3. Redirected to AiimsLoginActivity
+4. User logs in successfully
+5. authState becomes LOGGED_IN (PIN not set yet)
+6. SetupPinActivity starts
+7. User presses BACK
+8. Returns to MainMenuActivity (was in back stack)
+9. AiimsAppLock sees LOGGED_IN but PIN not set → does nothing
+10. USER ACCESSES APP WITHOUT PIN!
+```
+
+**Root Cause:**
+1. **Primary**: `AiimsAppLock.kt:60-62` - When `authState == LOGGED_IN` but PIN NOT set, no action taken
+2. **Secondary**: `SetupPinActivity` had no `onBackPressed()` override
+3. **Tertiary**: `navigateToPinSetup()` missing `FLAG_ACTIVITY_CLEAR_TASK`
+
+**Impact:**
+- **Severity**: Critical (P0)
+- **CVSS**: 7.5 (High)
+- **Exploitability**: Trivial (button press)
+- Users could skip required two-factor authentication
+- Multi-tenant security: On shared devices, users could access each other's data
+
+**Resolution:**
+
+1. **Added new AuthState**: `LOGGED_IN_REQUIRES_PIN`
+```kotlin
+enum class AuthState {
+    INITIAL,
+    LOGGED_IN,
+    LOGGED_IN_REQUIRES_PIN,  // NEW: Must set PIN before accessing app
+    LOGGED_OUT,
+    ERROR
+}
+```
+
+2. **Updated `AiimsLoginActivity.attemptLogin()`**: Set correct auth state based on reauth flag
+```kotlin
+if (isReauthMode) {
+    // Category A: Token Refresh - PIN should already be set
+    if (pinManager.isPinSet()) {
+        navigateToMain()
+    } else {
+        navigateToPinSetup(result.token, result.expiresAt)
+    }
+} else {
+    // Category B: Fresh Login / Forgot PIN / Logout
+    authManager.updateAuthState(AuthState.LOGGED_IN_REQUIRES_PIN)
+    navigateToPinSetup(result.token, result.expiresAt)
+}
+```
+
+3. **Updated `AiimsAppLock.onActivityStarted()`**: Handle `LOGGED_IN_REQUIRES_PIN`
+```kotlin
+if (authState == AuthState.LOGGED_IN_REQUIRES_PIN) {
+    val intent = Intent(application, SetupPinActivity::class.java).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
+    application.startActivity(intent)
+    return
+}
+```
+
+4. **Added `SetupPinActivity.onBackPressed()`**: Block BACK button
+```kotlin
+override fun onBackPressed() {
+    // Prevent bypass - user must complete PIN setup
+    AlertDialog.Builder(this)
+        .setTitle(getString(R.string.aiims_pin_required_title))
+        .setMessage(getString(R.string.aiims_pin_required_message))
+        .setPositiveButton(getString(R.string.aiims_button_ok), null)
+        .setCancelable(false)
+        .show()
+}
+```
+
+**Re-authentication Flows Covered:**
+
+| Flow | Trigger | PIN State | Auth State |
+|------|---------|-----------|------------|
+| Token Refresh (3 places) | `EXTRA_IS_REAUTH=true` | Preserved | `LOGGED_IN` |
+| Forgot PIN | Button click | Cleared | `LOGGED_IN_REQUIRES_PIN` |
+| Logout | Settings logout | Cleared | `LOGGED_IN_REQUIRES_PIN` |
+| First-time login | Initial login | None | `LOGGED_IN_REQUIRES_PIN` |
+
+**Files Changed:**
+- `aiims-auth-module/src/main/java/org/aiims/odk/auth/managers/AiimsAuthManager.kt` - Added `LOGGED_IN_REQUIRES_PIN` to AuthState enum
+- `aiims-auth-module/src/main/java/org/aiims/odk/auth/activities/AiimsLoginActivity.kt` - Set correct state based on `EXTRA_IS_REAUTH` flag
+- `aiims-auth-module/src/main/java/org/aiims/odk/auth/utils/AiimsAppLock.kt` - Handle `LOGGED_IN_REQUIRES_PIN` (force PIN setup)
+- `aiims-auth-module/src/main/java/org/aiims/odk/auth/activities/SetupPinActivity.kt` - Added `onBackPressed()` override
+- `aiims-auth-module/src/main/res/values/strings.xml` - Added dialog strings
+
+**Verification:**
+- Build verified: `./gradlew assembleAiimsDebug` ✅
+- BACK button: Shows "PIN Required" dialog, prevents exit ✅
+- HOME button: `AiimsAppLock` redirects back to PIN setup on resume ✅
+
+**Bonus Fix**: Fixed Time Card overlapping PIN entry boxes in `SetupPinActivity`
+- Changed `pin_hint` constraint from `user_text_view` to `time_warning_card`
+
+**References:**
+- Beads issue: `collect-s0d` (closed)
+- GitHub issue: https://github.com/drguptavivek/collect/issues/67 (closed)
+- Git commit: `62e99dc5af`
+
+---
+
+### Updated Scenario Count (2025-12-28)
+
+| Category | Count |
+|----------|-------|
+| Previously documented valid scenarios | 49 |
+| **New missing scenarios identified** | **23** |
+| **New fixed scenarios** | **1** |
+| **New total scenarios** | **73** |
+| Critical security scenarios (resolved) | 3 |
+| High-risk scenarios | 5 |
+| Medium-risk scenarios | 10 |
+| Low-risk scenarios | 6 |
+
+### Updated Security Vulnerabilities Status
+
+| # | Vulnerability | Impact | Mitigation | Status |
+|---|--------------|--------|------------|--------|
+| 1 | Clock manipulation extends grace | Critical | Use monotonic clock, server time validation | ✅ **Resolved** |
+| 2 | Plain text token storage | Critical | Ensure encrypted storage works correctly | ✅ **Resolved** |
+| 3 | PIN setup bypass via BACK button | Critical | New AuthState, AppLock handler, onBackPressed block | ✅ **Resolved** |
+| 4 | No 401 detection on API calls | High | Global 401 interceptor | Not covered |
+| 5 | Hard logout during API call loses data | High | Sync logout with API operations | Not covered |
+| 6 | Multi-device token invalidation | High | Detect and handle server-initiated invalidation | Not covered |
