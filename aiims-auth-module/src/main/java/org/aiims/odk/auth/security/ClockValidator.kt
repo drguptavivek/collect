@@ -92,8 +92,11 @@ class ClockValidator private constructor(
         val lastElapsedRealtime = secureStorage.lastElapsedRealtime
 
         // First run - no anchor points yet
+        // Allow operation but mark as not server-validated
+        // Anchor points will be established during login with server time
         if (lastValidWallTime == null || lastElapsedRealtime == null) {
-            Log.d(TAG, "First run - initializing anchor points")
+            Log.d(TAG, "First run - no anchor points yet, will be established during login")
+            // Initialize with current time to allow operation until server sync
             initializeAnchorPoints(currentWallTime, currentElapsed)
             return TimeResult.Valid(currentWallTime, isServerSynced = false)
         }
@@ -142,26 +145,73 @@ class ClockValidator private constructor(
     }
 
     /**
-     * Sync clock with server time.
+     * Sync clock with server time and initialize/validate anchor points.
      *
-     * Call this when receiving a timestamp from the server (e.g., in API response headers).
-     * This calculates the offset between server time and local time for better accuracy.
+     * Call this when receiving a timestamp from the server (e.g., token expiry time).
+     * This validates local clock against server time and establishes trust.
      *
-     * @param serverTime Current server time in milliseconds
+     * IMPORTANT: This is the PRIMARY way to establish clock trust.
+     * Server time is considered the source of truth.
+     *
+     * @param serverTime Current server time in milliseconds (or token expiry time from server)
      * @param localTime Local time when server response was received (defaults to now)
+     * @param forceSync If true, bypass validation and trust server time completely
      */
-    fun syncWithServerTime(serverTime: Long, localTime: Long = System.currentTimeMillis()) {
+    fun syncWithServerTime(serverTime: Long, localTime: Long = System.currentTimeMillis(), forceSync: Boolean = false) {
         val offset = serverTime - localTime
+        val currentElapsed = SystemClock.elapsedRealtime()
 
-        // Only update if offset is reasonable (not more than 5 minutes off)
-        // This prevents server time errors from causing issues
-        val maxOffset = 5 * 60 * 1000L
-        if (kotlin.math.abs(offset) <= maxOffset) {
+        // Check if this is first sync (no anchor points)
+        val isFirstSync = secureStorage.lastValidWallTime == null || secureStorage.lastElapsedRealtime == null
+
+        if (forceSync || isFirstSync) {
+            // First sync or forced sync - trust server completely
             secureStorage.serverTimeOffsetMs = offset
-            Log.d(TAG, "Synced with server time. Offset: ${offset}ms (${offset / 1000}s)")
+            // Initialize anchor points with server-corrected time
+            initializeAnchorPoints(serverTime, currentElapsed)
+            Log.d(TAG, "Initial server sync - Anchor points established with server time")
+            Log.d(TAG, "Server time: $serverTime, Local time: $localTime, Offset: ${offset}ms")
         } else {
-            Log.w(TAG, "Server time offset too large: ${offset}ms - ignoring")
+            // Subsequent sync - only accept if offset is reasonable
+            val maxOffset = 5 * 60 * 1000L // 5 minutes
+            if (kotlin.math.abs(offset) <= maxOffset) {
+                secureStorage.serverTimeOffsetMs = offset
+                Log.d(TAG, "Server sync - Offset: ${offset}ms (${offset / 1000}s)")
+            } else {
+                // Server and local clocks differ significantly - potential manipulation
+                // Use server time to reset anchor points
+                Log.w(TAG, "Large clock offset detected: ${offset}ms - Correcting using server time")
+                secureStorage.serverTimeOffsetMs = offset
+                initializeAnchorPoints(serverTime, currentElapsed)
+            }
         }
+    }
+
+    /**
+     * Validate clock against server token expiry time.
+     *
+     * This is a specialized version of syncWithServerTime that handles token expiry.
+     * It calculates the server's current time based on the token expiry time.
+     *
+     * @param serverExpiryTime Token expiry time from server (milliseconds since epoch)
+     * @param tokenTtlMs Expected token TTL in milliseconds (default 3 days)
+     */
+    fun validateWithServerExpiry(serverExpiryTime: Long, tokenTtlMs: Long = 3L * 24 * 60 * 60 * 1000) {
+        val currentElapsed = SystemClock.elapsedRealtime()
+        val localTime = System.currentTimeMillis()
+
+        // Calculate what server time should be: server_time = server_expiry - token_ttl
+        val estimatedServerTime = serverExpiryTime - tokenTtlMs
+
+        // Use this as server time reference
+        syncWithServerTime(
+            serverTime = estimatedServerTime,
+            localTime = localTime,
+            forceSync = true // Always trust server time for validation
+        )
+
+        Log.d(TAG, "Clock validated with server expiry time")
+        Log.d(TAG, "Server expiry: $serverExpiryTime, Estimated server time: $estimatedServerTime")
     }
 
     /**

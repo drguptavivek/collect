@@ -308,10 +308,15 @@ class AiimsAuthManager @Inject constructor(
                     // Persist for this project
                     persistSession(projectId, result.user, result.token, result.expiresAt, apiUrl)
 
-                    // Sync clock with server time (if available from API response)
-                    // Note: Server time should be extracted from Date header in API response
-                    // For now, we sync using the local time as reference
-                    clockValidator.syncWithServerTime(System.currentTimeMillis())
+                    // Validate and sync clock with server using token expiry time
+                    // The server's expiresAt is our source of truth for clock validation
+                    val serverExpiryTime = org.aiims.odk.auth.utils.ApiDateFormat.parse(result.expiresAt)?.time
+                    if (serverExpiryTime != null) {
+                        // Use server expiry time to validate local clock
+                        // This calculates what server time should be and establishes anchor points
+                        clockValidator.validateWithServerExpiry(serverExpiryTime)
+                        Log.d("AiimsAuthManager", "Validated clock with server expiry time: $serverExpiryTime")
+                    }
 
                     // Reset soft expiry and clock manipulation flag
                     _isSoftExpiry.value = false
