@@ -92,4 +92,11 @@ object AiimsConstants {
 
     // Date Formats
     const val API_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+
+    // Clock Validation Constants
+    const val CLOCK_MANIPULATION_THRESHOLD_MS = 30 * 60 * 1000L // 30 minutes threshold
+    const val KEY_LAST_VALID_WALL_TIME = "last_valid_wall_time"
+    const val KEY_LAST_ELAPSED_REALTIME = "last_elapsed_realtime"
+    const val KEY_SERVER_TIME_OFFSET_MS = "server_time_offset_ms"
+    const val KEY_CLOCK_MANIPULATION_DETECTED = "clock_manipulation_detected"
 }

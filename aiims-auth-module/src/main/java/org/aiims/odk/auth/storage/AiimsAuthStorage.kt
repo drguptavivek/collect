@@ -96,6 +96,14 @@ class AiimsAuthStorage private constructor(
         get() = secureStorage.apiUrl
         set(value) { secureStorage.apiUrl = value }
 
+    // ===== Clock Validation (Passthrough to SecureStorage) =====
+    /**
+     * Get access to the underlying secure storage for ClockValidator.
+     * This is intentionally package-private for security.
+     */
+    internal val secureStorageForClockValidator: AiimsSecureStorage
+        get() = secureStorage
+
     var lastAuthTimestamp: Long
         get() = secureStorage.lastAuthTimestamp
         set(value) { secureStorage.lastAuthTimestamp = value }

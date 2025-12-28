@@ -120,6 +120,39 @@ class AiimsSecureStorage private constructor(
         get() = encryptedPrefs.getString(AiimsConstants.KEY_API_URL, "") ?: ""
         set(value) = encryptedPrefs.edit().putString(AiimsConstants.KEY_API_URL, value).apply()
 
+    // ===== Clock Validation Storage (Encrypted) =====
+    /**
+     * Last validated wall-clock time (System.currentTimeMillis()).
+     * Used as anchor point for clock manipulation detection.
+     */
+    var lastValidWallTime: Long?
+        get() = encryptedPrefs.getLong(AiimsConstants.KEY_LAST_VALID_WALL_TIME, -1).takeIf { it != -1L }
+        set(value) = encryptedPrefs.edit().putLong(AiimsConstants.KEY_LAST_VALID_WALL_TIME, value ?: -1L).apply()
+
+    /**
+     * Corresponding monotonic time (SystemClock.elapsedRealtime()) for lastValidWallTime.
+     * This cannot be manipulated and is used to calculate expected wall time.
+     */
+    var lastElapsedRealtime: Long?
+        get() = encryptedPrefs.getLong(AiimsConstants.KEY_LAST_ELAPSED_REALTIME, -1).takeIf { it != -1L }
+        set(value) = encryptedPrefs.edit().putLong(AiimsConstants.KEY_LAST_ELAPSED_REALTIME, value ?: -1L).apply()
+
+    /**
+     * Offset between server time and local time in milliseconds.
+     * Calculated during server time sync for better accuracy.
+     */
+    var serverTimeOffsetMs: Long
+        get() = encryptedPrefs.getLong(AiimsConstants.KEY_SERVER_TIME_OFFSET_MS, 0L)
+        set(value) = encryptedPrefs.edit().putLong(AiimsConstants.KEY_SERVER_TIME_OFFSET_MS, value).apply()
+
+    /**
+     * Flag indicating whether clock manipulation has been detected.
+     * When true, prevents re-authentication until user corrects device time.
+     */
+    var clockManipulationDetected: Boolean
+        get() = encryptedPrefs.getBoolean(AiimsConstants.KEY_CLOCK_MANIPULATION_DETECTED, false)
+        set(value) = encryptedPrefs.edit().putBoolean(AiimsConstants.KEY_CLOCK_MANIPULATION_DETECTED, value).apply()
+
     // ===== Authentication State Storage (Regular - Non-sensitive) =====
     var isAuthenticated: Boolean
         get() = regularPrefs.getBoolean(AiimsConstants.KEY_IS_AUTHENTICATED, false)
@@ -162,7 +195,7 @@ class AiimsSecureStorage private constructor(
     }
 
     /**
-     * Clear only sensitive data (tokens, PIN).
+     * Clear only sensitive data (tokens, PIN, clock validation).
      */
     fun clearSensitiveData() {
         encryptedPrefs.edit()
@@ -172,6 +205,10 @@ class AiimsSecureStorage private constructor(
             .remove(AiimsConstants.KEY_PIN_HASH)
             .remove(AiimsConstants.KEY_PIN_SALT)
             .remove(AiimsConstants.KEY_BIOMETRIC_KEY_ALIAS)
+            .remove(AiimsConstants.KEY_LAST_VALID_WALL_TIME)
+            .remove(AiimsConstants.KEY_LAST_ELAPSED_REALTIME)
+            .remove(AiimsConstants.KEY_SERVER_TIME_OFFSET_MS)
+            .remove(AiimsConstants.KEY_CLOCK_MANIPULATION_DETECTED)
             .apply()
     }
 

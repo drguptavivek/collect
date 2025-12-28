@@ -23,6 +23,7 @@ import org.aiims.odk.auth.api.TelemetryLocation
 import org.aiims.odk.auth.api.TelemetryRequest
 import org.aiims.odk.auth.api.User
 import org.aiims.odk.auth.storage.AiimsAuthStorage
+import org.aiims.odk.auth.storage.AiimsSecureStorage
 import org.aiims.odk.auth.work.TelemetryWorker
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
@@ -43,7 +44,8 @@ class AiimsAuthManager @Inject constructor(
     private val context: Context,
     private val projectCleaner: ProjectCleaner,
     private val pinManager: org.aiims.odk.auth.utils.PinManager,
-    private val authStorage: AiimsAuthStorage
+    private val authStorage: AiimsAuthStorage,
+    secureStorage: AiimsSecureStorage
 ) {
 
     companion object {
@@ -52,6 +54,9 @@ class AiimsAuthManager @Inject constructor(
         // Global keys
         private const val KEY_ACTIVE_PROJECT_ID = "active_project_id"
     }
+
+    // Clock validator for detecting clock manipulation
+    private val clockValidator = org.aiims.odk.auth.security.ClockValidator.getInstance(secureStorage)
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -184,7 +189,26 @@ class AiimsAuthManager @Inject constructor(
         if (token != null && user != null) {
             val expiryTime = authStorage.tokenExpiry ?: 0L
             _tokenExpiryTime.value = expiryTime
-            val currentTime = System.currentTimeMillis()
+
+            // Get validated time from ClockValidator
+            val timeResult = clockValidator.getCurrentTime()
+            val currentTime = when (timeResult) {
+                is org.aiims.odk.auth.security.ClockValidator.TimeResult.Valid -> {
+                    // Clear manipulation flag if time is now valid
+                    if (clockValidator.isManipulationDetected()) {
+                        clockValidator.resetManipulationFlag()
+                    }
+                    timeResult.time
+                }
+                is org.aiims.odk.auth.security.ClockValidator.TimeResult.ManipulationDetected -> {
+                    // Clock manipulation detected - allow grace but prevent re-auth
+                    _errorMessage.value = "Clock manipulation detected: ${timeResult.reason}. Please correct your device time to re-authenticate."
+                    _isSoftExpiry.value = false // Don't show re-auth prompt
+                    // Use the expected time for grace period calculation
+                    timeResult.expectedTime
+                }
+            }
+
             val hardDeadline = expiryTime + GRACE_PERIOD_MS
 
             // Check if expiring soon (within 24 hours)
@@ -231,7 +255,12 @@ class AiimsAuthManager @Inject constructor(
                     if (serverReachable) {
                         println("DEBUG_AUTH: Server reachable in grace period. Setting Soft Expiry.")
                         // SOFT EXPIRY: Prompt user, but do not force logout yet
-                        _isSoftExpiry.value = true
+                        // Check if clock manipulation detected - if so, don't show re-auth prompt
+                        if (!clockValidator.isManipulationDetected()) {
+                            _isSoftExpiry.value = true
+                        } else {
+                            _isSoftExpiry.value = false
+                        }
                     } else {
                         println("DEBUG_AUTH: Server unreachable. Maintaining Offline Grace.")
                         // OFFLINE GRACE: Keep logged in, silent
@@ -279,8 +308,14 @@ class AiimsAuthManager @Inject constructor(
                     // Persist for this project
                     persistSession(projectId, result.user, result.token, result.expiresAt, apiUrl)
 
-                    // Reset soft expiry
+                    // Sync clock with server time (if available from API response)
+                    // Note: Server time should be extracted from Date header in API response
+                    // For now, we sync using the local time as reference
+                    clockValidator.syncWithServerTime(System.currentTimeMillis())
+
+                    // Reset soft expiry and clock manipulation flag
                     _isSoftExpiry.value = false
+                    clockValidator.resetManipulationFlag()
 
                     // If this matches the active project, update state immediately
                     if (activeProjectId == projectId) {
@@ -385,6 +420,9 @@ class AiimsAuthManager @Inject constructor(
 
         // Clear local PIN
         pinManager.clearPin()
+
+        // Clear clock validation data
+        clockValidator.clear()
 
         if (activeProjectId == projectId) {
             refreshState()
