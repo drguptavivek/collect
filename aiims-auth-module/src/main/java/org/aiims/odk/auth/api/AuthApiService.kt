@@ -102,7 +102,8 @@ data class RevokeResponse(
 data class TelemetryResponse(
     val id: Int,
     val dateTime: String,
-    val serverTime: String? = null  // Server current time (ISO 8601 format)
+    val serverTime: String? = null,  // Server current time (ISO 8601 format)
+    val status: String? = null, // "ok" or "invalidated"
 )
 
 data class ProjectResponse(

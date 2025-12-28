@@ -703,25 +703,77 @@ class AiimsAuthManager @Inject constructor(
 
                 val result = client.submitTelemetry(pid, token, request)
 
-                // Sync clock with server time from telemetry response
-                // This provides continuous clock validation (every 20 minutes)
-                if (result?.serverTime != null) {
-                    val serverTime = parseIsoDateTime(result.serverTime)
-                    if (serverTime != null) {
-                        clockValidator.syncWithServerTime(
-                            serverTime = serverTime,
-                            localTime = System.currentTimeMillis(),
-                            forceSync = false  // Only adjust if offset is reasonable
-                        )
-                        Log.d("AiimsAuthManager", "Clock synced with server time from telemetry")
-                        
-                        // Update time flows to reflect new sync state immediately
-                        updateTimeState()
+                if (result != null) {
+                    // Check for server-side invalidation
+                    if (result.status == "invalidated") {
+                         val msg = "Session expired by server. Please login again."
+                         android.util.Log.w("AiimsAuthManager", "Telemetry response indicates session invalidated. Logging out project $pid.")
+                         _errorMessage.value = msg
+                         try {
+                             showSessionExpiredNotification(msg)
+                         } catch (e: Exception) {
+                             android.util.Log.e("AiimsAuthManager", "Failed to show notification", e)
+                         }
+                         logoutProject(pid)
+                         return@launch
+                    }
+
+                    // Sync clock with server time from telemetry response
+                    // This provides continuous clock validation (every 20 minutes)
+                    if (result.serverTime != null) {
+                        val serverTime = parseIsoDateTime(result.serverTime)
+                        if (serverTime != null) {
+                            clockValidator.syncWithServerTime(
+                                serverTime = serverTime,
+                                localTime = System.currentTimeMillis(),
+                                forceSync = false  // Only adjust if offset is reasonable
+                            )
+                            Log.d("AiimsAuthManager", "Clock synced with server time from telemetry")
+                            
+                            // Update time flows to reflect new sync state immediately
+                            updateTimeState()
+                        }
                     }
                 }
             } catch (e: Exception) {
                 android.util.Log.e("AiimsAuthManager", "Failed to submit telemetry", e)
             }
+        }
+    }
+
+    private fun showSessionExpiredNotification(message: String) {
+        try {
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            
+            // Re-create channel to ensure it exists (reusing app channel ID)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                val channelId = "collect_notification_channel"
+                val channelName = "ODK Collect"
+                val channel = android.app.NotificationChannel(channelId, channelName, android.app.NotificationManager.IMPORTANCE_DEFAULT)
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            val intent = android.content.Intent(context, org.aiims.odk.auth.activities.AiimsLoginActivity::class.java)
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            val pendingIntent = android.app.PendingIntent.getActivity(
+                context, 
+                0, 
+                intent, 
+                android.app.PendingIntent.FLAG_ONE_SHOT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val notification = androidx.core.app.NotificationCompat.Builder(context, "collect_notification_channel")
+                .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                .setContentTitle("Session Expired")
+                .setContentText(message)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+                .build()
+                
+            notificationManager.notify(1337, notification)
+        } catch (e: Exception) {
+            android.util.Log.e("AiimsAuthManager", "Error constructing notification", e)
         }
     }
 
