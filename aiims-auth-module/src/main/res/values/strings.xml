@@ -141,4 +141,16 @@
     <string name="aiims_offline_banner">Working offline</string>
     <string name="aiims_sync_pending">Data will sync when online</string>
     <string name="aiims_last_sync">Last sync: %s</string>
+
+    <!-- QR Scanner -->
+    <string name="aiims_scan_qr_code">Scan QR Code</string>
+    <string name="aiims_qr_scanner_instruction">Position QR code within the frame to scan</string>
+    <string name="aiims_select_from_gallery">Select from Gallery</string>
+    <string name="aiims_close_scanner">Close Scanner</string>
+    <string name="aiims_invalid_qr_code">Invalid QR code. Please try again.</string>
+    <string name="aiims_settings_imported_successfully">Settings imported successfully</string>
+    <string name="aiims_gd_protocol_not_supported">Google Drive protocol is not supported</string>
+    <string name="aiims_camera_permission_required">Camera Permission Required</string>
+    <string name="aiims_camera_permission_message">Camera permission is required to scan QR codes. Please grant camera permission to use this feature.</string>
+    <string name="aiims_ok">OK</string>
 </resources>

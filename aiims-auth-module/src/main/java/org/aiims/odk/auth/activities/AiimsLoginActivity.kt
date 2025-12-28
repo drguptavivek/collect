@@ -274,14 +274,9 @@ class AiimsLoginActivity : AiimsBaseActivity() {
     }
 
     private fun launchQrScanner() {
-        // Launch ODK's QR Code Tabs Activity
-        try {
-            val intent = Intent()
-            intent.setClassName(this, "org.odk.collect.android.configure.qr.QRCodeTabsActivity")
-            startActivity(intent)
-        } catch (e: Exception) {
-            Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_qr_scanner_launch), Toast.LENGTH_SHORT).show()
-        }
+        // Launch AIIMS QR Scanner Activity
+        val intent = Intent(this, org.aiims.odk.auth.activities.AiimsQrScannerActivity::class.java)
+        startActivity(intent)
     }
 
     override fun onBackPressed() {

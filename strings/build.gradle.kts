@@ -43,6 +43,7 @@ dependencies {
      * extend [LocalizedActivity].
      */
     api(libs.androidxAppcompat)
+    api(libs.androidxLifecycleRuntimeKtx)
 
     testImplementation(libs.junit)
     testImplementation(libs.hamcrest)

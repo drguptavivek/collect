@@ -47,4 +47,10 @@
     <color name="offline_background">#FFF3E0</color>
     <color name="offline_text">#E65100</color>
     <color name="offline_border">#FFB74D</color>
+
+    <!-- Barcode Scanner Colors -->
+    <color name="zxing_possible_result_points">#c0ff33</color>
+    <color name="zxing_result_view">#b0000000</color>
+    <color name="zxing_viewfinder_laser">#ffcc0000</color>
+    <color name="zxing_viewfinder_mask">#60000000</color>
 </resources>

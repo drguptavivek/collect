@@ -5,6 +5,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Camera permission for QR scanner -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <!-- Biometric authentication permission -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
@@ -30,6 +33,14 @@
                 <data android:scheme="aiims-auth" />
             </intent-filter>
         </activity>
+
+        <!-- AIIMS QR Scanner Activity - For scanning project configuration QR codes -->
+        <activity
+            android:name=".activities.AiimsQrScannerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Aiims.Auth.NoActionBar"
+            android:screenOrientation="portrait"
+            android:excludeFromRecents="true" />
 
         <!-- PIN Entry Activity - For returning users -->
         <activity
