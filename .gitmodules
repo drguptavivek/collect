@@ -1,3 +1,6 @@
 [submodule "agentic_kb"]
 	path = agentic_kb
 	url = https://github.com/drguptavivek/agentic_kb.git
+[submodule ".wiki"]
+	path = .wiki
+	url = https://github.com/drguptavivek/collect.wiki.git
