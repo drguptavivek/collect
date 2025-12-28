@@ -133,6 +133,14 @@ class AiimsAuthManager @Inject constructor(
     private val _tokenExpiryTime = MutableStateFlow(0L)
     val tokenExpiryTime: Flow<Long> = _tokenExpiryTime.asStateFlow()
 
+    // Validated current time from ClockValidator (for UI display)
+    private val _validatedCurrentTime = MutableStateFlow(0L)
+    val validatedCurrentTime: Flow<Long> = _validatedCurrentTime.asStateFlow()
+
+    // Server/device time difference in milliseconds (for warnings)
+    private val _serverTimeDifferenceMs = MutableStateFlow(0L)
+    val serverTimeDifferenceMs: Flow<Long> = _serverTimeDifferenceMs.asStateFlow()
+
     // Current active project context
     private var activeProjectId: String? = null
 
@@ -198,16 +206,27 @@ class AiimsAuthManager @Inject constructor(
                     if (clockValidator.isManipulationDetected()) {
                         clockValidator.resetManipulationFlag()
                     }
+                    // Calculate server/device difference for UI warning
+                    // Positive = device is behind server, Negative = device is ahead of server
+                    val deviceTime = System.currentTimeMillis()
+                    _serverTimeDifferenceMs.value = deviceTime - timeResult.time
                     timeResult.time
                 }
                 is org.aiims.odk.auth.security.ClockValidator.TimeResult.ManipulationDetected -> {
                     // Clock manipulation detected - allow grace but prevent re-auth
                     _errorMessage.value = "Clock manipulation detected: ${timeResult.reason}. Please correct your device time to re-authenticate."
                     _isSoftExpiry.value = false // Don't show re-auth prompt
+                    // Calculate server/device difference (expected time is what we should use)
+                    // Positive = device is behind server, Negative = device is ahead of server
+                    val deviceTime = System.currentTimeMillis()
+                    _serverTimeDifferenceMs.value = deviceTime - timeResult.expectedTime
                     // Use the expected time for grace period calculation
                     timeResult.expectedTime
                 }
             }
+
+            // Update validated current time flow for UI
+            _validatedCurrentTime.value = currentTime
 
             val hardDeadline = expiryTime + GRACE_PERIOD_MS
 
@@ -274,6 +293,8 @@ class AiimsAuthManager @Inject constructor(
             _isSoftExpiry.value = false
             _isExpiringSoon.value = false
             _tokenExpiryTime.value = 0L
+            _validatedCurrentTime.value = System.currentTimeMillis()
+            _serverTimeDifferenceMs.value = 0L
         }
     }
 
@@ -666,7 +687,21 @@ class AiimsAuthManager @Inject constructor(
                     location = telemetryLocation
                 )
 
-                client.submitTelemetry(pid, token, request)
+                val result = client.submitTelemetry(pid, token, request)
+
+                // Sync clock with server time from telemetry response
+                // This provides continuous clock validation (every 20 minutes)
+                if (result?.serverTime != null) {
+                    val serverTime = parseIsoDateTime(result.serverTime)
+                    if (serverTime != null) {
+                        clockValidator.syncWithServerTime(
+                            serverTime = serverTime,
+                            localTime = System.currentTimeMillis(),
+                            forceSync = false  // Only adjust if offset is reasonable
+                        )
+                        Log.d("AiimsAuthManager", "Clock synced with server time from telemetry")
+                    }
+                }
             } catch (e: Exception) {
                 android.util.Log.e("AiimsAuthManager", "Failed to submit telemetry", e)
             }
@@ -711,6 +746,27 @@ class AiimsAuthManager @Inject constructor(
             }.toString()
         } catch (e: Exception) {
             "{}"
+        }
+    }
+
+    /**
+     * Parse ISO 8601 datetime string to milliseconds since epoch.
+     * Handles formats: "2025-12-21T10:02:00.000Z" or similar
+     */
+    private fun parseIsoDateTime(isoString: String): Long? {
+        return try {
+            val format = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US)
+            format.timeZone = java.util.TimeZone.getTimeZone("GMT")
+            format.parse(isoString)?.time
+        } catch (e: Exception) {
+            try {
+                val format = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", java.util.Locale.US)
+                format.timeZone = java.util.TimeZone.getTimeZone("GMT")
+                format.parse(isoString)?.time
+            } catch (e2: Exception) {
+                Log.e("AiimsAuthManager", "Failed to parse ISO datetime: $isoString")
+                null
+            }
         }
     }
 }

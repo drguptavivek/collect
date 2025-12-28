@@ -253,22 +253,80 @@ class PinEntryActivity : AiimsBaseActivity() {
             }
         }
 
+        // Collect both token expiry time AND validated current time
         lifecycleScope.launch {
             authManager.tokenExpiryTime.collect { expiryTime ->
                 if (expiryTime > 0) {
                     binding.expiryReminderCard.visibility = View.VISIBLE
-                    val remainingMs = expiryTime - System.currentTimeMillis()
+                    // Get validated current time to calculate remaining time
+                    val currentTime = System.currentTimeMillis() // Will be replaced by validated time
+                    // Note: We'll use the validatedCurrentTime flow below for actual calculation
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            authManager.validatedCurrentTime.collect { currentTime ->
+                // Only show expiry if we have both expiry time and current time
+                if (currentTime > 0) {
+                    // Get current expiry time value - we need to collect it separately
+                    // For now, store the current time for use when expiry updates
+                }
+            }
+        }
+
+        // Combine both flows to calculate and display remaining time using validated time
+        lifecycleScope.launch {
+            kotlinx.coroutines.flow.combine(
+                authManager.tokenExpiryTime,
+                authManager.validatedCurrentTime
+            ) { expiryTime, currentTime ->
+                if (expiryTime > 0 && currentTime > 0) {
+                    binding.expiryReminderCard.visibility = View.VISIBLE
+                    val remainingMs = expiryTime - currentTime
                     if (remainingMs > 0) {
                         val hours = java.util.concurrent.TimeUnit.MILLISECONDS.toHours(remainingMs)
                         val minutes = java.util.concurrent.TimeUnit.MILLISECONDS.toMinutes(remainingMs) % 60
-                        
+
                         val timeStr = if (hours > 0) {
                             "${hours}h ${minutes}m"
                         } else {
                             "${minutes}m"
                         }
                         binding.expiryTimeText.text = getString(org.aiims.odk.auth.R.string.aiims_token_expires_in, timeStr)
+                    } else {
+                        binding.expiryTimeText.text = "Token expired"
                     }
+                }
+            }.collect {}
+        }
+
+        // Show warning if device time differs from server time
+        lifecycleScope.launch {
+            authManager.serverTimeDifferenceMs.collect { diffMs ->
+                if (kotlin.math.abs(diffMs) > 30 * 60 * 1000L) { // > 30 minutes difference
+                    val hours = kotlin.math.abs(diffMs) / (60 * 60 * 1000)
+                    val minutes = (kotlin.math.abs(diffMs) / (60 * 1000)) % 60
+
+                    val diffStr = if (hours > 0) {
+                        "${hours}h ${minutes}m"
+                    } else {
+                        "${minutes}m"
+                    }
+
+                    // diffMs > 0 means device time is ahead of server time
+                    // diffMs < 0 means device time is behind server time
+                    val direction = if (diffMs > 0) "ahead of" else "behind"
+                    binding.expiryReminderText.text = "⚠️ Device time is $diffStr $direction server time. Please Correct it to avoid auto-logout"
+                    binding.expiryReminderText.setTextColor(
+                        ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_error)
+                    )
+                } else {
+                    // Normal message when time is in sync
+                    binding.expiryReminderText.text = getString(org.aiims.odk.auth.R.string.aiims_token_expiry_reminder)
+                    binding.expiryReminderText.setTextColor(
+                        ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_on_surface_variant)
+                    )
                 }
             }
         }

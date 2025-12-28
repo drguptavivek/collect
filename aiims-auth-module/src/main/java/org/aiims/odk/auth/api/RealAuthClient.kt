@@ -161,8 +161,8 @@ class RealAuthClient private constructor(
                     if (body != null) {
                         Log.d("AiimsAuthClient", "Login successful")
 
-                        // Extract server time from Date header
-                        val serverTime = extractServerTime(response)
+                        // Parse server time from response body (ISO 8601 format)
+                        val serverTime = body.serverTime?.let { parseIsoDateTime(it) }
 
                         // Construct User object from response + input
                         val user = User(
@@ -204,8 +204,41 @@ class RealAuthClient private constructor(
     /**
      * Extract server time from HTTP response Date header.
      * Returns null if the header is missing or invalid.
+     * NOTE: Now deprecated - serverTime is provided in response body.
      */
     private fun extractServerTime(response: retrofit2.Response<LoginResponse>): Long? {
+        return extractServerTimeFromResponse(response)
+    }
+
+    /**
+     * Parse ISO 8601 datetime string to milliseconds since epoch.
+     * Handles formats: "2025-12-21T10:02:00.000Z" or "2025-12-21T10:02:00.000+00:00"
+     */
+    private fun parseIsoDateTime(isoString: String): Long? {
+        return try {
+            // Try parsing with timezone indicator
+            val format = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US)
+            format.timeZone = java.util.TimeZone.getTimeZone("GMT")
+            format.parse(isoString)?.time
+        } catch (e: Exception) {
+            try {
+                // Fallback to parsing without 'Z' suffix
+                val format = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", java.util.Locale.US)
+                format.timeZone = java.util.TimeZone.getTimeZone("GMT")
+                format.parse(isoString)?.time
+            } catch (e2: Exception) {
+                Log.w("AiimsAuthClient", "Failed to parse ISO datetime: $isoString")
+                null
+            }
+        }
+    }
+
+    /**
+     * Extract server time from HTTP Date header (generic version).
+     * Returns null if the header is missing or invalid.
+     * NOTE: Fallback method - primary source should be response body serverTime field.
+     */
+    private fun extractServerTimeFromResponse(response: retrofit2.Response<*>): Long? {
         val dateHeader = response.headers()["Date"] ?: return null
         return try {
             // HTTP Date format: "Wed, 21 Oct 2015 07:28:00 GMT"

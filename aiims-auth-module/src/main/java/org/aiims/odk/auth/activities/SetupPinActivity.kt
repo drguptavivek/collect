@@ -30,6 +30,8 @@ class SetupPinActivity : AiimsBaseActivity() {
     private lateinit var setupButton: com.google.android.material.button.MaterialButton
     private lateinit var progressBar: ProgressBar
     private lateinit var userTextView: TextView
+    private lateinit var timeWarningCard: com.google.android.material.card.MaterialCardView
+    private lateinit var timeWarningText: TextView
 
     // Store the authentication token from login
     private var authToken: String = ""
@@ -46,6 +48,8 @@ class SetupPinActivity : AiimsBaseActivity() {
         // Initialize views
         progressBar = findViewById(org.aiims.odk.auth.R.id.progress_bar)
         userTextView = findViewById(org.aiims.odk.auth.R.id.user_text_view)
+        timeWarningCard = findViewById(org.aiims.odk.auth.R.id.time_warning_card)
+        timeWarningText = findViewById(org.aiims.odk.auth.R.id.time_warning_text)
         pinField = findViewById(org.aiims.odk.auth.R.id.pin_field)
         confirmPinField = findViewById(org.aiims.odk.auth.R.id.confirm_pin_field)
         setupButton = findViewById(org.aiims.odk.auth.R.id.setup_button)
@@ -58,8 +62,36 @@ class SetupPinActivity : AiimsBaseActivity() {
         // Load user data
         loadUserData()
 
+        // Show time warning if device time differs from server time
+        observeTimeDifference()
+
         // Setup PIN box logic
         setupPinBoxLogic()
+    }
+
+    private fun observeTimeDifference() {
+        lifecycleScope.launch {
+            authManager.serverTimeDifferenceMs.collect { diffMs ->
+                if (kotlin.math.abs(diffMs) > 30 * 60 * 1000L) { // > 30 minutes difference
+                    val hours = kotlin.math.abs(diffMs) / (60 * 60 * 1000)
+                    val minutes = (kotlin.math.abs(diffMs) / (60 * 1000)) % 60
+
+                    val diffStr = if (hours > 0) {
+                        "${hours}h ${minutes}m"
+                    } else {
+                        "${minutes}m"
+                    }
+
+                    // diffMs > 0 means device time is ahead of server time
+                    // diffMs < 0 means device time is behind server time
+                    val direction = if (diffMs > 0) "ahead of" else "behind"
+                    timeWarningText.text = "⚠️ Device time is $diffStr $direction server time. Please Correct it to avoid auto-logout"
+                    timeWarningCard.visibility = View.VISIBLE
+                } else {
+                    timeWarningCard.visibility = View.GONE
+                }
+            }
+        }
     }
 
     private fun setupPinBoxLogic() {

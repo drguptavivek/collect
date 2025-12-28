@@ -91,7 +91,8 @@ data class LoginResponse(
     val token: String,
     val projectId: Int,
     val expiresAt: String,
-    val id: Int // App User ID
+    val id: Int, // App User ID
+    val serverTime: String? = null  // Server current time (ISO 8601 format)
 )
 
 data class RevokeResponse(
@@ -100,7 +101,8 @@ data class RevokeResponse(
 
 data class TelemetryResponse(
     val id: Int,
-    val dateTime: String
+    val dateTime: String,
+    val serverTime: String? = null  // Server current time (ISO 8601 format)
 )
 
 data class ProjectResponse(
