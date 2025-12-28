@@ -31,6 +31,11 @@ object AiimsConstants {
     const val KEY_API_VERSION = "api_version"
     const val KEY_DEV_SERVER_IP = "dev_server_ip" // DEBUG only - overrides base URL
 
+    // Auth Persistence Keys
+    const val KEY_AUTH_URL = "auth_url"
+    const val KEY_AUTH_PROJECT_ID = "auth_project_id"
+    const val KEY_QR_GENERAL_SETTINGS = "qr_general_settings"
+
     // Feature Flags
     const val KEY_AIIMS_AUTH_ENABLED = "aiims_auth_enabled"
     const val KEY_DEBUG_MODE = "debug_mode"

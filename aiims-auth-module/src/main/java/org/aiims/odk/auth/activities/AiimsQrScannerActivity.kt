@@ -247,43 +247,30 @@ class AiimsQrScannerActivity : AppCompatActivity() {
 
                 // Extract values from general section
                 val serverUrl = general.optString("server_url", "")
-                val username = general.optString("username", "")
-                val formUpdateMode = general.optString("form_update_mode", "manual")
-
-                // Extract admin password - NOTE: This is for protecting ODK settings panel, NOT for server auth
-                val adminPassword = admin.optString("admin_pw", "")
-
+                
                 // Extract project info
-                val projectName = projectSection.optString("name", "")
                 val projectId = projectSection.optString("project_id", "")
-
+                
                 if (serverUrl.isEmpty()) {
                     throw IllegalArgumentException("Missing server_url in QR code")
                 }
 
-                // Get or create project
-                val project = getOrCreateProject(serverUrl, projectName)
-                val currentProjectId = project.uuid
-
-                // Save ONLY essential settings to project preferences
-                val projPrefs = getSharedPreferences("general_prefs$currentProjectId", Context.MODE_PRIVATE)
-                projPrefs.edit()
-                    .putString(ProjectKeys.KEY_SERVER_URL, serverUrl)
-                    .putString(ProjectKeys.KEY_USERNAME, username)  // Save for tracking
-                    .putString(ProjectKeys.KEY_FORM_UPDATE_MODE, formUpdateMode)
-                    .commit()
-
-                // Save admin password to protected settings if provided
-                // This protects access to ODK settings panel
-                if (adminPassword.isNotEmpty()) {
-                    val protectedPrefs = getSharedPreferences("protected_prefs$currentProjectId", Context.MODE_PRIVATE)
-                    protectedPrefs.edit()
-                        .putString("admin_pw", adminPassword)
-                        .commit()
+                // Calculate Auth URL (strip /projects/...)
+                // Expected format: https://central.domain.com/v1/projects/1
+                // Auth URL: https://central.domain.com/v1
+                val authUrl = if (serverUrl.contains("/projects")) {
+                    serverUrl.substringBefore("/projects")
+                } else {
+                    serverUrl
                 }
 
-                // Set as current project
-                setCurrentProject(currentProjectId)
+                // Save Auth Details to AIIMS Preferences
+                val authPrefs = getSharedPreferences(org.aiims.odk.auth.utils.AiimsConstants.AIIMS_PREFS_NAME, Context.MODE_PRIVATE)
+                authPrefs.edit()
+                    .putString(org.aiims.odk.auth.utils.AiimsConstants.KEY_AUTH_URL, authUrl)
+                    .putString(org.aiims.odk.auth.utils.AiimsConstants.KEY_AUTH_PROJECT_ID, projectId)
+                    .putString(org.aiims.odk.auth.utils.AiimsConstants.KEY_QR_GENERAL_SETTINGS, general.toString())
+                    .apply()
 
                 binding.progressBar.visibility = View.GONE
                 Toast.makeText(
@@ -305,27 +292,6 @@ class AiimsQrScannerActivity : AppCompatActivity() {
                 isProcessing = false
             }
         }
-    }
-
-    private fun getOrCreateProject(serverUrl: String, projectName: String = "AIIMS Project"): Project.Saved {
-        // Check if a project with this URL already exists
-        val allProjects = projectsRepository.getAll()
-        for (proj in allProjects) {
-            val projPrefs = getSharedPreferences("general_prefs${proj.uuid}", Context.MODE_PRIVATE)
-            val projUrl = projPrefs.getString(ProjectKeys.KEY_SERVER_URL, null)
-            if (projUrl == serverUrl) {
-                return proj
-            }
-        }
-
-        // Create new project with name from QR code or default
-        val uuidGenerator = UUIDGenerator()
-        val newProject = Project.New(
-            projectName.ifEmpty { "AIIMS Project" },
-            "A",
-            "#3e9fcc"
-        )
-        return projectsRepository.save(newProject)
     }
 
     private fun setCurrentProject(projectId: String) {

@@ -80,6 +80,7 @@
     <string name="aiims_button_ok">OK</string>
     <string name="aiims_button_save">Save</string>
     <string name="aiims_button_scan_qr_code">Scan QR Code</string>
+    <string name="aiims_button_rescan_qr_code">Rescan QR Code</string>
     <string name="aiims_button_work_offline_grace">Work Offline (Grace Period)</string>
     <string name="aiims_button_grant_permissions">Grant Permissions</string>
     <string name="aiims_button_forgot_pin">Forgot PIN?</string>

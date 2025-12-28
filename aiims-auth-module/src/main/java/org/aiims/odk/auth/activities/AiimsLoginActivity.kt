@@ -142,6 +142,29 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             val metaPrefs = getSharedPreferences("meta", Context.MODE_PRIVATE)
             currentSystemProjectId = metaPrefs.getString("current_project_id", null)
 
+            // FALLBACK 1: If ODK project missing, check for Staged Auth Details
+            if (currentSystemProjectId.isNullOrBlank()) {
+                val authPrefs = getSharedPreferences(org.aiims.odk.auth.utils.AiimsConstants.AIIMS_PREFS_NAME, Context.MODE_PRIVATE)
+                val authUrl = authPrefs.getString(org.aiims.odk.auth.utils.AiimsConstants.KEY_AUTH_URL, null)
+                val authPid = authPrefs.getString(org.aiims.odk.auth.utils.AiimsConstants.KEY_AUTH_PROJECT_ID, null)
+
+                if (!authUrl.isNullOrBlank() && !authPid.isNullOrBlank()) {
+                    // Temporarily set context to allow login
+                    serverUrl = authUrl
+                    centralProjectId = authPid
+                    authManager.setActiveProject(authPid!!)
+                    
+                    binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, authPid, authUrl)
+                    binding.statusText.visibility = View.VISIBLE
+                    
+                    // Already configured (staged) -> Rescan
+                    binding.scanQrButton.setText(org.aiims.odk.auth.R.string.aiims_button_rescan_qr_code)
+                    
+                    enableLoginUi(true)
+                    return
+                }
+            }
+
             if (currentSystemProjectId.isNullOrBlank()) {
                 showProjectMissingState()
                 return
@@ -163,6 +186,10 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 
                 binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, centralProjectId, serverUrl)
                 binding.statusText.visibility = View.VISIBLE
+                
+                // Configured -> Rescan
+                binding.scanQrButton.setText(org.aiims.odk.auth.R.string.aiims_button_rescan_qr_code)
+                
                 enableLoginUi(true)
             } else {
                 binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_invalid_project_config, serverUrl)
@@ -179,6 +206,9 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_no_project_configured)
         binding.statusText.visibility = View.VISIBLE
         enableLoginUi(false)
+        
+        // Missing -> Scan
+        binding.scanQrButton.setText(org.aiims.odk.auth.R.string.aiims_button_scan_qr_code)
         binding.scanQrButton.visibility = View.VISIBLE
         binding.loginButton.visibility = View.GONE
     }
@@ -188,7 +218,9 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         binding.passwordLayout.isEnabled = enable
         binding.loginButton.isEnabled = enable
         binding.loginButton.visibility = if (enable) View.VISIBLE else View.GONE
-        binding.scanQrButton.visibility = if (!enable) View.VISIBLE else View.GONE
+        
+        // Scan/Rescan button is ALWAYS visible to allow correcting config
+        binding.scanQrButton.visibility = View.VISIBLE
     }
 
     private fun attemptLogin() {
@@ -215,22 +247,88 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 is AuthResult.Success -> {
                     Toast.makeText(this@AiimsLoginActivity, getString(org.aiims.odk.auth.R.string.aiims_welcome_user, result.user.username), Toast.LENGTH_SHORT).show()
 
+                    // POST-LOGIN: CREATE/UPDATE ODK PROJECT
+                    try {
+                        // 1. Check for Pending/Staged Auth Details
+                        val authPrefs = getSharedPreferences(org.aiims.odk.auth.utils.AiimsConstants.AIIMS_PREFS_NAME, Context.MODE_PRIVATE)
+                        val stagedAuthUrl = authPrefs.getString(org.aiims.odk.auth.utils.AiimsConstants.KEY_AUTH_URL, null)
+                        val stagedPid = authPrefs.getString(org.aiims.odk.auth.utils.AiimsConstants.KEY_AUTH_PROJECT_ID, null)
+
+                        if (stagedAuthUrl == url && stagedPid == pid) {
+                            // MATCHED! This is a fresh login for a scanned QR.
+                            
+                            // Initialize ODK Repositories
+                            val uuidGenerator = org.odk.collect.shared.strings.UUIDGenerator()
+                            val gson = com.google.gson.Gson()
+                            val metaPrefs = getSharedPreferences("meta", Context.MODE_PRIVATE)
+                            val metaSettings = AiimsSettings(metaPrefs)
+                            val projectsRepo = org.odk.collect.projects.SharedPreferencesProjectsRepository(
+                                uuidGenerator, gson, metaSettings, org.odk.collect.settings.keys.MetaKeys.KEY_PROJECTS
+                            )
+                            
+                            // FIND OR CREATE PROJECT (Preserve Data)
+                            var targetUuid: String? = null
+                            val allProjects = projectsRepo.getAll()
+                            
+                             // Search by PID (better than URL now since URL changes)
+                            for (proj in allProjects) {
+                                val projPrefs = getSharedPreferences("general_prefs${proj.uuid}", Context.MODE_PRIVATE)
+                                val serverUrl = projPrefs.getString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, "") ?: ""
+                                if (AiimsProjectUtils.getProjectIdFromUrl(serverUrl) == pid) {
+                                    targetUuid = proj.uuid
+                                    break
+                                }
+                            }
+                            
+                             if (targetUuid == null) {
+                                // Create new
+                                val jsonStr = authPrefs.getString(org.aiims.odk.auth.utils.AiimsConstants.KEY_QR_GENERAL_SETTINGS, "{}")
+                                val json = org.json.JSONObject(jsonStr)
+                                val projectSection = json.optJSONObject("project") ?: org.json.JSONObject()
+                                val projectName = projectSection.optString("name", "AIIMS Project $pid")
+                                
+                                val newProject = org.odk.collect.projects.Project.New(
+                                    projectName, "A", "#3e9fcc"
+                                )
+                                targetUuid = projectsRepo.save(newProject).uuid
+                             }
+                             
+                             // CONSTRUCT TOKENIZED URL
+                             // Format: <BaseURL>/key/<TOKEN>/projects/<PID>
+                             // stagedAuthUrl now includes version (e.g. .../v1)
+                             val tokenizedUrl = "$stagedAuthUrl/key/${result.token}/projects/$pid"
+                             
+                             // APPLY SETTINGS
+                             val generalJsonStr = authPrefs.getString(org.aiims.odk.auth.utils.AiimsConstants.KEY_QR_GENERAL_SETTINGS, "{}")
+                             val generalJson = org.json.JSONObject(generalJsonStr)
+                             
+                             val projPrefs = getSharedPreferences("general_prefs$targetUuid", Context.MODE_PRIVATE)
+                             projPrefs.edit().apply {
+                                 putString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, tokenizedUrl)
+                                 putString(org.odk.collect.settings.keys.ProjectKeys.KEY_PROTOCOL, org.odk.collect.settings.keys.ProjectKeys.PROTOCOL_SERVER)
+                                 putString(org.odk.collect.settings.keys.ProjectKeys.KEY_USERNAME, username)
+                                 putString(org.odk.collect.settings.keys.ProjectKeys.KEY_PASSWORD, password)
+                                 // Apply other settings from QR
+                                 putString(org.odk.collect.settings.keys.ProjectKeys.KEY_FORM_UPDATE_MODE, generalJson.optString("form_update_mode", "manual"))
+                                 commit() // Sync
+                             }
+                             
+                             // Set Active
+                             metaSettings.save(org.odk.collect.settings.keys.MetaKeys.CURRENT_PROJECT_ID, targetUuid)
+                             currentSystemProjectId = targetUuid
+                             serverUrl = tokenizedUrl
+                             
+                             // Update Mappings
+                             authManager.setProjectMapping(pid, targetUuid!!)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("AiimsLogin", "Failed to setup ODK project after login", e)
+                        // Non-fatal? We still have a session. But ODK layer relies on it.
+                    }
+
                     // Trigger Telemetry with Location (Manager sends one without location, we refine it here)
                     lifecycleScope.launch {
                         authManager.submitTelemetry(getLastKnownLocation())
-                    }
-
-                    // SAVE CREDENTIALS TO ODK SETTINGS
-                    if (currentSystemProjectId != null && currentSystemProjectId != "MANUAL_FALLBACK") {
-                        try {
-                            val projPrefs = getSharedPreferences("general_prefs$currentSystemProjectId", Context.MODE_PRIVATE)
-                            projPrefs.edit()
-                                .putString(org.odk.collect.settings.keys.ProjectKeys.KEY_USERNAME, username)
-                                .putString(org.odk.collect.settings.keys.ProjectKeys.KEY_PASSWORD, password)
-                                .commit()
-                        } catch (e: Exception) {
-                            // Ignored
-                        }
                     }
 
                     // Navigate based on reauth mode and PIN state

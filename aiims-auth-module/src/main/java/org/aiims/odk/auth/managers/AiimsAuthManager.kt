@@ -514,7 +514,13 @@ class AiimsAuthManager @Inject constructor(
                 for (project in allProjects) {
                     val projPrefs = context.getSharedPreferences("general_prefs${project.uuid}", Context.MODE_PRIVATE)
                     val url = projPrefs.getString("server_url", "") ?: ""
-                    if (url.contains("/v1/projects/$centralPid")) {
+                    
+                    // Match standard: .../v1/projects/{pid}
+                    // Match tokenized: .../v1/key/{token}/projects/{pid}
+                    
+                    // Simple check: Does it end with /projects/{pid} (taking potential trailing slash into account)
+                    val cleanUrl = url.trimEnd('/')
+                    if (cleanUrl.endsWith("/projects/$centralPid")) {
                         systemUuid = project.uuid
                         setProjectMapping(centralPid, systemUuid)
                         Log.d("AiimsAuthManager", "Backfilled mapping: Central $centralPid -> ODK $systemUuid")
