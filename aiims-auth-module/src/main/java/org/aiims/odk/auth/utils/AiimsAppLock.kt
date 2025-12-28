@@ -34,6 +34,16 @@ class AiimsAppLock(
 
         val authState = authManager.getCurrentAuthState()
 
+        // Handle LOGGED_IN_REQUIRES_PIN - User must set up PIN before accessing app
+        if (authState == AuthState.LOGGED_IN_REQUIRES_PIN) {
+            shouldRequirePin = false
+            val intent = Intent(application, SetupPinActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            application.startActivity(intent)
+            return
+        }
+
         // Require PIN on every start if logged in and PIN is set
         // This covers both: resume from background AND fresh app start
         if (authState == AuthState.LOGGED_IN) {

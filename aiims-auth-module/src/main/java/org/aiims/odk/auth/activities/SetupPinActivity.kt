@@ -249,5 +249,16 @@ class SetupPinActivity : AiimsBaseActivity() {
         setupButton.isEnabled = !loading
         pinField.isEnabled = !loading
         confirmPinField.isEnabled = !loading
-        }
+    }
+
+    override fun onBackPressed() {
+        // Prevent bypass - user must complete PIN setup to use the app
+        // Show dialog explaining that PIN is required
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(getString(org.aiims.odk.auth.R.string.aiims_pin_required_title))
+            .setMessage(getString(org.aiims.odk.auth.R.string.aiims_pin_required_message))
+            .setPositiveButton(getString(org.aiims.odk.auth.R.string.aiims_button_ok), null)
+            .setCancelable(false)
+            .show()
+    }
 }

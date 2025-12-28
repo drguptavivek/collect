@@ -233,10 +233,19 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                         }
                     }
 
-                    // Check for PIN
-                    if (pinManager.isPinSet()) {
-                        navigateToMain()
+                    // Navigate based on reauth mode and PIN state
+                    if (isReauthMode) {
+                        // Category A: Token Refresh - PIN should already be set
+                        if (pinManager.isPinSet()) {
+                            navigateToMain()
+                        } else {
+                            // Edge case: PIN was somehow cleared during token refresh
+                            navigateToPinSetup(result.token, result.expiresAt)
+                        }
                     } else {
+                        // Category B: Fresh Login / Forgot PIN / Logout
+                        // Set auth state to LOGGED_IN_REQUIRES_PIN to enforce PIN setup
+                        authManager.updateAuthState(org.aiims.odk.auth.managers.AuthState.LOGGED_IN_REQUIRES_PIN)
                         navigateToPinSetup(result.token, result.expiresAt)
                     }
                 }

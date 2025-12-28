@@ -774,8 +774,7 @@ class AiimsAuthManager @Inject constructor(
 enum class AuthState {
     INITIAL,
     LOGGED_IN,
+    LOGGED_IN_REQUIRES_PIN,  // Logged in but must set up PIN first (Forgot PIN, Logout, First-time login)
     LOGGED_OUT,
-
-    // REQUIRES_PIN - Removed, now Local only
     ERROR
 }

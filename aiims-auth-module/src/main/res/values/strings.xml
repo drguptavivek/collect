@@ -116,6 +116,8 @@
     <string name="aiims_pin_setup_title">Setup PIN</string>
     <string name="aiims_pin_setup_message">Create a 4-digit PIN for quick access</string>
     <string name="aiims_pin_setup_success">PIN setup successful!</string>
+    <string name="aiims_pin_required_title">PIN Required</string>
+    <string name="aiims_pin_required_message">You must set up a PIN to continue using the app.</string>
     <string name="aiims_pin_changed_success">PIN changed successfully!</string>
     <string name="aiims_change_pin_title">Change PIN</string>
     <string name="aiims_change_pin_message">Update your 4-digit PIN for quick access</string>
