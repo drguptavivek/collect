@@ -6,6 +6,29 @@ This document provides a comprehensive analysis of all possible scenarios in the
 
 ---
 
+## FIX INSTRUCTIONS
+Fix collect-a55 address beads issues ..... 
+When Fixing the issue, Refer to 
+@docs/aiims-custom/audit/REAUTHENTICATION_SCENARIOS.md and 
+@docs/aiims-custom/01-ARCHITECTURE/ 
+Think carefully and propose a fix. 
+Confirm first before applying fix. 
+Verify. Doublecheck code.
+Then Do an 
+./gradlew clean
+./gradlew compileAiimsDebug 
+./gradlew installAiimsDebug
+
+Then ask for User verofciation. 
+Once user confirms, DoubleCheck code.
+Update the @docs/aiims-custom/audit/REAUTHENTICATION_SCENARIOS.md  and @docs/aiims-custom/01-ARCHITECTURE/ . 
+Finally  git commit. 
+Close beads issue with full details of fix  and Git Commit ID.
+Close GH issue  with full details of fix and Git Commit ID.
+Udpate Knowldge base for any new broad based knowledge.
+
+---
+
 ## Table of Contents
 
 1. [System Overview](#system-overview)
