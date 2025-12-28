@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="TokenLifecycle" name="Token Lifecycle &#38; Grace Period" isExecutable="false">
+    <bpmn:startEvent id="StartTokenValid" name="Token valid">
+      <bpmn:outgoing>Flow_AppUsesToken</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="AppUsesToken" name="App makes OpenRosa request">
+      <bpmn:incoming>Flow_AppUsesToken</bpmn:incoming>
+      <bpmn:outgoing>Flow_Interceptor</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:serviceTask id="Interceptor" name="OkHttp Interceptor gets token" implementation="external">
+      <bpmn:incoming>Flow_Interceptor</bpmn:incoming>
+      <bpmn:outgoing>Flow_AddHeader</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:task id="AddHeader" name="Add Authorization: Bearer header">
+      <bpmn:incoming>Flow_AddHeader</bpmn:incoming>
+      <bpmn:outgoing>Flow_SendRequest</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="SendRequest" name="Send request to server">
+      <bpmn:incoming>Flow_SendRequest</bpmn:incoming>
+      <bpmn:outgoing>Flow_CheckResponse</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_CheckResponse" name="Response status">
+      <bpmn:incoming>Flow_CheckResponse</bpmn:incoming>
+      <bpmn:outgoing>Flow_1uixdoi</bpmn:outgoing>
+      <bpmn:outgoing>Flow_15gq0ou</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Success" name="Request successful">
+      <bpmn:incoming>Flow_1uixdoi</bpmn:incoming>
+      <bpmn:outgoing>Flow_NextRequest</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="EndContinue" name="Continue using app">
+      <bpmn:incoming>Flow_NextRequest</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="Gateway_TokenExpired" name="Within grace period?">
+      <bpmn:incoming>Flow_15gq0ou</bpmn:incoming>
+      <bpmn:outgoing>Flow_0luoqzo</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1s2ogo1</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="EndHardLogout" name="Force logout">
+      <bpmn:incoming>Flow_0luoqzo</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="Gateway_CheckServer" name="Server reachable?">
+      <bpmn:incoming>Flow_1s2ogo1</bpmn:incoming>
+      <bpmn:outgoing>Flow_1ce2ebw</bpmn:outgoing>
+      <bpmn:outgoing>Flow_01c28c7</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="OfflineWork" name="Allow offline work">
+      <bpmn:incoming>Flow_01c28c7</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:task id="SoftExpiryTrigger" name="Trigger soft expiry">
+      <bpmn:incoming>Flow_1ce2ebw</bpmn:incoming>
+      <bpmn:outgoing>Flow_PromptUser</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_PromptUser" name="User action">
+      <bpmn:incoming>Flow_PromptUser</bpmn:incoming>
+      <bpmn:outgoing>Flow_Refresh</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Snooze</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="RefreshToken" name="User enters password">
+      <bpmn:incoming>Flow_Refresh</bpmn:incoming>
+      <bpmn:outgoing>Flow_GetNewToken</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:task id="GetNewToken" name="Receive new token from server">
+      <bpmn:incoming>Flow_GetNewToken</bpmn:incoming>
+      <bpmn:outgoing>Flow_SaveNewToken</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="SaveNewToken" name="Save new token to prefs">
+      <bpmn:incoming>Flow_SaveNewToken</bpmn:incoming>
+      <bpmn:outgoing>Flow_ReturnToActive</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Snooze" name="User cancels (snooze)">
+      <bpmn:incoming>Flow_Snooze</bpmn:incoming>
+      <bpmn:outgoing>Flow_ContinueOffline</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="EndReturnToActive" name="Return to active state">
+      <bpmn:incoming>Flow_ReturnToActive</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndContinueOffline" name="Continue offline">
+      <bpmn:incoming>Flow_ContinueOffline</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_AppUsesToken" sourceRef="StartTokenValid" targetRef="AppUsesToken" />
+    <bpmn:sequenceFlow id="Flow_Interceptor" sourceRef="AppUsesToken" targetRef="Interceptor" />
+    <bpmn:sequenceFlow id="Flow_AddHeader" sourceRef="Interceptor" targetRef="AddHeader" />
+    <bpmn:sequenceFlow id="Flow_SendRequest" sourceRef="AddHeader" targetRef="SendRequest" />
+    <bpmn:sequenceFlow id="Flow_CheckResponse" sourceRef="SendRequest" targetRef="Gateway_CheckResponse" />
+    <bpmn:sequenceFlow id="Flow_NextRequest" sourceRef="Success" targetRef="EndContinue" />
+    <bpmn:sequenceFlow id="Flow_PromptUser" sourceRef="SoftExpiryTrigger" targetRef="Gateway_PromptUser" />
+    <bpmn:sequenceFlow id="Flow_Refresh" name="Login" sourceRef="Gateway_PromptUser" targetRef="RefreshToken" />
+    <bpmn:sequenceFlow id="Flow_Snooze" name="Cancel" sourceRef="Gateway_PromptUser" targetRef="Snooze" />
+    <bpmn:sequenceFlow id="Flow_GetNewToken" sourceRef="RefreshToken" targetRef="GetNewToken" />
+    <bpmn:sequenceFlow id="Flow_SaveNewToken" sourceRef="GetNewToken" targetRef="SaveNewToken" />
+    <bpmn:sequenceFlow id="Flow_ReturnToActive" sourceRef="SaveNewToken" targetRef="EndReturnToActive" />
+    <bpmn:sequenceFlow id="Flow_ContinueOffline" sourceRef="Snooze" targetRef="OfflineWork" />
+    <bpmn:sequenceFlow id="Flow_1uixdoi" name="200 OK" sourceRef="Gateway_CheckResponse" targetRef="Success" />
+    <bpmn:sequenceFlow id="Flow_15gq0ou" name="401" sourceRef="Gateway_CheckResponse" targetRef="Gateway_TokenExpired" />
+    <bpmn:sequenceFlow id="Flow_0luoqzo" name="&#62; 6 hours" sourceRef="Gateway_TokenExpired" targetRef="EndHardLogout" />
+    <bpmn:sequenceFlow id="Flow_1s2ogo1" name="&#60;= 6 hrs" sourceRef="Gateway_TokenExpired" targetRef="Gateway_CheckServer" />
+    <bpmn:sequenceFlow id="Flow_1ce2ebw" name="Reachable" sourceRef="Gateway_CheckServer" targetRef="SoftExpiryTrigger" />
+    <bpmn:sequenceFlow id="Flow_01c28c7" name="Un-reachable" sourceRef="Gateway_CheckServer" targetRef="OfflineWork" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="TokenLifecycle">
+      <bpmndi:BPMNShape id="Shape_StartTokenValid" bpmnElement="StartTokenValid">
+        <dc:Bounds x="100" y="200" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="95" y="240" width="45" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_AppUsesToken" bpmnElement="AppUsesToken">
+        <dc:Bounds x="200" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Interceptor" bpmnElement="Interceptor">
+        <dc:Bounds x="350" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_AddHeader" bpmnElement="AddHeader">
+        <dc:Bounds x="500" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_SendRequest" bpmnElement="SendRequest">
+        <dc:Bounds x="650" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_CheckResponse" bpmnElement="Gateway_CheckResponse" isMarkerVisible="true">
+        <dc:Bounds x="800" y="195" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="860" y="213" width="82" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Success" bpmnElement="Success">
+        <dc:Bounds x="900" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndContinue" bpmnElement="EndContinue">
+        <dc:Bounds x="1050" y="115" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_TokenExpired" bpmnElement="Gateway_TokenExpired" isMarkerVisible="true">
+        <dc:Bounds x="900" y="295" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="894" y="257.5" width="62" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_CheckServer" bpmnElement="Gateway_CheckServer" isMarkerVisible="true">
+        <dc:Bounds x="1050" y="295" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1110" y="313" width="90" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_SoftExpiryTrigger" bpmnElement="SoftExpiryTrigger">
+        <dc:Bounds x="1150" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_PromptUser" bpmnElement="Gateway_PromptUser" isMarkerVisible="true">
+        <dc:Bounds x="1300" y="195" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_RefreshToken" bpmnElement="RefreshToken">
+        <dc:Bounds x="1400" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_GetNewToken" bpmnElement="GetNewToken">
+        <dc:Bounds x="1550" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_SaveNewToken" bpmnElement="SaveNewToken">
+        <dc:Bounds x="1700" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Snooze" bpmnElement="Snooze">
+        <dc:Bounds x="1400" y="280" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndReturnToActive" bpmnElement="EndReturnToActive">
+        <dc:Bounds x="1850" y="115" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndContinueOffline" bpmnElement="EndContinueOffline">
+        <dc:Bounds x="1550" y="295" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndHardLogout" bpmnElement="EndHardLogout">
+        <dc:Bounds x="1550" y="542" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1537" y="578" width="62" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_OfflineWork" bpmnElement="OfflineWork">
+        <dc:Bounds x="1160" y="420" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_AppUsesToken" bpmnElement="Flow_AppUsesToken">
+        <di:waypoint x="136" y="218" />
+        <di:waypoint x="200" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Interceptor" bpmnElement="Flow_Interceptor">
+        <di:waypoint x="300" y="220" />
+        <di:waypoint x="350" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_AddHeader" bpmnElement="Flow_AddHeader">
+        <di:waypoint x="450" y="220" />
+        <di:waypoint x="500" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_SendRequest" bpmnElement="Flow_SendRequest">
+        <di:waypoint x="600" y="220" />
+        <di:waypoint x="650" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_CheckResponse" bpmnElement="Flow_CheckResponse">
+        <di:waypoint x="750" y="220" />
+        <di:waypoint x="800" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_NextRequest" bpmnElement="Flow_NextRequest">
+        <di:waypoint x="1000" y="140" />
+        <di:waypoint x="1050" y="133" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_PromptUser" bpmnElement="Flow_PromptUser">
+        <di:waypoint x="1250" y="220" />
+        <di:waypoint x="1300" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Refresh" bpmnElement="Flow_Refresh">
+        <di:waypoint x="1350" y="220" />
+        <di:waypoint x="1350" y="140" />
+        <di:waypoint x="1400" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Snooze" bpmnElement="Flow_Snooze">
+        <di:waypoint x="1350" y="220" />
+        <di:waypoint x="1350" y="320" />
+        <di:waypoint x="1400" y="320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_GetNewToken" bpmnElement="Flow_GetNewToken">
+        <di:waypoint x="1500" y="140" />
+        <di:waypoint x="1550" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_SaveNewToken" bpmnElement="Flow_SaveNewToken">
+        <di:waypoint x="1650" y="140" />
+        <di:waypoint x="1700" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_ReturnToActive" bpmnElement="Flow_ReturnToActive">
+        <di:waypoint x="1800" y="140" />
+        <di:waypoint x="1850" y="133" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_ContinueOffline" bpmnElement="Flow_ContinueOffline">
+        <di:waypoint x="1400" y="327" />
+        <di:waypoint x="1330" y="327" />
+        <di:waypoint x="1330" y="460" />
+        <di:waypoint x="1260" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1uixdoi_di" bpmnElement="Flow_1uixdoi">
+        <di:waypoint x="825" y="195" />
+        <di:waypoint x="825" y="140" />
+        <di:waypoint x="900" y="140" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="821" y="165" width="38" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_15gq0ou_di" bpmnElement="Flow_15gq0ou">
+        <di:waypoint x="825" y="245" />
+        <di:waypoint x="825" y="320" />
+        <di:waypoint x="900" y="320" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="831" y="280" width="19" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0luoqzo_di" bpmnElement="Flow_0luoqzo">
+        <di:waypoint x="925" y="345" />
+        <di:waypoint x="925" y="560" />
+        <di:waypoint x="1550" y="560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="917" y="454" width="47" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1s2ogo1_di" bpmnElement="Flow_1s2ogo1">
+        <di:waypoint x="950" y="320" />
+        <di:waypoint x="1050" y="320" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="951" y="302" width="41" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ce2ebw_di" bpmnElement="Flow_1ce2ebw">
+        <di:waypoint x="1075" y="295" />
+        <di:waypoint x="1075" y="220" />
+        <di:waypoint x="1150" y="220" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1079" y="277" width="53" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_01c28c7_di" bpmnElement="Flow_01c28c7">
+        <di:waypoint x="1075" y="345" />
+        <di:waypoint x="1075" y="430" />
+        <di:waypoint x="1160" y="430" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1080" y="354" width="67" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

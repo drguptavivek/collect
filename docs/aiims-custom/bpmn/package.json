@@ -1,0 +1,14 @@
+{
+  "name": "aiims-bpmn-diagrams",
+  "version": "1.0.0",
+  "description": "BPMN 2.0 diagrams for AIIMS ODK Collect documentation",
+  "private": true,
+  "scripts": {
+    "render": "node render.js",
+    "render:all": "node render.js --all",
+    "clean": "rm -rf output node_modules"
+  },
+  "devDependencies": {
+    "bpmn-to-image": "^1.0.0"
+  }
+}

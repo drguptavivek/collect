@@ -1,24 +1,31 @@
+# Demo App Users - Testing Credentials
 
-https://central-dev/projects/1/forms/MarkdownExamples/
+> **WARNING**: These are demo credentials for testing purposes only. Do not use in production.
 
+---
 
-Password: Poppy-Perp-339-Stall
-Username: newuser2
-Access  to forms: Form 0, 2 3
+## Central Dev Environment
 
+**URL**: `https://central-dev/projects/1/forms/MarkdownExamples/`
 
-Password: Tennis-Dead-129-Assist
-Username: hhhhhhhh
-Access  to forms: Form 0
+### Project 1 Users
 
-Username: sdsdsdsdsds
-Password: Louse-Scorn-408-Behest
-Access  to forms: Form 3
+| Username | Password | Access |
+|----------|----------|--------|
+| newuser2 | Poppy-Perp-339-Stall | Form 0, 2, 3 |
+| hhhhhhhh | Tennis-Dead-129-Assist | Form 0 |
+| sdsdsdsdsds | Louse-Scorn-408-Behest | Form 3 |
 
+### Project 2 Users
 
-PROPJECT 2
-pr2_user1
-Other-Adult-769-Futon
+| Username | Password |
+|----------|----------|
+| pr2_user1 | Other-Adult-769-Futon |
 
+---
 
+## Notes
 
+- These are temporary demo accounts for local testing
+- Credentials may change without notice
+- For production use, create users via the Central admin interface

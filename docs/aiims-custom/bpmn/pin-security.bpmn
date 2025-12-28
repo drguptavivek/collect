@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="PinSecurity" name="PIN Security Flow" isExecutable="false">
+    <bpmn:startEvent id="StartAppResume" name="App comes to foreground">
+      <bpmn:outgoing>Flow_CheckAuth</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="Gateway_AuthState" name="User logged in?">
+      <bpmn:incoming>Flow_CheckAuth</bpmn:incoming>
+      <bpmn:outgoing>Flow_NormalFlow</bpmn:outgoing>
+      <bpmn:outgoing>Flow_PINSetCheck</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="NormalFlow" name="Allow normal flow">
+      <bpmn:incoming>Flow_NormalFlow</bpmn:incoming>
+      <bpmn:outgoing>Flow_EndNormal</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="EndNormal" name="Proceed">
+      <bpmn:incoming>Flow_EndNormal</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="Gateway_PINSetCheck" name="PIN set?">
+      <bpmn:incoming>Flow_PINSetCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_ShowPINScreen</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="ShowPINScreen" name="Show PIN Entry Screen">
+      <bpmn:incoming>Flow_ShowPINScreen</bpmn:incoming>
+      <bpmn:outgoing>Flow_UserEntersPIN</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:userTask id="UserEntersPIN" name="User enters 4-digit PIN">
+      <bpmn:incoming>Flow_UserEntersPIN</bpmn:incoming>
+      <bpmn:outgoing>Flow_SubmitPIN</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="ValidatePIN" name="Compare with stored hash" implementation="external">
+      <bpmn:incoming>Flow_SubmitPIN</bpmn:incoming>
+      <bpmn:outgoing>Gateway_IsCorrect</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_IsCorrect" name="PIN correct?">
+      <bpmn:incoming>Flow_IsCorrect</bpmn:incoming>
+      <bpmn:outgoing>Flow_1ca0sg4</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1sj9uh0</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="ResetAttempts" name="Reset attempt counter to 0">
+      <bpmn:incoming>Flow_1ca0sg4</bpmn:incoming>
+      <bpmn:outgoing>Flow_CheckSoftExpiry</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_SoftExpiry" name="Soft expiry active? (6 hr grace)">
+      <bpmn:incoming>Flow_CheckSoftExpiry</bpmn:incoming>
+      <bpmn:outgoing>Flow_AllowAccess</bpmn:outgoing>
+      <bpmn:outgoing>Flow_13zajna</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="AllowAccess" name="Allow access to app">
+      <bpmn:incoming>Flow_AllowAccess</bpmn:incoming>
+      <bpmn:outgoing>Flow_EndAccess</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="TriggerReAuth" name="Trigger re-auth flow">
+      <bpmn:incoming>Flow_13zajna</bpmn:incoming>
+      <bpmn:outgoing>Flow_EndReAuth</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="EndAccess" name="User can use app">
+      <bpmn:incoming>Flow_EndAccess</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndReAuth" name="Re-auth required">
+      <bpmn:incoming>Flow_EndReAuth</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:task id="IncrementAttempts" name="Increment failed attempts">
+      <bpmn:incoming>Flow_1sj9uh0</bpmn:incoming>
+      <bpmn:outgoing>Flow_03xi5uj</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_MaxAttempts" name="Attempts = 3?">
+      <bpmn:incoming>Flow_03xi5uj</bpmn:incoming>
+      <bpmn:outgoing>Flow_1oxf0u1</bpmn:outgoing>
+      <bpmn:outgoing>Flow_19ri6si</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="ReturnValidationError" name="Return validation error">
+      <bpmn:incoming>Flow_1oxf0u1</bpmn:incoming>
+      <bpmn:outgoing>Flow_LoopToPINScreen</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="TriggerWipe" name="Trigger security wipe">
+      <bpmn:incoming>Flow_19ri6si</bpmn:incoming>
+      <bpmn:outgoing>Flow_ClearTokens</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="ClearAuthTokens" name="Clear auth tokens">
+      <bpmn:incoming>Flow_ClearTokens</bpmn:incoming>
+      <bpmn:outgoing>Flow_ClearPINData</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="ClearPINData" name="Clear PIN hash and salt">
+      <bpmn:incoming>Flow_ClearPINData</bpmn:incoming>
+      <bpmn:outgoing>Flow_DeleteForms</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="DeleteForms" name="Delete forms">
+      <bpmn:incoming>Flow_DeleteForms</bpmn:incoming>
+      <bpmn:outgoing>Flow_GoToLogin</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="EndGoToLogin" name="Return to login screen">
+      <bpmn:incoming>Flow_GoToLogin</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_CheckAuth" sourceRef="StartAppResume" targetRef="Gateway_AuthState" />
+    <bpmn:sequenceFlow id="Flow_NormalFlow" name="No" sourceRef="Gateway_AuthState" targetRef="NormalFlow" />
+    <bpmn:sequenceFlow id="Flow_PINSetCheck" name="Yes" sourceRef="Gateway_AuthState" targetRef="Gateway_PINSetCheck" />
+    <bpmn:sequenceFlow id="Flow_EndNormal" sourceRef="NormalFlow" targetRef="EndNormal" />
+    <bpmn:sequenceFlow id="Flow_ShowPINScreen" name="Yes" sourceRef="Gateway_PINSetCheck" targetRef="ShowPINScreen" />
+    <bpmn:sequenceFlow id="Flow_UserEntersPIN" sourceRef="ShowPINScreen" targetRef="UserEntersPIN" />
+    <bpmn:sequenceFlow id="Flow_SubmitPIN" sourceRef="UserEntersPIN" targetRef="ValidatePIN" />
+    <bpmn:sequenceFlow id="Flow_IsCorrect" sourceRef="ValidatePIN" targetRef="Gateway_IsCorrect" />
+    <bpmn:sequenceFlow id="Flow_CheckSoftExpiry" sourceRef="ResetAttempts" targetRef="Gateway_SoftExpiry" />
+    <bpmn:sequenceFlow id="Flow_AllowAccess" name="Yes" sourceRef="Gateway_SoftExpiry" targetRef="AllowAccess" />
+    <bpmn:sequenceFlow id="Flow_EndAccess" sourceRef="AllowAccess" targetRef="EndAccess" />
+    <bpmn:sequenceFlow id="Flow_EndReAuth" sourceRef="TriggerReAuth" targetRef="EndReAuth" />
+    <bpmn:sequenceFlow id="Flow_LoopToPINScreen" sourceRef="ReturnValidationError" targetRef="ShowPINScreen" />
+    <bpmn:sequenceFlow id="Flow_ClearTokens" sourceRef="TriggerWipe" targetRef="ClearAuthTokens" />
+    <bpmn:sequenceFlow id="Flow_ClearPINData" sourceRef="ClearAuthTokens" targetRef="ClearPINData" />
+    <bpmn:sequenceFlow id="Flow_DeleteForms" sourceRef="ClearPINData" targetRef="DeleteForms" />
+    <bpmn:sequenceFlow id="Flow_GoToLogin" sourceRef="DeleteForms" targetRef="EndGoToLogin" />
+    <bpmn:sequenceFlow id="Flow_1ca0sg4" name="Yes" sourceRef="Gateway_IsCorrect" targetRef="ResetAttempts" />
+    <bpmn:sequenceFlow id="Flow_1sj9uh0" name="No" sourceRef="Gateway_IsCorrect" targetRef="IncrementAttempts" />
+    <bpmn:sequenceFlow id="Flow_03xi5uj" sourceRef="IncrementAttempts" targetRef="Gateway_MaxAttempts" />
+    <bpmn:sequenceFlow id="Flow_1oxf0u1" name="No" sourceRef="Gateway_MaxAttempts" targetRef="ReturnValidationError" />
+    <bpmn:sequenceFlow id="Flow_19ri6si" name="Yes" sourceRef="Gateway_MaxAttempts" targetRef="TriggerWipe" />
+    <bpmn:sequenceFlow id="Flow_13zajna" name="No" sourceRef="Gateway_SoftExpiry" targetRef="TriggerReAuth" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="PinSecurity">
+      <bpmndi:BPMNShape id="Shape_StartAppResume" bpmnElement="StartAppResume">
+        <dc:Bounds x="92" y="141" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="76" y="181" width="68" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_AuthState" bpmnElement="Gateway_AuthState" isMarkerVisible="true">
+        <dc:Bounds x="200" y="132" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="186" y="182" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_NormalFlow" bpmnElement="NormalFlow">
+        <dc:Bounds x="300" y="510" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndNormal" bpmnElement="EndNormal">
+        <dc:Bounds x="1822" y="542" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1819" y="588" width="41" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_PINSetCheck" bpmnElement="Gateway_PINSetCheck" isMarkerVisible="true">
+        <dc:Bounds x="301" y="132" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="305" y="182" width="43" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ShowPINScreen" bpmnElement="ShowPINScreen">
+        <dc:Bounds x="400" y="125" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_UserEntersPIN" bpmnElement="UserEntersPIN">
+        <dc:Bounds x="550" y="125" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ValidatePIN" bpmnElement="ValidatePIN">
+        <dc:Bounds x="700" y="125" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_IsCorrect" bpmnElement="Gateway_IsCorrect" isMarkerVisible="true">
+        <dc:Bounds x="850" y="132" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="903" y="149" width="62" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ResetAttempts" bpmnElement="ResetAttempts">
+        <dc:Bounds x="917" y="12" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_SoftExpiry" bpmnElement="Gateway_SoftExpiry" isMarkerVisible="true">
+        <dc:Bounds x="1100" y="95" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1160" y="113" width="90" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_AllowAccess" bpmnElement="AllowAccess">
+        <dc:Bounds x="1250" y="-40" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_TriggerReAuth" bpmnElement="TriggerReAuth">
+        <dc:Bounds x="1281" y="160" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndAccess" bpmnElement="EndAccess">
+        <dc:Bounds x="1792" y="-18" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1766" y="-42" width="87" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndReAuth" bpmnElement="EndReAuth">
+        <dc:Bounds x="1800" y="192" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1777" y="228" width="83" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_IncrementAttempts" bpmnElement="IncrementAttempts">
+        <dc:Bounds x="910" y="240" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_MaxAttempts" bpmnElement="Gateway_MaxAttempts" isMarkerVisible="true">
+        <dc:Bounds x="1075" y="285" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1065" y="261" width="69" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ReturnValidationError" bpmnElement="ReturnValidationError">
+        <dc:Bounds x="867" y="420" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_TriggerWipe" bpmnElement="TriggerWipe">
+        <dc:Bounds x="1200" y="320" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ClearAuthTokens" bpmnElement="ClearAuthTokens">
+        <dc:Bounds x="1350" y="320" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ClearPINData" bpmnElement="ClearPINData">
+        <dc:Bounds x="1500" y="320" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_DeleteForms" bpmnElement="DeleteForms">
+        <dc:Bounds x="1650" y="320" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndGoToLogin" bpmnElement="EndGoToLogin">
+        <dc:Bounds x="1813" y="352" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1795" y="388" width="72" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_CheckAuth" bpmnElement="Flow_CheckAuth">
+        <di:waypoint x="128" y="158" />
+        <di:waypoint x="201" y="158" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_NormalFlow" bpmnElement="Flow_NormalFlow">
+        <di:waypoint x="250" y="157" />
+        <di:waypoint x="250" y="550" />
+        <di:waypoint x="300" y="550" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="258" y="367" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_PINSetCheck" bpmnElement="Flow_PINSetCheck">
+        <di:waypoint x="250" y="157" />
+        <di:waypoint x="301" y="157" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="262" y="139" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_EndNormal" bpmnElement="Flow_EndNormal">
+        <di:waypoint x="400" y="557" />
+        <di:waypoint x="1822" y="557" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_ShowPINScreen" bpmnElement="Flow_ShowPINScreen">
+        <di:waypoint x="348" y="160" />
+        <di:waypoint x="400" y="160" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="367" y="140" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_UserEntersPIN" bpmnElement="Flow_UserEntersPIN">
+        <di:waypoint x="500" y="165" />
+        <di:waypoint x="550" y="165" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_SubmitPIN" bpmnElement="Flow_SubmitPIN">
+        <di:waypoint x="650" y="165" />
+        <di:waypoint x="700" y="165" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_IsCorrect" bpmnElement="Flow_IsCorrect">
+        <di:waypoint x="800" y="160" />
+        <di:waypoint x="853" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_CheckSoftExpiry" bpmnElement="Flow_CheckSoftExpiry">
+        <di:waypoint x="1017" y="52" />
+        <di:waypoint x="1075" y="52" />
+        <di:waypoint x="1075" y="120" />
+        <di:waypoint x="1100" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_AllowAccess" bpmnElement="Flow_AllowAccess">
+        <di:waypoint x="1125" y="95" />
+        <di:waypoint x="1125" y="0" />
+        <di:waypoint x="1250" y="0" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1133" y="53" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_EndAccess" bpmnElement="Flow_EndAccess">
+        <di:waypoint x="1350" y="0" />
+        <di:waypoint x="1792" y="0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_EndReAuth" bpmnElement="Flow_EndReAuth">
+        <di:waypoint x="1381" y="207" />
+        <di:waypoint x="1800" y="207" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_LoopToPINScreen" bpmnElement="Flow_LoopToPINScreen">
+        <di:waypoint x="867" y="460" />
+        <di:waypoint x="450" y="460" />
+        <di:waypoint x="450" y="205" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_ClearTokens" bpmnElement="Flow_ClearTokens">
+        <di:waypoint x="1300" y="360" />
+        <di:waypoint x="1350" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_ClearPINData" bpmnElement="Flow_ClearPINData">
+        <di:waypoint x="1450" y="360" />
+        <di:waypoint x="1500" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_DeleteForms" bpmnElement="Flow_DeleteForms">
+        <di:waypoint x="1600" y="360" />
+        <di:waypoint x="1650" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_GoToLogin" bpmnElement="Flow_GoToLogin">
+        <di:waypoint x="1750" y="367" />
+        <di:waypoint x="1813" y="367" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ca0sg4_di" bpmnElement="Flow_1ca0sg4">
+        <di:waypoint x="880" y="127" />
+        <di:waypoint x="880" y="52" />
+        <di:waypoint x="917" y="52" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="886" y="59" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1sj9uh0_di" bpmnElement="Flow_1sj9uh0">
+        <di:waypoint x="875" y="182" />
+        <di:waypoint x="875" y="280" />
+        <di:waypoint x="910" y="280" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="883" y="231" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_03xi5uj_di" bpmnElement="Flow_03xi5uj">
+        <di:waypoint x="1010" y="280" />
+        <di:waypoint x="1055" y="280" />
+        <di:waypoint x="1055" y="310" />
+        <di:waypoint x="1075" y="310" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1oxf0u1_di" bpmnElement="Flow_1oxf0u1">
+        <di:waypoint x="1100" y="335" />
+        <di:waypoint x="1100" y="460" />
+        <di:waypoint x="967" y="460" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1108" y="395" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_19ri6si_di" bpmnElement="Flow_19ri6si">
+        <di:waypoint x="1125" y="310" />
+        <di:waypoint x="1163" y="310" />
+        <di:waypoint x="1163" y="360" />
+        <di:waypoint x="1200" y="360" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1133" y="296" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13zajna_di" bpmnElement="Flow_13zajna">
+        <di:waypoint x="1125" y="145" />
+        <di:waypoint x="1125" y="200" />
+        <di:waypoint x="1281" y="200" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1133" y="169" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

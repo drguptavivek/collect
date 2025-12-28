@@ -20,7 +20,7 @@ This document describes how QR code scanning works differently in AIIMS vs defau
   },
   "admin": {
     "change_server": false,
-    "admin_pw": "vg_custom"
+    "admin_pw": "SOME_STRING"
   },
   "project": {
     "name": "Project Name",

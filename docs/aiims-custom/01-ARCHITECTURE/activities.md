@@ -184,7 +184,9 @@ graph TD
 ---
 
 ## 9. Relevant Documentation
-- [AIIMS Architecture](AIIMS_ARCHITECTURE.md)
-- [AIIMS API Documentation](AIIMS_API.md)
-- [AIIMS Maintenance Guide](AIIMS_MAINTENANCE.md)
-- [AIIMS Preferences & Persistence](AIIMS_PREFERENCES.md)
+- [Architecture Overview](overview.md)
+- [Authentication System](authentication.md)
+- [Data Isolation](data-isolation.md)
+- [API Reference](../03-API/reference.md)
+- [Maintenance Guide](../04-OPERATIONS/maintenance.md)
+- [PIN Security Feature](../05-FEATURES/pin-security.md)

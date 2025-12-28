@@ -57,3 +57,7 @@ apks
 
 # bv (beads viewer) local config and caches
 .bv/
+
+# Node.js / npm (isolated to docs/aiims-custom/bpmn)
+docs/aiims-custom/bpmn/node_modules/
+docs/aiims-custom/bpmn/package-lock.json

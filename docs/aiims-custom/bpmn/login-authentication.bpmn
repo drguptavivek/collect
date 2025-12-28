@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="LoginAuthentication" name="Login &#38; Authentication Flow" isExecutable="false">
+    <bpmn:startEvent id="StartEvent" name="User opens app">
+      <bpmn:outgoing>Flow_EnterCredentials</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="EnterCredentials" name="Enter username/password">
+      <bpmn:incoming>Flow_EnterCredentials</bpmn:incoming>
+      <bpmn:outgoing>Gateway_FormatCheck</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_FormatCheck" name="Valid format?">
+      <bpmn:incoming>Flow_FormatCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_CallAPI</bpmn:outgoing>
+      <bpmn:outgoing>Flow_18anurd</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="ShowValidationError" name="Show validation error">
+      <bpmn:incoming>Flow_18anurd</bpmn:incoming>
+      <bpmn:outgoing>Flow_RetryEnter</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:serviceTask id="CallLoginAPI" name="Call login API" implementation="external">
+      <bpmn:incoming>Flow_CallAPI</bpmn:incoming>
+      <bpmn:outgoing>Gateway_APIResponse</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_APIResponse" name="API Response">
+      <bpmn:incoming>Flow_APIResponse</bpmn:incoming>
+      <bpmn:outgoing>Flow_ShowAuthError</bpmn:outgoing>
+      <bpmn:outgoing>Flow_SaveToken</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="ShowAuthError" name="Show authentication error">
+      <bpmn:incoming>Flow_ShowAuthError</bpmn:incoming>
+      <bpmn:outgoing>Flow_RetryEnter</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="SaveToken" name="Save token to SharedPreferences">
+      <bpmn:incoming>Flow_SaveToken</bpmn:incoming>
+      <bpmn:outgoing>Gateway_PINSet</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_PINSet" name="PIN set?">
+      <bpmn:incoming>Flow_PINSet</bpmn:incoming>
+      <bpmn:outgoing>Flow_SetupPIN</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ShowPINEntry</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="SetupPIN" name="User creates 4-digit PIN">
+      <bpmn:incoming>Flow_SetupPIN</bpmn:incoming>
+      <bpmn:outgoing>Flow_HashPIN</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:task id="HashPIN" name="Hash PIN with PBKDF2">
+      <bpmn:incoming>Flow_HashPIN</bpmn:incoming>
+      <bpmn:outgoing>Flow_SetCurrentProject</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="ShowPINEntry" name="Show PIN Entry Screen">
+      <bpmn:incoming>Flow_ShowPINEntry</bpmn:incoming>
+      <bpmn:outgoing>Flow_SetCurrentProject</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="SetCurrentProject" name="Set current project in ODK">
+      <bpmn:incoming>Flow_SetCurrentProject</bpmn:incoming>
+      <bpmn:outgoing>Flow_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="EndEvent" name="User can access app - See also the PIN Security flow">
+      <bpmn:incoming>Flow_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_EnterCredentials" sourceRef="StartEvent" targetRef="EnterCredentials" />
+    <bpmn:sequenceFlow id="Flow_FormatCheck" name="Validate" sourceRef="EnterCredentials" targetRef="Gateway_FormatCheck" />
+    <bpmn:sequenceFlow id="Flow_CallAPI" name="Valid" sourceRef="Gateway_FormatCheck" targetRef="CallLoginAPI" />
+    <bpmn:sequenceFlow id="Flow_APIResponse" sourceRef="CallLoginAPI" targetRef="Gateway_APIResponse" />
+    <bpmn:sequenceFlow id="Flow_ShowAuthError" name="401 Unauthorized" sourceRef="Gateway_APIResponse" targetRef="ShowAuthError" />
+    <bpmn:sequenceFlow id="Flow_SaveToken" name="Success" sourceRef="Gateway_APIResponse" targetRef="SaveToken" />
+    <bpmn:sequenceFlow id="Flow_PINSet" sourceRef="SaveToken" targetRef="Gateway_PINSet" />
+    <bpmn:sequenceFlow id="Flow_SetupPIN" name="No" sourceRef="Gateway_PINSet" targetRef="SetupPIN" />
+    <bpmn:sequenceFlow id="Flow_ShowPINEntry" name="Yes" sourceRef="Gateway_PINSet" targetRef="ShowPINEntry" />
+    <bpmn:sequenceFlow id="Flow_HashPIN" sourceRef="SetupPIN" targetRef="HashPIN" />
+    <bpmn:sequenceFlow id="Flow_RetryEnter" name="Retry" sourceRef="ShowValidationError" targetRef="EnterCredentials" />
+    <bpmn:sequenceFlow id="Flow_RetryEnter2" name="Retry" sourceRef="ShowAuthError" targetRef="EnterCredentials" />
+    <bpmn:sequenceFlow id="Flow_SetCurrentProject" sourceRef="HashPIN" targetRef="SetCurrentProject" />
+    <bpmn:sequenceFlow id="Flow_End" sourceRef="SetCurrentProject" targetRef="EndEvent" />
+    <bpmn:sequenceFlow id="Flow_18anurd" sourceRef="Gateway_FormatCheck" targetRef="ShowValidationError" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="LoginAuthentication">
+      <bpmndi:BPMNShape id="Shape_StartEvent" bpmnElement="StartEvent">
+        <dc:Bounds x="100" y="100" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="79" y="140" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EnterCredentials" bpmnElement="EnterCredentials">
+        <dc:Bounds x="200" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_FormatCheck" bpmnElement="Gateway_FormatCheck" isMarkerVisible="true">
+        <dc:Bounds x="350" y="95" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="343" y="71" width="64" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ShowValidationError" bpmnElement="ShowValidationError">
+        <dc:Bounds x="390" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_CallLoginAPI" bpmnElement="CallLoginAPI">
+        <dc:Bounds x="450" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_APIResponse" bpmnElement="Gateway_APIResponse" isMarkerVisible="true">
+        <dc:Bounds x="600" y="95" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="589" y="71" width="71" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ShowAuthError" bpmnElement="ShowAuthError">
+        <dc:Bounds x="720" y="260" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_SaveToken" bpmnElement="SaveToken">
+        <dc:Bounds x="700" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_PINSet" bpmnElement="Gateway_PINSet" isMarkerVisible="true">
+        <dc:Bounds x="850" y="95" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_SetupPIN" bpmnElement="SetupPIN">
+        <dc:Bounds x="950" y="200" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_HashPIN" bpmnElement="HashPIN">
+        <dc:Bounds x="1120" y="200" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_ShowPINEntry" bpmnElement="ShowPINEntry">
+        <dc:Bounds x="950" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_SetCurrentProject" bpmnElement="SetCurrentProject">
+        <dc:Bounds x="1100" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_EndEvent" bpmnElement="EndEvent">
+        <dc:Bounds x="1322" y="100" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1295" y="145" width="90" height="53" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_EnterCredentials" bpmnElement="Flow_EnterCredentials">
+        <di:waypoint x="136" y="118" />
+        <di:waypoint x="200" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_FormatCheck" bpmnElement="Flow_FormatCheck">
+        <di:waypoint x="300" y="120" />
+        <di:waypoint x="350" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="315" y="102" width="35" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_CallAPI" bpmnElement="Flow_CallAPI">
+        <di:waypoint x="400" y="120" />
+        <di:waypoint x="450" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="415" y="102" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_APIResponse" bpmnElement="Flow_APIResponse">
+        <di:waypoint x="550" y="120" />
+        <di:waypoint x="600" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_ShowAuthError" bpmnElement="Flow_ShowAuthError">
+        <di:waypoint x="625" y="145" />
+        <di:waypoint x="625" y="300" />
+        <di:waypoint x="720" y="300" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="617" y="223" width="87" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_SaveToken" bpmnElement="Flow_SaveToken">
+        <di:waypoint x="650" y="120" />
+        <di:waypoint x="700" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="655" y="102" width="40" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_PINSet" bpmnElement="Flow_PINSet">
+        <di:waypoint x="800" y="120" />
+        <di:waypoint x="850" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_SetupPIN" bpmnElement="Flow_SetupPIN">
+        <di:waypoint x="875" y="145" />
+        <di:waypoint x="875" y="240" />
+        <di:waypoint x="950" y="240" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="880" y="190" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_ShowPINEntry" bpmnElement="Flow_ShowPINEntry">
+        <di:waypoint x="900" y="120" />
+        <di:waypoint x="950" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="910" y="102" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_HashPIN" bpmnElement="Flow_HashPIN">
+        <di:waypoint x="1050" y="240" />
+        <di:waypoint x="1120" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_RetryEnter" bpmnElement="Flow_RetryEnter">
+        <di:waypoint x="390" y="260" />
+        <di:waypoint x="270" y="260" />
+        <di:waypoint x="270" y="160" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="317" y="235" width="27" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_RetryEnter2" bpmnElement="Flow_RetryEnter2">
+        <di:waypoint x="720" y="330" />
+        <di:waypoint x="250" y="330" />
+        <di:waypoint x="250" y="160" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="556" y="313" width="27" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_SetCurrentProject" bpmnElement="Flow_SetCurrentProject">
+        <di:waypoint x="1170" y="200" />
+        <di:waypoint x="1170" y="180" />
+        <di:waypoint x="1150" y="180" />
+        <di:waypoint x="1150" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_End" bpmnElement="Flow_End">
+        <di:waypoint x="1200" y="110" />
+        <di:waypoint x="1261" y="110" />
+        <di:waypoint x="1261" y="115" />
+        <di:waypoint x="1322" y="115" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_18anurd_di" bpmnElement="Flow_18anurd">
+        <di:waypoint x="375" y="145" />
+        <di:waypoint x="375" y="230" />
+        <di:waypoint x="390" y="230" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

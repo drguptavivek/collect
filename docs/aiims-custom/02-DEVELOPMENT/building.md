@@ -246,9 +246,14 @@ For issues or questions about building, refer to:
 2. `collect_app/src/debug/google-services.json` - Firebase configuration
 3. `collect_app/src/release/google-services.json` - Firebase configuration
 
-Please refer to the **[Maintenance Guide](AIIMS_MAINTENANCE.md)** for:
+Please refer to the **[Maintenance Guide](../04-OPERATIONS/maintenance.md)** for:
 - Syncing with upstream ODK changes
 - Database migrations
 - Release management
 
-See [AIIMS_MAINTENANCE.md](AIIMS_MAINTENANCE.md) for full details.
+## Related Documentation
+
+- [Quick Start](../01-QUICKSTART.md) - Getting started
+- [Local Setup](setup.md) - Development environment
+- [Debugging](debugging.md) - Debugging tools
+- [Versioning](../04-OPERATIONS/versioning.md) - Version strategy
