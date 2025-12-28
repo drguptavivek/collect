@@ -2,6 +2,7 @@ package org.aiims.odk.auth.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import org.aiims.odk.auth.utils.AiimsConstants
@@ -18,6 +19,8 @@ class AiimsSecureStorage private constructor(
 ) {
 
     companion object {
+        private const val TAG = "AiimsSecureStorage"
+
         @Volatile
         private var INSTANCE: AiimsSecureStorage? = null
 
@@ -33,11 +36,19 @@ class AiimsSecureStorage private constructor(
     }
 
     // Master key for encryption
+    // Tries to use secure lock screen requirement, falls back if not available
     private val masterKey: MasterKey by lazy {
-        MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .setUserAuthenticationRequired(true)
-            .build()
+        try {
+            MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .setUserAuthenticationRequired(true)
+                .build()
+        } catch (e: Exception) {
+            Log.w(TAG, "Secure lock screen not enabled, using encryption without auth requirement")
+            MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+        }
     }
 
     // Encrypted preferences for sensitive data
