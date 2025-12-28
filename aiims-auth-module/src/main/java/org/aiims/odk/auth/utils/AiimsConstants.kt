@@ -11,6 +11,7 @@ object AiimsConstants {
     const val KEY_AUTH_TOKEN = "auth_token"
     const val KEY_TOKEN_EXPIRY = "token_expiry"
     const val KEY_LAST_AUTH_TIMESTAMP = "last_auth_timestamp"
+    const val KEY_PROJECT_ID = "project_id"  // Project ID for token validation
 
     // User Information
     const val KEY_USER_ID = "user_id"

@@ -22,6 +22,7 @@ import org.aiims.odk.auth.api.RealAuthClient
 import org.aiims.odk.auth.api.TelemetryLocation
 import org.aiims.odk.auth.api.TelemetryRequest
 import org.aiims.odk.auth.api.User
+import org.aiims.odk.auth.storage.AiimsAuthStorage
 import org.aiims.odk.auth.work.TelemetryWorker
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
@@ -41,7 +42,8 @@ import org.odk.collect.settings.keys.MetaKeys
 class AiimsAuthManager @Inject constructor(
     private val context: Context,
     private val projectCleaner: ProjectCleaner,
-    private val pinManager: org.aiims.odk.auth.utils.PinManager
+    private val pinManager: org.aiims.odk.auth.utils.PinManager,
+    private val authStorage: AiimsAuthStorage
 ) {
 
     companion object {
@@ -165,12 +167,22 @@ class AiimsAuthManager @Inject constructor(
             return
         }
         val pid = activeProjectId!!
-        val token = getPersistedToken(pid)
+        // Check if this is the active project in secure storage
+        val secureProjectId = authStorage.projectId
+
+        // Token from encrypted storage
+        val token = if (secureProjectId == pid) {
+            authStorage.deviceToken.takeIf { it.isNotEmpty() }
+        } else {
+            null
+        }
         val user = getPersistedUser(pid)
-        val expiresAt = getPersistedExpiresAt(pid)
+        val expiresAt = authStorage.tokenExpiry?.let { expiryMs ->
+            org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(expiryMs))
+        }
 
         if (token != null && user != null) {
-            val expiryTime = parseExpiryTime(expiresAt)
+            val expiryTime = authStorage.tokenExpiry ?: 0L
             _tokenExpiryTime.value = expiryTime
             val currentTime = System.currentTimeMillis()
             val hardDeadline = expiryTime + GRACE_PERIOD_MS
@@ -383,29 +395,34 @@ class AiimsAuthManager @Inject constructor(
     }
 
     private fun persistSession(projectId: String, user: User, token: String, expiresAt: String, apiUrl: String) {
-        prefs.edit().apply {
-            putString(keyToken(projectId), token)
-            putString(keyExpiresAt(projectId), expiresAt)
-            putString(keyApiUrl(projectId), apiUrl)
+        // Store sensitive data (token, expiry) in encrypted storage via AiimsAuthStorage
+        authStorage.saveAuthSession(
+            token = token,
+            expiresAt = expiresAt,
+            user = user,
+            apiUrl = apiUrl
+        )
 
-            val userJson = JSONObject().apply {
+        // Store user data (non-sensitive) in plain SharedPreferences for project context
+        prefs.edit().apply {
+            putString(keyUser(projectId), JSONObject().apply {
                 put("id", user.id)
                 put("username", user.username)
                 put("projectId", user.projectId)
-                put("projectId", user.projectId)
                 put("expiresAt", user.expiresAt)
-            }.toString()
-            putString(keyUser(projectId), userJson)
-
+            }.toString())
+            putString(keyApiUrl(projectId), apiUrl)
             apply()
         }
     }
 
     private fun clearSession(projectId: String) {
+        // Clear sensitive data from encrypted storage
+        authStorage.clearAuthData()
+
+        // Clear project-specific non-sensitive data from SharedPreferences
         prefs.edit().apply {
-            remove(keyToken(projectId))
             remove(keyUser(projectId))
-            remove(keyExpiresAt(projectId))
             remove(keyApiUrl(projectId))
             apply()
         }
@@ -461,8 +478,26 @@ class AiimsAuthManager @Inject constructor(
     private fun keyApiUrl(pid: String) = "api_url_$pid"
 
     // --- Retrieval ---
-    private fun getPersistedToken(pid: String): String? = prefs.getString(keyToken(pid), null)
-    private fun getPersistedExpiresAt(pid: String): String? = prefs.getString(keyExpiresAt(pid), null)
+    private fun getPersistedToken(pid: String): String? {
+        // Only return token from secure storage if it matches the active project
+        return if (authStorage.projectId == pid) {
+            authStorage.deviceToken.takeIf { it.isNotEmpty() }
+        } else {
+            null
+        }
+    }
+
+    private fun getPersistedExpiresAt(pid: String): String? {
+        // Only return expiry from secure storage if it matches the active project
+        return if (authStorage.projectId == pid) {
+            authStorage.tokenExpiry?.let { expiryMs ->
+                org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(expiryMs))
+            }
+        } else {
+            null
+        }
+    }
+
     private fun getApiUrlForProject(pid: String): String? = prefs.getString(keyApiUrl(pid), null)
 
     fun getActiveProjectApiUrl(): String? {

@@ -36,6 +36,7 @@ class AiimsSecureStorage private constructor(
     private val masterKey: MasterKey by lazy {
         MasterKey.Builder(context)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .setUserAuthenticationRequired(true)
             .build()
     }
 
@@ -65,6 +66,10 @@ class AiimsSecureStorage private constructor(
     var tokenExpiry: Long?
         get() = encryptedPrefs.getLong(AiimsConstants.KEY_TOKEN_EXPIRY, -1).takeIf { it != -1L }
         set(value) = encryptedPrefs.edit().putLong(AiimsConstants.KEY_TOKEN_EXPIRY, value ?: -1L).apply()
+
+    var projectId: String?
+        get() = encryptedPrefs.getString(AiimsConstants.KEY_PROJECT_ID, null)
+        set(value) = encryptedPrefs.edit().putString(AiimsConstants.KEY_PROJECT_ID, value).apply()
 
     // ===== PIN Security Storage =====
     var pinHash: String?
@@ -142,7 +147,9 @@ class AiimsSecureStorage private constructor(
      */
     fun clearSensitiveData() {
         encryptedPrefs.edit()
+            .remove(AiimsConstants.KEY_AUTH_TOKEN)
             .remove(AiimsConstants.KEY_TOKEN_EXPIRY)
+            .remove(AiimsConstants.KEY_PROJECT_ID)
             .remove(AiimsConstants.KEY_PIN_HASH)
             .remove(AiimsConstants.KEY_PIN_SALT)
             .remove(AiimsConstants.KEY_BIOMETRIC_KEY_ALIAS)

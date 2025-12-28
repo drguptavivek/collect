@@ -49,6 +49,10 @@ class AiimsAuthStorage private constructor(
         get() = secureStorage.tokenExpiry
         set(value) { secureStorage.tokenExpiry = value }
 
+    var projectId: String?
+        get() = secureStorage.projectId
+        set(value) { secureStorage.projectId = value }
+
     // ===== User Information =====
     var userId: String?
         get() = secureStorage.userId
@@ -133,6 +137,9 @@ class AiimsAuthStorage private constructor(
         deviceToken = token
         // refreshToken gone
         tokenExpiry = org.aiims.odk.auth.utils.ApiDateFormat.parse(expiresAt)?.time
+
+        // Save project ID (for token validation)
+        projectId = user.projectId
 
         // Save user info
         saveUser(user)
