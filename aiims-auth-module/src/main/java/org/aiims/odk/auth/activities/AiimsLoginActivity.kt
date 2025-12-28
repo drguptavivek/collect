@@ -38,6 +38,9 @@ class AiimsLoginActivity : AiimsBaseActivity() {
     private var currentSystemProjectId: String? = null // ODK's internal UUID
     private var centralProjectId: String? = null // Central's integer ID
     private var serverUrl: String? = null
+    
+    // Re-authentication mode flag (used for token refresh flow)
+    private var isReauthMode = false
 
     override fun injectDependencies() {
         (application as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.inject(this)
@@ -80,8 +83,8 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         detectCurrentProject()
 
         // Handle Re-Auth Mode (token refresh)
-        val isReauth = intent.getBooleanExtra("EXTRA_IS_REAUTH", false)
-        if (isReauth) {
+        isReauthMode = intent.getBooleanExtra("EXTRA_IS_REAUTH", false)
+        if (isReauthMode) {
             val username = intent.getStringExtra("EXTRA_REAUTH_USERNAME")
             binding.appTitle.text = "Re-authenticate"
             binding.statusText.text = "Please enter your password to refresh your session"
@@ -109,9 +112,10 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             authManager.authState.collect { state ->
                 when (state) {
                     org.aiims.odk.auth.managers.AuthState.LOGGED_IN -> {
-                        // Check if we need local PIN (optional feature, currently local-only)
-                        // For now, proceed to Main Menu
-                        navigateToMain()
+                        // Skip auto-navigation if in re-auth mode - user must enter password first
+                        if (!isReauthMode) {
+                            navigateToMain()
+                        }
                     }
                     else -> {
                         // Stay on login screen
@@ -272,8 +276,14 @@ class AiimsLoginActivity : AiimsBaseActivity() {
     }
 
     override fun onBackPressed() {
-        if (intent.getBooleanExtra("is_reauth", false)) {
-            // Treat Back as Cancel/Snooze
+        if (isReauthMode) {
+            // In re-auth mode, return to PIN entry (cancel the refresh attempt)
+            val intent = Intent(this, PinEntryActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        } else if (intent.getBooleanExtra("is_reauth", false)) {
+            // Legacy soft expiry mode - treat Back as Cancel/Snooze
             authManager.snoozeSoftExpiry()
             super.onBackPressed()
         } else {

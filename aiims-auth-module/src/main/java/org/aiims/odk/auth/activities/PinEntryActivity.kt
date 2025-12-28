@@ -274,10 +274,23 @@ class PinEntryActivity : AiimsBaseActivity() {
         }
 
         binding.refreshTokenButton.setOnClickListener {
-            // Take user to login screen to refresh session
-            val intent = Intent(this, AiimsLoginActivity::class.java)
-            // Optional: Pass target project context if needed, though AuthManager handles it
-            startActivity(intent)
+            // Take user to login screen to refresh session with re-auth mode
+            lifecycleScope.launch {
+                var username: String? = null
+                try {
+                    authManager.currentUser.collect { user ->
+                        username = user?.username
+                        throw kotlinx.coroutines.CancellationException()
+                    }
+                } catch (_: kotlinx.coroutines.CancellationException) { }
+                
+                val intent = Intent(this@PinEntryActivity, AiimsLoginActivity::class.java)
+                intent.putExtra("EXTRA_IS_REAUTH", true)
+                username?.let { intent.putExtra("EXTRA_REAUTH_USERNAME", it) }
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }
         }
     }
 
