@@ -323,7 +323,14 @@ class PinEntryActivity : AiimsBaseActivity() {
                     )
                 } else {
                     // Normal message when time is in sync
-                    binding.expiryReminderText.text = getString(org.aiims.odk.auth.R.string.aiims_token_expiry_reminder)
+                    // Verify if we are actually expiring soon before overriding
+                    // Ideally we should not touch the text here if it's controlled by isExpiringSoon
+                    // But since we are here, we should probably reset to Title if not expiring soon?
+                    // To be safe and avoid conflict, let's observe the current state of isExpiringSoon?
+                    // Simpler fix: Set to "Token Status" which is the neutral title.
+                    // The isExpiringSoon collector will overwrite this if needed (race condition?), 
+                    // but "Your session will expire soon" is definitely wrong here.
+                    binding.expiryReminderText.text = getString(org.aiims.odk.auth.R.string.aiims_token_status_title)
                     binding.expiryReminderText.setTextColor(
                         ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_on_surface_variant)
                     )

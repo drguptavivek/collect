@@ -28,6 +28,7 @@ class AuthSettingsActivity : AiimsBaseActivity() {
         val tokenStatusText: TextView = findViewById(org.aiims.odk.auth.R.id.token_status_text)
         val tokenValidityText: TextView = findViewById(org.aiims.odk.auth.R.id.token_validity_text)
         val deviceIdText: TextView = findViewById(org.aiims.odk.auth.R.id.device_id_text)
+        val clockWarningText: TextView = findViewById(org.aiims.odk.auth.R.id.clock_warning_text) // New View
         val getProjectDetailsButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.get_project_details_button)
         val changePinButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.change_pin_button)
         val refreshTokenButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.refresh_token_button)
@@ -60,6 +61,34 @@ class AuthSettingsActivity : AiimsBaseActivity() {
 
         // Load user data
         loadUserData(userDetailsText, tokenStatusText, tokenValidityText, deviceIdText)
+        
+        // Setup Clock Warning Observer
+        setupClockObserver(clockWarningText)
+    }
+
+    private fun setupClockObserver(warningText: TextView) {
+        lifecycleScope.launch {
+            authManager.serverTimeDifferenceMs.collect { diffMs ->
+                if (kotlin.math.abs(diffMs) > 30 * 60 * 1000L) { // > 30 minutes difference
+                    val hours = kotlin.math.abs(diffMs) / (60 * 60 * 1000)
+                    val minutes = (kotlin.math.abs(diffMs) / (60 * 1000)) % 60
+
+                    val diffStr = if (hours > 0) {
+                        "${hours}h ${minutes}m"
+                    } else {
+                        "${minutes}m"
+                    }
+
+                    // diffMs > 0 means device time is ahead of server time
+                    // diffMs < 0 means device time is behind server time
+                    val direction = if (diffMs > 0) "ahead of" else "behind"
+                    warningText.text = "⚠ Device time is $diffStr $direction server time."
+                    warningText.visibility = android.view.View.VISIBLE
+                } else {
+                    warningText.visibility = android.view.View.GONE
+                }
+            }
+        }
     }
 
     private fun loadUserData(userDetailsText: TextView, tokenStatusText: TextView, tokenValidityText: TextView, deviceIdText: TextView) {
@@ -80,37 +109,45 @@ class AuthSettingsActivity : AiimsBaseActivity() {
             }
         }
 
-        // Get token expiry from Auth Manager
-        val expiresAt = authManager.getActiveProjectTokenExpiry()
-        if (expiresAt != null) {
-            try {
-                val expiryDate = org.aiims.odk.auth.utils.ApiDateFormat.parse(expiresAt)
-                
-                if (expiryDate != null) {
+        // Observe token expiry and validated time to display correct validity status
+        lifecycleScope.launch {
+            kotlinx.coroutines.flow.combine(
+                authManager.tokenExpiryTime,
+                authManager.validatedCurrentTime
+            ) { expiryTime, currentTime ->
+                if (expiryTime > 0) {
+                    val expiryDate = java.util.Date(expiryTime)
                     val displayFormatter = java.text.SimpleDateFormat("MMM dd, yyyy HH:mm", java.util.Locale.getDefault())
                     tokenStatusText.text = "Valid until: ${displayFormatter.format(expiryDate)}"
                     
-                    // Check if token is still valid
-                    val now = java.util.Date()
-                    if (expiryDate.after(now)) {
-                        val hoursLeft = ((expiryDate.time - now.time) / (1000 * 60 * 60)).toInt()
-                        tokenValidityText.text = "✓ Token is valid ($hoursLeft hours remaining)"
-                        tokenValidityText.setTextColor(getColor(org.aiims.odk.auth.R.color.aiims_success))
+                    if (currentTime > 0) {
+                        val hoursLeft = ((expiryTime - currentTime) / (1000 * 60 * 60)).toInt()
+                        
+                        if (hoursLeft >= 0) {
+                            tokenValidityText.text = "✓ Token is valid ($hoursLeft hours remaining)"
+                            tokenValidityText.setTextColor(getColor(org.aiims.odk.auth.R.color.aiims_success))
+                        } else {
+                            tokenValidityText.text = "⚠ Token has expired"
+                            tokenValidityText.setTextColor(getColor(org.aiims.odk.auth.R.color.aiims_error))
+                        }
                     } else {
-                        tokenValidityText.text = "⚠ Token has expired"
-                        tokenValidityText.setTextColor(getColor(org.aiims.odk.auth.R.color.aiims_error))
+                         // Fallback if validated time is not yet available (should be rare)
+                         tokenValidityText.text = "Validating time..."
+                         tokenValidityText.setTextColor(getColor(org.aiims.odk.auth.R.color.aiims_secondary))
                     }
                 } else {
-                    tokenStatusText.text = "Token expiry: $expiresAt"
-                    tokenValidityText.text = "Unable to parse expiry date"
+                    // Try to load from persistence if flow is empty (e.g. strict mode or init issue)
+                    val persistedExpiry = authManager.getActiveProjectTokenExpiry()
+                    if (persistedExpiry != null) {
+                         tokenStatusText.text = "Token expiry: $persistedExpiry"
+                         // We can't validate reliably without validated time, so just show label
+                         tokenValidityText.text = "Checking validity..."
+                    } else {
+                        tokenStatusText.text = "No token information available"
+                        tokenValidityText.text = ""
+                    }
                 }
-            } catch (e: Exception) {
-                tokenStatusText.text = "Token expiry: $expiresAt"
-                tokenValidityText.text = "Error: ${e.message}"
-            }
-        } else {
-            tokenStatusText.text = "No token information available"
-            tokenValidityText.text = ""
+            }.collect {}
         }
 
         // Device ID comes from Collect meta prefs

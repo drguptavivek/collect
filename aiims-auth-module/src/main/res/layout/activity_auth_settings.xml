@@ -104,6 +104,18 @@
                     android:textColor="@color/aiims_secondary"
                     tools:text="Token is valid" />
 
+                <TextView
+                    android:id="@+id/clock_warning_text"
+                    style="@style/TextAppearance.Aiims.BodySmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/aiims_error"
+                    android:visibility="gone"
+                    android:textStyle="bold"
+                    tools:text="⚠ Device time is 45m behind server"
+                    tools:visibility="visible" />
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/refresh_token_button"
                     style="@style/Widget.MaterialComponents.Button.TextButton"

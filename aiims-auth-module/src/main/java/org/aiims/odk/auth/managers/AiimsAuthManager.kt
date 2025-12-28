@@ -199,34 +199,7 @@ class AiimsAuthManager @Inject constructor(
             _tokenExpiryTime.value = expiryTime
 
             // Get validated time from ClockValidator
-            val timeResult = clockValidator.getCurrentTime()
-            val currentTime = when (timeResult) {
-                is org.aiims.odk.auth.security.ClockValidator.TimeResult.Valid -> {
-                    // Clear manipulation flag if time is now valid
-                    if (clockValidator.isManipulationDetected()) {
-                        clockValidator.resetManipulationFlag()
-                    }
-                    // Calculate server/device difference for UI warning
-                    // Positive = device is behind server, Negative = device is ahead of server
-                    val deviceTime = System.currentTimeMillis()
-                    _serverTimeDifferenceMs.value = deviceTime - timeResult.time
-                    timeResult.time
-                }
-                is org.aiims.odk.auth.security.ClockValidator.TimeResult.ManipulationDetected -> {
-                    // Clock manipulation detected - allow grace but prevent re-auth
-                    _errorMessage.value = "Clock manipulation detected: ${timeResult.reason}. Please correct your device time to re-authenticate."
-                    _isSoftExpiry.value = false // Don't show re-auth prompt
-                    // Calculate server/device difference (expected time is what we should use)
-                    // Positive = device is behind server, Negative = device is ahead of server
-                    val deviceTime = System.currentTimeMillis()
-                    _serverTimeDifferenceMs.value = deviceTime - timeResult.expectedTime
-                    // Use the expected time for grace period calculation
-                    timeResult.expectedTime
-                }
-            }
-
-            // Update validated current time flow for UI
-            _validatedCurrentTime.value = currentTime
+            val currentTime = updateTimeState()
 
             val hardDeadline = expiryTime + GRACE_PERIOD_MS
 
@@ -296,6 +269,41 @@ class AiimsAuthManager @Inject constructor(
             _validatedCurrentTime.value = System.currentTimeMillis()
             _serverTimeDifferenceMs.value = 0L
         }
+    }
+    
+    /**
+     * Updates time-related flows (validatedCurrentTime, serverTimeDifferenceMs) 
+     * based on ClockValidator state. Returns the validated current time.
+     */
+    private fun updateTimeState(): Long {
+        val timeResult = clockValidator.getCurrentTime()
+        val currentTime = when (timeResult) {
+            is org.aiims.odk.auth.security.ClockValidator.TimeResult.Valid -> {
+                // Clear manipulation flag if time is now valid
+                if (clockValidator.isManipulationDetected()) {
+                    clockValidator.resetManipulationFlag()
+                }
+                // Calculate server/device difference for UI warning
+                // Positive = device is behind server, Negative = device is ahead of server
+                val deviceTime = System.currentTimeMillis()
+                _serverTimeDifferenceMs.value = deviceTime - timeResult.time
+                timeResult.time
+            }
+            is org.aiims.odk.auth.security.ClockValidator.TimeResult.ManipulationDetected -> {
+                // Clock manipulation detected - allow grace but prevent re-auth
+                _errorMessage.value = "Clock manipulation detected: ${timeResult.reason}. Please correct your device time to re-authenticate."
+                _isSoftExpiry.value = false // Don't show re-auth prompt
+                // Calculate server/device difference (expected time is what we should use)
+                val deviceTime = System.currentTimeMillis()
+                _serverTimeDifferenceMs.value = deviceTime - timeResult.expectedTime
+                // Use the expected time for grace period calculation
+                timeResult.expectedTime
+            }
+        }
+        
+        // Update validated current time flow for UI
+        _validatedCurrentTime.value = currentTime
+        return currentTime
     }
 
     private fun parseExpiryTime(expiresAt: String?): Long {
@@ -706,6 +714,9 @@ class AiimsAuthManager @Inject constructor(
                             forceSync = false  // Only adjust if offset is reasonable
                         )
                         Log.d("AiimsAuthManager", "Clock synced with server time from telemetry")
+                        
+                        // Update time flows to reflect new sync state immediately
+                        updateTimeState()
                     }
                 }
             } catch (e: Exception) {
