@@ -1,4 +1,6 @@
 # Building AIIMS ODK Collect APK
+> Last Updated: 2025-12-28
+> Reviewed At: 2025-12-28
 
 This document explains how to build the AIIMS ODK Collect APK.
 

@@ -1,4 +1,6 @@
 # AIIMS Custom Activities
+> Last Updated: 2025-12-28
+> Reviewed At: 2025-12-28
 
 This document provides a comprehensive list of activities introduced as part of the AIIMS customizations in ODK Collect. These activities are primarily located in the `aiims-auth-module`.
 

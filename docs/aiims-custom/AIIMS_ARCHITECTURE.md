@@ -1,4 +1,5 @@
-# System Changes & Architecture Documentation
+# AIIMS ODK Collect Customization - Architecture
+> Last Updated: 2025-12-28
 **Date**: 2025-12-18
 **Objective**: Enable App User Authentication, Local Development Networking, and Secure PIN Access in ODK Collect.
 

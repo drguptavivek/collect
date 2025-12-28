@@ -1,4 +1,6 @@
 # AIIMS Preferences & Persistence
+> Last Updated: 2025-12-28
+> Reviewed At: 2025-12-28
 
 This document explains how the AIIMS customization manages data persistence, bridging custom AIIMS requirements with standard ODK Collect storage.
 
