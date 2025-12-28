@@ -87,18 +87,8 @@ android {
     flavorDimensions "version"
 
     productFlavors {
-        odk {
-            dimension "version"
-            applicationId "org.odk.collect.android"
-
-            // Override app name for ODK flavor
-            resValue("string", "collect_app_name", "ODK Collect")
-
-            // Set feature flags for standard ODK
-            resValue("bool", "aiims_auth_enabled", "false")
-            resValue("bool", "odk_launcher_enabled", "true")
-        }
-
+        // Only AIIMS flavor - this fork is specifically for AIIMS ODK Collect
+        // For vanilla ODK Collect, checkout 'main' branch and build without flavors
         aiims {
             dimension "version"
             applicationId "org.aiims.odk.collect"
@@ -192,15 +182,8 @@ android {
     }
 
     applicationVariants.configureEach { variant ->
-        // Determine base name based on flavor
-        def baseName
-        if (variant.flavorName == "aiims") {
-            baseName = "AIIMS-ODK-Collect"
-        } else if (variant.flavorName == "odk") {
-            baseName = "ODK-Collect"
-        } else {
-            baseName = "Collect"
-        }
+        // Only AIIMS flavor exists in this fork
+        def baseName = "AIIMS-ODK-Collect"
 
         // Determine build type suffix
         def buildTypeSuffix

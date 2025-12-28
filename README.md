@@ -62,6 +62,48 @@ For deep-dives into the custom components, refer to these internal docs:
     *   Data Architecture
 2.  **[API Specification](docs/AIIMS_API.md)**: Details of the backend endpoints Customized ODK Central API. https://hithub.com/drguptavivek/central.
 3.  **[Maintenance Guide](docs/AIIMS_MAINTENANCE.md)**: Instructions for merging upstream changes and maintaining these customizations.
+4.  **[Preferences & Persistence](docs/aiims-custom/AIIMS_PREFERENCES.md)**: Details on how settings, PINs, and tokens are stored.
+
+```mermaid
+  graph TD
+      Start((App Start)) --> AuthCheck
+      
+      AuthCheck{Session Found?} -- No / Fresh Login --> Login
+      AuthCheck -- Yes --> PinCheck
+      
+      Login[AiimsLoginActivity] -- Login Success --> SetupPin
+      
+      PinCheck{PIN Set?} -- No / Initial Setup --> SetupPin
+      PinCheck -- Yes / Secure Resume --> PinEntry
+      
+      SetupPin[SetupPinActivity] -- Success --> Main
+      
+      PinEntry[PinEntryActivity] -- Success --> Main
+      PinEntry -- Forgot / Wipe --> Login
+      PinEntry -- Refresh Session --> Login
+      
+      Main[ODK Main Menu] --> Settings
+      Settings[AuthSettingsActivity] --> ChangePin
+      Settings -- Logout --> Login
+      Settings -- Refresh Session --> Login
+      
+      ChangePin[ChangePinActivity] -- Back --> Settings
+      
+      subgraph "Persistence Context"
+      Main -- App Minimized --> BG[Background]
+      BG -- App Resumed --> PinEntry
+      end
+
+      %% Styling
+      classDef activity fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+      classDef decision fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+      classDef infra fill:#f5f5f5,stroke:#616161,stroke-width:1px;
+
+      class Login,SetupPin,PinEntry,Main,Settings,ChangePin activity
+      class AuthCheck,PinCheck decision
+      class Start,BG infra
+  ```
+
 
 ---
 
