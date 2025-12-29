@@ -99,9 +99,13 @@ class AuthSettingsActivity : AiimsBaseActivity() {
                     val projectName = getSharedPreferences("aiims_auth", MODE_PRIVATE)
                         .getString("project_name_${it.projectId}", null) ?: it.projectId
                     
+                    // Get base API URL for display
+                    val apiUrl = authManager.getActiveProjectApiUrl() ?: "N/A"
+
                     val userDetails = """
                         Username: ${it.username}
                         Project: $projectName
+                        Server: $apiUrl
                     """.trimIndent()
 
                     userDetailsText.text = userDetails

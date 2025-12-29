@@ -138,13 +138,14 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
     private fun detectCurrentProject() {
         try {
+            val authPrefs = getSharedPreferences(org.aiims.odk.auth.utils.AiimsConstants.AIIMS_PREFS_NAME, Context.MODE_PRIVATE)
+
             // Read "meta" prefs to get current project ID
             val metaPrefs = getSharedPreferences("meta", Context.MODE_PRIVATE)
             currentSystemProjectId = metaPrefs.getString("current_project_id", null)
 
             // FALLBACK 1: If ODK project missing, check for Staged Auth Details
             if (currentSystemProjectId.isNullOrBlank()) {
-                val authPrefs = getSharedPreferences(org.aiims.odk.auth.utils.AiimsConstants.AIIMS_PREFS_NAME, Context.MODE_PRIVATE)
                 val authUrl = authPrefs.getString(org.aiims.odk.auth.utils.AiimsConstants.KEY_AUTH_URL, null)
                 val authPid = authPrefs.getString(org.aiims.odk.auth.utils.AiimsConstants.KEY_AUTH_PROJECT_ID, null)
 
@@ -171,16 +172,23 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             }
 
             // Read Project Settings (ODK uses "general_prefs" + projectId)
-            val prefsName = "general_prefs$currentSystemProjectId"
-            val projectPrefs = getSharedPreferences(prefsName, Context.MODE_PRIVATE)
-            serverUrl = projectPrefs.getString("server_url", null)
+            val projectPrefs = getSharedPreferences("general_prefs$currentSystemProjectId", Context.MODE_PRIVATE)
+            val odkServerUrl = projectPrefs.getString("server_url", null)
 
             // Extract Central Project ID
-            centralProjectId = AiimsProjectUtils.getProjectIdFromUrl(serverUrl)
+            centralProjectId = AiimsProjectUtils.getProjectIdFromUrl(odkServerUrl)
 
-            if (centralProjectId != null && serverUrl != null) {
+            if (centralProjectId != null) {
                 // Set Active Project in Auth Manager
                 authManager.setActiveProject(centralProjectId!!)
+                
+                // Prioritize Auth URL from AIIMS Prefs for UI display
+                val authUrl = authPrefs.getString(org.aiims.odk.auth.utils.AiimsConstants.KEY_AUTH_URL, null)
+                    ?: authManager.getActiveProjectApiUrl()
+                    ?: odkServerUrl?.substringBefore("/v1") // Fallback
+                
+                serverUrl = authUrl
+                
                 // Ensure mapping is established
                 authManager.setProjectMapping(centralProjectId!!, currentSystemProjectId!!)
                 
@@ -192,7 +200,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 
                 enableLoginUi(true)
             } else {
-                binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_invalid_project_config, serverUrl)
+                binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_invalid_project_config, odkServerUrl)
                 binding.statusText.visibility = View.VISIBLE
                 enableLoginUi(false)
             }
@@ -521,14 +529,15 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 metaSettings.save(org.odk.collect.settings.keys.MetaKeys.CURRENT_PROJECT_ID, targetProjectUuid)
 
                 // Update Local State
+                val displayUrl = url.substringBefore("/v1/projects")
                 currentSystemProjectId = targetProjectUuid
-                serverUrl = url
+                serverUrl = displayUrl
                 centralProjectId = centralPid
 
                 authManager.setActiveProject(centralPid)
                 authManager.setProjectMapping(centralPid, targetProjectUuid)
 
-                binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, centralPid, url)
+                binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, centralPid, displayUrl)
                 binding.statusText.visibility = View.VISIBLE
                 enableLoginUi(true)
 
