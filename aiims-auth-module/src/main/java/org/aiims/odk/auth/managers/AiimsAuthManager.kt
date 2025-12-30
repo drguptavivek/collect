@@ -191,101 +191,121 @@ class AiimsAuthManager @Inject constructor(
      * Refresh in-memory flows based on the Active Project's persisted state.
      */
     private fun refreshState() {
-        if (activeProjectId == null) {
-            _authState.value = AuthState.LOGGED_OUT // Or INITIAL
-            _currentUser.value = null
-            _isSoftExpiry.value = false
-            return
-        }
-        val pid = activeProjectId!!
-        // Check if this is the active project in secure storage
-        val secureProjectId = authStorage.projectId
-
-        // Token from encrypted storage
-        val token = if (secureProjectId == pid) {
-            authStorage.deviceToken.takeIf { it.isNotEmpty() }
-        } else {
-            null
-        }
-        val user = getPersistedUser(pid)
-        val expiresAt = authStorage.tokenExpiry?.let { expiryMs ->
-            org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(expiryMs))
-        }
-
-        if (token != null && user != null) {
-            val expiryTime = authStorage.tokenExpiry ?: 0L
-            _tokenExpiryTime.value = expiryTime
-
-            // Get validated time from ClockValidator
-            val currentTime = updateTimeState()
-
-            val hardDeadline = expiryTime + GRACE_PERIOD_MS
-
-            // Check if expiring soon (within 24 hours)
-            _isExpiringSoon.value = currentTime + EXPIRATION_THRESHOLD_MS > expiryTime
-
-            if (currentTime > hardDeadline) {
-                // HARD LOGOUT: Exceeded 6-hour grace
-                println("DEBUG_AUTH: Hard deadline exceeded. Logging out.")
-                // We need to launch logout
-                scope.launch { logoutProject(pid) }
+        try {
+            if (activeProjectId == null) {
+                _authState.value = AuthState.LOGGED_OUT // Or INITIAL
+                _currentUser.value = null
+                _isSoftExpiry.value = false
                 return
             }
+            val pid = activeProjectId!!
+            // Check if this is the active project in secure storage
+            val secureProjectId = authStorage.projectId
 
-            if (currentTime <= expiryTime) {
-                // VALID
-                _authState.value = AuthState.LOGGED_IN
-                _currentUser.value = user
-                _isSoftExpiry.value = false
-
-                // Ensure Telemetry Worker is scheduled
-                startPeriodicTelemetry()
+            // Token from encrypted storage
+            val token = if (secureProjectId == pid) {
+                authStorage.deviceToken.takeIf { it.isNotEmpty() }
             } else {
-                // GRACE PERIOD (Expired but within 6h)
-                println("DEBUG_AUTH: In Grace Period. Token expired $expiresAt")
+                null
+            }
+            val user = getPersistedUser(pid)
+            val expiresAt = authStorage.tokenExpiry?.let { expiryMs ->
+                org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(expiryMs))
+            }
 
-                // Optimistically allow login
-                _authState.value = AuthState.LOGGED_IN
-                _currentUser.value = user
+            if (token != null && user != null) {
+                val expiryTime = authStorage.tokenExpiry ?: 0L
+                _tokenExpiryTime.value = expiryTime
 
-                // Background Reachability Check
-                scope.launch {
-                    val apiUrl = getApiUrlForProject(pid)
-                    var serverReachable = false
+                // Get validated time from ClockValidator
+                val currentTime = updateTimeState()
 
-                    if (apiUrl != null) {
-                        try {
-                            val client = getAuthClient(apiUrl)
-                            serverReachable = client.checkReachability()
-                        } catch (e: Exception) {
-                            serverReachable = false
+                val hardDeadline = expiryTime + GRACE_PERIOD_MS
+
+                // Check if expiring soon (within 24 hours)
+                _isExpiringSoon.value = currentTime + EXPIRATION_THRESHOLD_MS > expiryTime
+
+                if (currentTime > hardDeadline) {
+                    // HARD LOGOUT: Exceeded 6-hour grace
+                    println("DEBUG_AUTH: Hard deadline exceeded. Logging out.")
+                    // We need to launch logout
+                    scope.launch { logoutProject(pid) }
+                    return
+                }
+
+                if (currentTime <= expiryTime) {
+                    // VALID
+                    _authState.value = AuthState.LOGGED_IN
+                    _currentUser.value = user
+                    _isSoftExpiry.value = false
+
+                    // Ensure Telemetry Worker is scheduled
+                    startPeriodicTelemetry()
+                } else {
+                    // GRACE PERIOD (Expired but within 6h)
+                    println("DEBUG_AUTH: In Grace Period. Token expired $expiresAt")
+
+                    // Optimistically allow login
+                    _authState.value = AuthState.LOGGED_IN
+                    _currentUser.value = user
+
+                    // Background Reachability Check
+                    scope.launch {
+                        val apiUrl = getApiUrlForProject(pid)
+                        var serverReachable = false
+
+                        if (apiUrl != null) {
+                            try {
+                                val client = getAuthClient(apiUrl)
+                                serverReachable = client.checkReachability()
+                            } catch (e: Exception) {
+                                serverReachable = false
+                            }
                         }
-                    }
 
-                    if (serverReachable) {
-                        println("DEBUG_AUTH: Server reachable in grace period. Setting Soft Expiry.")
-                        // SOFT EXPIRY: Prompt user, but do not force logout yet
-                        // Check if clock manipulation detected - if so, don't show re-auth prompt
-                        if (!clockValidator.isManipulationDetected()) {
-                            _isSoftExpiry.value = true
+                        if (serverReachable) {
+                            println("DEBUG_AUTH: Server reachable in grace period. Setting Soft Expiry.")
+                            // SOFT EXPIRY: Prompt user, but do not force logout yet
+                            // Check if clock manipulation detected - if so, don't show re-auth prompt
+                            if (!clockValidator.isManipulationDetected()) {
+                                _isSoftExpiry.value = true
+                            } else {
+                                _isSoftExpiry.value = false
+                            }
                         } else {
+                            println("DEBUG_AUTH: Server unreachable. Maintaining Offline Grace.")
+                            // OFFLINE GRACE: Keep logged in, silent
                             _isSoftExpiry.value = false
                         }
-                    } else {
-                        println("DEBUG_AUTH: Server unreachable. Maintaining Offline Grace.")
-                        // OFFLINE GRACE: Keep logged in, silent
-                        _isSoftExpiry.value = false
                     }
                 }
+            } else {
+                _authState.value = AuthState.LOGGED_OUT
+                _currentUser.value = null
+                _isSoftExpiry.value = false
+                _isExpiringSoon.value = false
+                _tokenExpiryTime.value = 0L
+                _validatedCurrentTime.value = System.currentTimeMillis()
+                _serverTimeDifferenceMs.value = 0L
             }
-        } else {
+        } catch (e: Exception) {
+            android.util.Log.e("AiimsAuthManager", "Critical: Auth storage corruption detected during refreshState", e)
+            // Fallback to safe state
             _authState.value = AuthState.LOGGED_OUT
             _currentUser.value = null
             _isSoftExpiry.value = false
             _isExpiringSoon.value = false
             _tokenExpiryTime.value = 0L
-            _validatedCurrentTime.value = System.currentTimeMillis()
-            _serverTimeDifferenceMs.value = 0L
+
+            // Clear potentially corrupted data for safety?
+            // Optional: run a cleanup task. For now, fail safe to LOGGED_OUT is priority.
+            if (activeProjectId != null) {
+                 try {
+                     clearSession(activeProjectId!!)
+                 } catch (cleanupEx: Exception) {
+                     android.util.Log.e("AiimsAuthManager", "Failed to clear corrupted session", cleanupEx)
+                 }
+            }
         }
     }
     
