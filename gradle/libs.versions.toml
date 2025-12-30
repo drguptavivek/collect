@@ -12,7 +12,7 @@ glide = "5.0.5"
 camerax = "1.4.2" # Newer versions require minSdkVersion >= 23
 espresso = "3.7.0"
 kotlin = "2.1.0"
-room = "2.8.4"
+room = "2.6.1"
 
 [libraries]
 firebaseCrashlyticsGradle = { group = "com.google.firebase", name = "firebase-crashlytics-gradle", version = "3.0.6" }

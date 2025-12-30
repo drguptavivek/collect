@@ -1,4 +1,7 @@
-# Feature Request: Multi-User Project Persistence (collect-8p4)
+# Feature: Multi-User Project Persistence (collect-8p4) - [IMPLEMENTED]
+
+> **Status**: Implemented
+> **Architecture Ref**: [aiims_vs_standard_boundary.md](aiims_vs_standard_boundary.md)
 
 ## Objective
 Enable multi-user support on a single shared device by preserving project-specific data (forms, instances, settings) when switching between projects.

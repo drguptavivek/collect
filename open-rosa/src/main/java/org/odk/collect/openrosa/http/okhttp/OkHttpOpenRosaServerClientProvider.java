@@ -14,9 +14,6 @@ import com.burgstaller.okhttp.digest.DigestAuthenticator;
 
 import org.odk.collect.openrosa.http.HttpCredentialsInterface;
 import org.odk.collect.openrosa.http.OpenRosaConstants;
-import org.aiims.odk.auth.managers.AiimsAuthManager;
-import org.aiims.odk.auth.api.AuthInterceptor;
-import org.aiims.odk.auth.storage.AiimsTokenProvider;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -57,21 +54,19 @@ public class OkHttpOpenRosaServerClientProvider implements OpenRosaServerClientP
     private final String cacheDir;
     private final boolean isDebug;
     private final TokenProvider tokenProvider;
-    private final AiimsAuthManager authManager;
 
     private final Map<Pair<String, HttpCredentialsInterface>, OkHttpOpenRosaServerClient> clients = new HashMap<>();
 
     public OkHttpOpenRosaServerClientProvider(@NonNull OkHttpClient baseClient, String cacheDir, boolean isDebug,
-            TokenProvider tokenProvider, AiimsAuthManager authManager) {
+            TokenProvider tokenProvider) {
         this.baseClient = baseClient;
         this.cacheDir = cacheDir;
         this.isDebug = isDebug;
         this.tokenProvider = tokenProvider;
-        this.authManager = authManager;
     }
 
-    public OkHttpOpenRosaServerClientProvider(String cacheDir, boolean isDebug, TokenProvider tokenProvider, AiimsAuthManager authManager) {
-        this(new OkHttpClient(), cacheDir, isDebug, tokenProvider, authManager);
+    public OkHttpOpenRosaServerClientProvider(String cacheDir, boolean isDebug, TokenProvider tokenProvider) {
+        this(new OkHttpClient(), cacheDir, isDebug, tokenProvider);
     }
 
     // Default for backward compat (no token)
@@ -147,14 +142,6 @@ public class OkHttpOpenRosaServerClientProvider implements OpenRosaServerClientP
             } catch (Exception e) {
                 Timber.e(e, "Failed to configure unsafe SSL");
             }
-        }
-
-        // INJECT GLOBAL 401 INTERCEPTOR
-        if (authManager != null) {
-            builder.addInterceptor(new AuthInterceptor(
-                authManager, 
-                AiimsTokenProvider.Companion.getInstance(authManager.getContext())
-            ));
         }
 
         if (cacheDir != null && new File(cacheDir).exists()) {

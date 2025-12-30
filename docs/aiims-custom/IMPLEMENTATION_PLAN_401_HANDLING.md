@@ -1,54 +1,30 @@
-# Implementation Plan: Handle 401 in Telemetry Worker (collect-5zw)
+# Architecture: AIIMS-Auth 401 Handling & Retry (collect-49l)
 
-## Goal
-Gracefully handle 401 (Unauthorized) responses from the telemetry API. According to `telemetry.md`, a 401 response means **no telemetry was recorded** on the server. Therefore, the app must queue the data for later submission.
+## Overview
+This document describes the final architecture for handling HTTP 401 (Unauthorized) responses within the AIIMS-specific authentication and telemetry flows.
 
-## Technical Details
+## Core Design Principle: Isolation
+To preserve the integrity of the core ODK Collect modules (specifically `open-rosa`), 401 interception and automatic re-authentication are strictly isolated to the `aiims-auth` layer. 
 
-### 401 vs Invalidated
-- **HTTP 401**: Token is >2 days past expiry. **No telemetry is recorded on server.** We MUST queue in Room DB. The auth state will be handled by other processes (e.g., login activity or session interceptor).
-- **HTTP 200 + status:"invalidated"**: Token is <2 days past expiry. **Telemetry IS recorded on server.** We should NOT queue (to avoid duplicates). The auth state will be handled by other processes.
+- **ODK Core APIs**: Requests for forms, submissions, etc., are **not** intercepted. If they receive a 401, they propagate the error according to standard ODK behavior.
+- **AIIMS APIs**: Requests for telemetry, project info, etc., handled via `RealAuthClient` are intercepted globally.
 
-## Proposed Changes
+## Implementation Details
 
-### 1. API Refactor (`aiims-auth-module`)
-- **[MODIFY] `AuthClient.kt`**: Update `submitTelemetry` signature to return a sealed `TelemetryResult`.
-- **[NEW] `TelemetryResult.kt`**:
-    ```kotlin
-    sealed class TelemetryResult {
-        data class Success(val response: TelemetryResponse) : TelemetryResult()
-        object AuthError : TelemetryResult() // 401
-        data class Error(val message: String, val code: Int? = null) : TelemetryResult() // 5xx, 4xx (non-401)
-        object NetworkError : TelemetryResult()
-    }
-    ```
-- **[MODIFY] `RealAuthClient.kt`**: Implement new return type, mapping HTTP 401 to `AuthError`.
+### 1. Global Interceptor (`aiims-auth-module`)
+- **`AuthInterceptor.kt`**: An OkHttp interceptor that catches 401 status codes.
+- **Retry Logic**: When a 401 is detected, the interceptor calls `AiimsAuthManager.awaitReauthentication()`. 
+- **Resumption**: If re-authentication succeeds (user enters PIN), the original request is updated with the new token and retried automatically.
 
-### 2. Manager Updates
-- **[MODIFY] `AiimsAuthManager.kt`**:
-    - Update `submitTelemetry` to handle `TelemetryResult`.
-    - On `AuthError` (401):
-        - Ensure request is **queued** in database.
-        - Log the error but **do not logout**.
-    - On `Success` with `invalidated` status:
-        - Log the status but **do not logout**.
+### 2. Coordination (`AiimsAuthManager.kt`)
+- **`reauthMutex`**: Ensures that multiple concurrent 401s from different background tasks (e.g., synchronous telemetry and project refresh) trigger only a single re-authentication UI prompt.
+- **`reauthDeferred`**: Used to notify all waiting requests once the user has successfully re-authenticated or cancelled.
 
-### 3. Worker Updates
-- **[MODIFY] `TelemetryWorker.kt`**:
-    - Ensure it doesn't delete from Room DB on `AuthError`.
-    - Handle retry logic for `NetworkError`.
+### 3. Re-use of UI
+- Re-authentication utilizes the existing `AiimsLoginActivity` in a specialized "re-auth mode" (pre-filled username, localized messaging). This ensures a consistent security experience without duplicating complex biometric/PIN logic.
 
-## Verification Plan
-
-### Automated Tests
-- **`AiimsAuthManagerTest.kt`**: Add test cases for 401 error during immediate submission and background flush.
-
-### Manual Verification
-1. **Force 401**: 
-    - Mock a 401 in `FakeAuthClient`.
-    - Attempt telemetry submission.
-    - Verify telemetry entry remains in `TelemetryEntity` table (not deleted).
-    - Verify user session remains active (no logout from telemetry).
-2. **Re-auth and Flush**:
-    - Simulate a successful token refresh (or login).
-    - Verify worker (or manual flush) sends the previously queued 401 data successfully.
+## Verification
+The implementation has been verified to:
+- Successfully retry AIIMS API calls after re-authentication.
+- Not interfere with standard ODK form management.
+- Be compatible with `minSdkVersion 21` (Room 2.6.1).

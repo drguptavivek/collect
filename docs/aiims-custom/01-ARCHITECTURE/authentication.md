@@ -1,7 +1,7 @@
 # Authentication System - AIIMS ODK Collect
 
-> Last Updated: 2025-12-28
-> Reviewed At: 2025-12-28
+> Last Updated: 2025-12-30
+> Reviewed At: 2025-12-30
 
 This document provides detailed documentation of the AIIMS authentication system, including the state machine, token lifecycle, and re-authentication flows.
 
@@ -114,11 +114,47 @@ sequenceDiagram
         Client-->>App: Success
     else Token Expired
         Server-->>Client: 401 Unauthorized
-        Client-->>App: Error (triggers soft expiry check)
+        Client-->>App: Error
+        Note over App: Standard ODK error handling.<br/>Does NOT trigger AIIMS re-auth prompt.
     end
 ```
 
-### 3. Token Expiry Handling
+### 3. AIIMS API Usage (Telemetry, etc.)
+
+For AIIMS-specific APIs, a global interceptor handles 401s and triggers re-authentication automatically.
+
+```mermaid
+sequenceDiagram
+    participant App as AIIMS Auth Module
+    participant Client as RealAuthClient
+    participant Interceptor as AuthInterceptor
+    participant Auth as AiimsAuthManager
+    participant Server as Central Backend
+
+    App->>Client: submitTelemetry()
+    Client->>Interceptor: Request chain
+    Interceptor->>Server: POST /projects/{id}/telemetry
+    
+    alt Token Valid
+        Server-->>Interceptor: 200 OK
+        Interceptor-->>Client: Success
+    else Token Expired (401)
+        Server-->>Interceptor: 401 Unauthorized
+        Interceptor->>Auth: awaitReauthentication()
+        Note over Auth: Launch re-auth UI if needed
+        Auth->>Interceptor: Resume (Success/Fail)
+        
+        alt Re-auth Success
+            Interceptor->>Server: Retry Original Request
+            Server-->>Interceptor: 200 OK
+            Interceptor-->>Client: Success
+        else Re-auth Cancelled/Failed
+            Interceptor-->>Client: 401 Unauthorized
+        end
+    end
+```
+
+### 4. Token Expiry Handling
 
 ```mermaid
 flowchart TD
@@ -200,9 +236,9 @@ data class AppUser(
 
 Re-auth is triggered in these scenarios:
 
-1. **Soft expiry detected** - Token expired but within grace period, server reachable
+1. **Soft expiry detected** - Token expired but within grace period, server reachable (proactive check)
 2. **Manual refresh** - User taps "Refresh Token" in settings
-3. **Token revocation** - Server returns 401 for valid-looking token
+3. **AIIMS API 401** - `RealAuthClient` detects 401 and triggers blocking re-auth
 
 ### Re-Auth Mode
 
@@ -282,7 +318,9 @@ context.startActivity(intent)
 | Scenario | Detection | Response |
 |----------|-----------|----------|
 | Invalid credentials | Server returns 401 on login | Show error, allow retry |
-| Token expired (online) | Server returns 401 on request | Trigger soft expiry flow |
+| AIIMS API 401 | `RealAuthClient` detects 401 | Trigger blocking re-auth & retry |
+| ODK API 401 | `OkHttpConnection` detects 401 | Return 401 error to ODK core |
+| Token expired (online) | Time based detection | Trigger soft expiry flow (proactive) |
 | Token expired (offline) | Local time > expiresAt | Allow work within grace period |
 | Grace period exceeded | Local time > expiresAt + 6h | Force logout |
 | Network unavailable | Catch exception during reachability check | Allow offline work if in grace |
@@ -306,6 +344,8 @@ context.startActivity(intent)
 ## Related Documentation
 
 - [Architecture Overview](overview.md) - System architecture
+- [AIIMS vs. Standard Boundary](aiims_vs_standard_boundary.md) - Clean separation rules
+- [Collect Telemetry](Collect_telemetry.md) - Telemetry system design
 - [Activities Reference](activities.md) - Activity details
 - [Data Isolation](data-isolation.md) - Storage and persistence
 - [API Reference](../03-API/reference.md) - Complete API docs

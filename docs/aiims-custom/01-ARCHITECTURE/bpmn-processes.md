@@ -26,8 +26,11 @@ Professional BPMN 2.0 diagrams with proper notation are located in `bpmn/output/
 For quick reference, Mermaid diagrams are provided below. These render in GitHub and other Mermaid-compatible viewers.
 
 ### 1. Authentication State Machine
-
-```mermaid
+ 
+ > [!NOTE]
+ > For the **Telemetry 401 Interceptor Flow**, please refer to the specific sequence diagram in [Authentication Architecture](authentication.md#2-401-interceptor-flow-aiims-apis-only).
+ 
+ ```mermaid
 stateDiagram-v2
     [*] --> LOGGED_OUT
 
@@ -335,7 +338,8 @@ sequenceDiagram
 
 ## Related Documentation
 
-- [Multi-User Persistence](multiuser-persistence.md) - Feature specification
+- [AIIMS vs. Standard Boundaries](aiims_vs_standard_boundary.md) - Architecture boundaries
+- [Collect Telemetry](Collect_telemetry.md) - Telemetry system design
 - [Authentication System](authentication.md) - Detailed auth documentation
 - [PIN Security Feature](../05-FEATURES/pin-security.md) - PIN implementation
 - [Data Isolation](data-isolation.md) - Storage and cleanup

@@ -1,6 +1,6 @@
 # AIIMS ODK Collect Documentation
 
-> **Last Updated**: 2025-12-28
+> **Last Updated**: 2025-12-30
 > **Project**: AIIMS Custom Fork of ODK Collect
 > **Branch**: `vg-work`
 
@@ -42,6 +42,8 @@ docs/aiims-custom/
 ├── 01-ARCHITECTURE/             # System design & components
 │   ├── overview.md              # Architecture overview with diagrams
 │   ├── authentication.md        # Auth flow & state machine
+│   ├── aiims_vs_standard_boundary.md # Custom vs Core boundaries
+│   ├── Collect_telemetry.md     # Telemetry system design
 │   ├── activities.md            # Activity reference
 │   └── data-isolation.md        # Persistence & storage
 │
@@ -146,7 +148,14 @@ graph TB
 | `master` | Tracks upstream ODK Collect (vanilla) | `origin` |
 | `vg-work` | AIIMS customizations (active development) | `origin` |
 
-> **Important**: This fork cannot produce true vanilla ODK builds. For vanilla ODK, use the `master` branch or official ODK Collect.
+### Data Layer
+ 
+| Component | Responsibility |
+|-----------|---------------|
+| `ProjectCleaner` | Form cleanup on logout (preserves instances) |
+| `TelemetryWorker` | Background telemetry (location, device info) |
+| `aiims_auth_prefs` | SharedPreferences for tokens, users, expiry, PIN |
+| `TelemetryEntity` | Local Room DB for offline telemetry storage |
 
 ---
 

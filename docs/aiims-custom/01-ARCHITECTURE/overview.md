@@ -364,6 +364,8 @@ graph TD
 ## Related Documentation
 
 - [Authentication Flows](authentication.md) - Detailed auth state machine
+- [AIIMS vs. Standard Boundary](aiims_vs_standard_boundary.md) - Clean separation rules
+- [Collect Telemetry](Collect_telemetry.md) - Telemetry system design
 - [Activities Reference](activities.md) - All AIIMS activities
 - [Data Isolation](data-isolation.md) - Persistence & storage details
 - [PIN Security](../05-FEATURES/pin-security.md) - PIN implementation details

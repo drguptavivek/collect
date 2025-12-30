@@ -198,8 +198,7 @@ public class AppDependencyModule {
                 new CollectThenSystemContentTypeMapper(mimeTypeMap),
                 userAgentProvider.getUserAgent(),
                 BuildConfig.DEBUG,
-                tokenProvider,
-                authManager);
+                tokenProvider);
     }
 
     @Provides
