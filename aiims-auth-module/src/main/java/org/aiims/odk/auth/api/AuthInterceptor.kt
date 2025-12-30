@@ -20,14 +20,19 @@ class AuthInterceptor(
         val originalRequest = chain.request()
         val response = chain.proceed(originalRequest)
 
+        if (response.code == 403) {
+            android.util.Log.w("AuthInterceptor", "[AiimsAuth] Detected 403 Forbidden for: ${originalRequest.url}. Check user roles/permissions.")
+            return response
+        }
+
         if (response.code == 401) {
             val url = originalRequest.url.toString()
             if (url.contains("/login") || url.contains("/restore")) {
-                android.util.Log.i("AuthInterceptor", "Skipping re-auth for login/restore path.")
+                android.util.Log.i("AuthInterceptor", "[AiimsAuth] Skipping re-auth for login/restore path: $url")
                 return response
             }
 
-            android.util.Log.w("AuthInterceptor", "Detected 401 for: $url")
+            android.util.Log.w("AuthInterceptor", "[AiimsAuth] Detected 401 Unauthorized for: $url. Triggering global re-authentication.")
             
             // Close the initial unauthorized response body to avoid leaks
             response.close()
@@ -38,7 +43,7 @@ class AuthInterceptor(
             }
 
             if (success) {
-                android.util.Log.i("AuthInterceptor", "Re-authentication succeeded. Retrying request.")
+                android.util.Log.i("AuthInterceptor", "[AiimsAuth] Re-authentication SUCCEEDED. Retrying request: $url")
                 
                 // Get fresh token
                 val newToken = tokenProvider.getActiveProjectToken()
@@ -50,9 +55,11 @@ class AuthInterceptor(
                         .build()
                     
                     return chain.proceed(newRequest)
+                } else {
+                     android.util.Log.e("AuthInterceptor", "[AiimsAuth] Re-auth succeeded but token is NULL. Cannot retry.")
                 }
             } else {
-                android.util.Log.e("AuthInterceptor", "Re-authentication failed or cancelled.")
+                android.util.Log.e("AuthInterceptor", "[AiimsAuth] Re-authentication FAILED or CANCELLED for: $url")
             }
         }
 
