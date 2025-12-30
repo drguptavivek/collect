@@ -79,15 +79,27 @@ class AiimsSecureStorageImpl private constructor(
 
     override var authToken: String?
         get() = encryptedPrefs.getString(AiimsConstants.KEY_AUTH_TOKEN, null)
-        set(value) = encryptedPrefs.edit().putString(AiimsConstants.KEY_AUTH_TOKEN, value).apply()
+        set(value) {
+            if (!encryptedPrefs.edit().putString(AiimsConstants.KEY_AUTH_TOKEN, value).commit()) {
+                throw java.io.IOException("Failed to persist auth token")
+            }
+        }
 
     override var tokenExpiry: Long?
         get() = encryptedPrefs.getLong(AiimsConstants.KEY_TOKEN_EXPIRY, -1).takeIf { it != -1L }
-        set(value) = encryptedPrefs.edit().putLong(AiimsConstants.KEY_TOKEN_EXPIRY, value ?: -1L).apply()
+        set(value) {
+            if (!encryptedPrefs.edit().putLong(AiimsConstants.KEY_TOKEN_EXPIRY, value ?: -1L).commit()) {
+                throw java.io.IOException("Failed to persist token expiry")
+            }
+        }
 
     override var projectId: String?
         get() = encryptedPrefs.getString(AiimsConstants.KEY_PROJECT_ID, null)
-        set(value) = encryptedPrefs.edit().putString(AiimsConstants.KEY_PROJECT_ID, value).apply()
+        set(value) {
+            if (!encryptedPrefs.edit().putString(AiimsConstants.KEY_PROJECT_ID, value).commit()) {
+                throw java.io.IOException("Failed to persist project ID")
+            }
+        }
 
     // ===== PIN Security Storage =====
     override var pinHash: String?

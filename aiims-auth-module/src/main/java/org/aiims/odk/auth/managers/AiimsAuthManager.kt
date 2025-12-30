@@ -507,25 +507,27 @@ class AiimsAuthManager @Inject constructor(
         stopPeriodicTelemetry()
     }
 
-    private fun persistSession(projectId: String, user: User, token: String, expiresAt: String, apiUrl: String) {
-        // Store sensitive data (token, expiry) in encrypted storage via AiimsAuthStorage
-        authStorage.saveAuthSession(
-            token = token,
-            expiresAt = expiresAt,
-            user = user,
-            apiUrl = apiUrl
-        )
+    private suspend fun persistSession(projectId: String, user: User, token: String, expiresAt: String, apiUrl: String) {
+        kotlinx.coroutines.withContext(ioDispatcherForTesting ?: Dispatchers.IO) {
+            // Store sensitive data (token, expiry) in encrypted storage via AiimsAuthStorage
+            authStorage.saveAuthSession(
+                token = token,
+                expiresAt = expiresAt,
+                user = user,
+                apiUrl = apiUrl
+            )
 
-        // Store user data (non-sensitive) in plain SharedPreferences for project context
-        prefs.edit().apply {
-            putString(keyUser(projectId), JSONObject().apply {
-                put("id", user.id)
-                put("username", user.username)
-                put("projectId", user.projectId)
-                put("expiresAt", user.expiresAt)
-            }.toString())
-            putString(keyApiUrl(projectId), apiUrl)
-            apply()
+            // Store user data (non-sensitive) in plain SharedPreferences for project context
+            prefs.edit().apply {
+                putString(keyUser(projectId), JSONObject().apply {
+                    put("id", user.id)
+                    put("username", user.username)
+                    put("projectId", user.projectId)
+                    put("expiresAt", user.expiresAt)
+                }.toString())
+                putString(keyApiUrl(projectId), apiUrl)
+                apply()
+            }
         }
     }
 
