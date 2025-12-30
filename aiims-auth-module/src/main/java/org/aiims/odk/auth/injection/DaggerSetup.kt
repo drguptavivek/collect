@@ -69,14 +69,30 @@ open class AiimsAuthDependencyModule {
 
     @Provides
     @Singleton
+    open fun providesAiimsDatabase(application: Application): org.aiims.odk.auth.storage.db.AiimsDatabase {
+        return androidx.room.Room.databaseBuilder(
+            application,
+            org.aiims.odk.auth.storage.db.AiimsDatabase::class.java,
+            "aiims_db"
+        ).build()
+    }
+
+    @Provides
+    open fun providesTelemetryDao(database: org.aiims.odk.auth.storage.db.AiimsDatabase): org.aiims.odk.auth.storage.db.TelemetryDao {
+        return database.telemetryDao()
+    }
+
+    @Provides
+    @Singleton
     open fun providesAiimsAuthManager(
         application: Application,
         projectCleaner: ProjectCleaner,
         pinManager: PinManager,
         authStorage: AiimsAuthStorage,
-        secureStorage: AiimsSecureStorage
+        secureStorage: AiimsSecureStorage,
+        telemetryDao: org.aiims.odk.auth.storage.db.TelemetryDao
     ): AiimsAuthManager {
-        return AiimsAuthManager(application, projectCleaner, pinManager, authStorage, secureStorage)
+        return AiimsAuthManager(application, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
     }
 
     @Provides

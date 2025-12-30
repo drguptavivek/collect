@@ -17,8 +17,10 @@ import org.aiims.odk.auth.api.AuthClient
 import org.aiims.odk.auth.api.AuthResult
 import org.aiims.odk.auth.api.User
 import org.aiims.odk.auth.api.TelemetryEvent
+import org.aiims.odk.auth.api.TelemetryRequest
 import org.aiims.odk.auth.storage.FakeAiimsAuthStorage
 import org.aiims.odk.auth.storage.FakeAiimsSecureStorage
+import org.aiims.odk.auth.fakes.FakeTelemetryDao
 import org.aiims.odk.auth.utils.PinManager
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
@@ -30,6 +32,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -48,6 +51,7 @@ class AiimsAuthManagerTest {
     // Fakes
     private lateinit var authStorage: FakeAiimsAuthStorage
     private lateinit var secureStorage: FakeAiimsSecureStorage
+    private lateinit var telemetryDao: FakeTelemetryDao
 
     @Before
     fun setUp() {
@@ -58,13 +62,14 @@ class AiimsAuthManagerTest {
         // Initialize Fakes
         authStorage = FakeAiimsAuthStorage()
         secureStorage = FakeAiimsSecureStorage()
+        telemetryDao = FakeTelemetryDao()
 
         // Ensure clean state (Though fakes are new instances)
         context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE).edit().clear().commit()
 
         // Initialize Managers
         pinManager = PinManager(context)
-        authManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage)
+        authManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
         authManager.setAuthClient(authClient)
         // Note: We don't attach testScheduler here because setUp runs outside runTest
         // But StandardTestDispatcher() works.
@@ -196,9 +201,6 @@ class AiimsAuthManagerTest {
 
     @Test
     fun `#logout preserves project data for next user on shared device - Option B`() = runTest {
-        // This test verifies the intentional behavior for AIIMS shared device deployments:
-        // When User A logs out, their forms and instances remain on device
-        // so User B logging into the same project can access them.
         val projectId = "1"
 
         val userA = User("A", "userA", projectId, "2099-01-01T00:00:00.000Z")
@@ -215,7 +217,6 @@ class AiimsAuthManagerTest {
         advanceUntilIdle()
 
         // Verify: projectCleaner should NEVER be called (Option B)
-        // This ensures forms, instances, and cache are preserved
         verify(projectCleaner, org.mockito.kotlin.never()).clearProjectData(any())
 
         // User B can now log into the same project and see User A's data
@@ -253,7 +254,7 @@ class AiimsAuthManagerTest {
         }
 
         // Recreating authManager to simulate app restart, using SAME Fakes
-        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage)
+        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
 
@@ -265,7 +266,6 @@ class AiimsAuthManagerTest {
         val state = newAuthManager.authState.first()
         assertThat("State should be LOGGED_IN during grace period", state, equalTo(AuthState.LOGGED_IN))
         assertThat("Should not be Soft Expiry if unreachable", newAuthManager.getIsSoftExpiry(), equalTo(false))
-        // Verify reachability was checked (Note: might need spy or proper verification if newManager calls it)
         verify(authClient).checkReachability()
     }
 
@@ -283,7 +283,7 @@ class AiimsAuthManagerTest {
         authManager.login(projectId, "user", "pass", "url")
 
         // Reuse Fakes for persistence check
-        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage)
+        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
 
@@ -301,7 +301,6 @@ class AiimsAuthManagerTest {
     @Test
     fun `#refreshState sets soft expiry if reachable within grace`() = runTest {
         val projectId = "1"
-        // Expires 1 hour ago (Within 6h grace)
         val now = System.currentTimeMillis()
         val oneHourAgo = now - (1 * 60 * 60 * 1000)
         val expiredDate = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(oneHourAgo))
@@ -316,7 +315,7 @@ class AiimsAuthManagerTest {
             doReturn(true).whenever(authClient).checkReachability()
         }
 
-        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage)
+        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
 
@@ -331,6 +330,59 @@ class AiimsAuthManagerTest {
 
         // Should NOT have logged out
         verify(authClient, org.mockito.kotlin.never()).revokeSession(any(), any(), any(), any())
+    }
+
+    @Test
+    fun `#submitTelemetry queues request when offline or error`() = runTest {
+        val projectId = "1"
+        val user = User("100", "testuser", projectId, "2099-01-01T00:00:00.000Z")
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        authManager.login(projectId, "user", "pass", "url")
+        authManager.setActiveProject(projectId)
+        advanceUntilIdle()
+
+        // Simulate Error
+        whenever(authClient.submitTelemetry(any(), any(), any())).thenThrow(RuntimeException("Network Error"))
+
+        authManager.submitTelemetry(null)
+        advanceUntilIdle()
+
+        // Verify inserted into DAO
+        runBlocking {
+            val pending = telemetryDao.getAll()
+            assertThat(pending.size, equalTo(1))
+            assertThat(pending[0].projectId, equalTo(projectId))
+        }
+    }
+
+    @Test
+    fun `#flushOfflineQueue submits pending items`() = runTest {
+        val projectId = "1"
+        val user = User("100", "testuser", projectId, "2099-01-01T00:00:00.000Z")
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        authManager.login(projectId, "user", "pass", "url")
+        authManager.setActiveProject(projectId)
+        advanceUntilIdle()
+
+        // Pre-populate DAO with a failed item
+        val json = "{\"deviceId\":\"test\",\"collectVersion\":\"1\",\"deviceDateTime\":\"now\",\"location\":null}"
+        val entity = org.aiims.odk.auth.storage.db.TelemetryEntity(data = json, projectId = projectId)
+        telemetryDao.insert(entity)
+
+        // Mock success for flush
+        whenever(authClient.submitTelemetry(any(), any(), any())).thenReturn(org.aiims.odk.auth.api.TelemetryResponse(1, "now", null, "ok"))
+
+        authManager.flushOfflineQueue()
+        advanceUntilIdle()
+
+        // Verify submitted
+        verify(authClient).submitTelemetry(org.mockito.kotlin.eq(projectId), org.mockito.kotlin.eq("token"), any())
+        
+        // Verify deleted from DAO
+        runBlocking {
+            val pending = telemetryDao.getAll()
+            assertThat(pending.size, equalTo(0))
+        }
     }
 
     @Test

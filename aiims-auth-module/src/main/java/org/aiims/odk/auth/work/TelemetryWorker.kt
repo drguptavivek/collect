@@ -20,6 +20,7 @@ class TelemetryWorker(
             // This is primarily for presence/heartbeat.
             val authManager = (applicationContext as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.authManager
             authManager.submitTelemetry(null)
+            authManager.flushOfflineQueue()
             Result.success()
         } catch (e: Exception) {
             Log.e("TelemetryWorker", "Failed to send telemetry", e)

@@ -75,7 +75,8 @@ class AiimsAppLockTest {
             projectCleaner = mockProjectCleaner,
             pinManager = mockPinManager,
             authStorage = authStorage,
-            secureStorage = secureStorage
+            secureStorage = secureStorage,
+            telemetryDao = org.aiims.odk.auth.fakes.FakeTelemetryDao()
         )
         
         appLock = AiimsAppLock(spyApplication, authManager, mockPinManager)

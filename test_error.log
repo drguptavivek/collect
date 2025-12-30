@@ -1,0 +1,1643 @@
+Initialized native services in: /Users/vivekgupta/.gradle/native
+Initialized jansi services in: /Users/vivekgupta/.gradle/native
+The client will now receive all logging from the daemon (pid: 12186). The daemon log file: /Users/vivekgupta/.gradle/daemon/9.0.0/daemon-12186.out.log
+Starting 45th build in daemon [uptime: 1 hrs 25 mins 39.065 secs, performance: 97%, GC rate: 0.00/s, heap usage: 0% of 2.5 GiB, non-heap usage: 56% of 1 GiB]
+Using 10 worker leases.
+Now considering [/Users/vivekgupta/workspace/collect] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Settings evaluated using settings file '/Users/vivekgupta/workspace/collect/settings.gradle'.
+Projects loaded. Root project using build file '/Users/vivekgupta/workspace/collect/build.gradle'.
+Included projects: [root project 'collect', project ':aiims-auth-module', project ':analytics', project ':androidshared', project ':androidtest', project ':async', project ':audio-clips', project ':audio-recorder', project ':collect_app', project ':crash-handler', project ':db', project ':draw', project ':entities', project ':errors', project ':external-app', project ':forms', project ':forms-test', project ':fragments-test', project ':geo', project ':google-maps', project ':icons', project ':image-loader', project ':lists', project ':location', project ':maps', project ':material', project ':metadata', project ':mobile-device-management', project ':nbistubs', project ':open-rosa', project ':osmdroid', project ':permissions', project ':printer', project ':projects', project ':qr-code', project ':selfie-camera', project ':service-test', project ':settings', project ':shadows', project ':shared', project ':strings', project ':test-forms', project ':test-shared', project ':upgrade', project ':web-page']
+
+> Configure project :
+Evaluating root project 'collect' using build file '/Users/vivekgupta/workspace/collect/build.gradle'.
+
+> Configure project :aiims-auth-module
+Evaluating project ':aiims-auth-module' using build file '/Users/vivekgupta/workspace/collect/aiims-auth-module/build.gradle'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'com.google.devtools.ksp', version: '2.1.0-1.0.29']
+WARNING: The option setting 'android.jetifier.ignorelist=jackson-core' is experimental.
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :aiims-auth-module:compileDebugAndroidTestKotlin
+
+> Configure project :analytics
+Evaluating project ':analytics' using build file '/Users/vivekgupta/workspace/collect/analytics/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :analytics:compileDebugAndroidTestKotlin
+
+> Configure project :androidshared
+Evaluating project ':androidshared' using build file '/Users/vivekgupta/workspace/collect/androidshared/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.1.0']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :androidshared:compileDebugAndroidTestKotlin
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+
+> Configure project :androidtest
+Evaluating project ':androidtest' using build file '/Users/vivekgupta/workspace/collect/androidtest/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :androidtest:compileDebugAndroidTestKotlin
+
+> Configure project :async
+Evaluating project ':async' using build file '/Users/vivekgupta/workspace/collect/async/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :async:compileDebugAndroidTestKotlin
+
+> Configure project :audio-clips
+Evaluating project ':audio-clips' using build file '/Users/vivekgupta/workspace/collect/audio-clips/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :audio-clips:compileDebugAndroidTestKotlin
+
+> Configure project :audio-recorder
+Evaluating project ':audio-recorder' using build file '/Users/vivekgupta/workspace/collect/audio-recorder/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :audio-recorder:compileDebugAndroidTestKotlin
+
+> Configure project :collect_app
+Evaluating project ':collect_app' using build file '/Users/vivekgupta/workspace/collect/collect_app/build.gradle'.
+Resolved plugin [id: 'com.android.application']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Resolved plugin [id: 'kotlin-parcelize']
+Resolved plugin [id: 'com.google.android.gms.oss-licenses-plugin']
+Resolved plugin [id: 'androidx.navigation.safeargs']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.1.0']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :collect_app:compileAiimsDebugAndroidTestKotlin
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :collect_app:compileAiimsDebugKotlin
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+collect_app: 'annotationProcessor' dependencies won't be recognized as kapt annotation processors. Please change the configuration name to 'kapt' for these artifacts: 'com.google.dagger:dagger-android-processor:2.57.1'.
+
+> Configure project :crash-handler
+Evaluating project ':crash-handler' using build file '/Users/vivekgupta/workspace/collect/crash-handler/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :crash-handler:compileDebugAndroidTestKotlin
+
+> Configure project :db
+Evaluating project ':db' using build file '/Users/vivekgupta/workspace/collect/db/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :db:compileDebugAndroidTestKotlin
+
+> Configure project :draw
+Evaluating project ':draw' using build file '/Users/vivekgupta/workspace/collect/draw/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :draw:compileDebugAndroidTestKotlin
+
+> Configure project :entities
+Evaluating project ':entities' using build file '/Users/vivekgupta/workspace/collect/entities/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Resolved plugin [id: 'androidx.navigation.safeargs.kotlin']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :entities:compileDebugAndroidTestKotlin
+
+> Configure project :errors
+Evaluating project ':errors' using build file '/Users/vivekgupta/workspace/collect/errors/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :errors:compileDebugAndroidTestKotlin
+
+> Configure project :external-app
+Evaluating project ':external-app' using build file '/Users/vivekgupta/workspace/collect/external-app/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :external-app:compileDebugAndroidTestKotlin
+
+> Configure project :forms
+Evaluating project ':forms' using build file '/Users/vivekgupta/workspace/collect/forms/build.gradle.kts'.
+Resolved plugin [id: 'java-library']
+Resolved plugin [id: 'kotlin']
+Using Kotlin Gradle Plugin gradle85 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :forms-test
+Evaluating project ':forms-test' using build file '/Users/vivekgupta/workspace/collect/forms-test/build.gradle.kts'.
+Resolved plugin [id: 'java-library']
+Resolved plugin [id: 'kotlin']
+Using Kotlin Gradle Plugin gradle85 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :fragments-test
+Evaluating project ':fragments-test' using build file '/Users/vivekgupta/workspace/collect/fragments-test/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :fragments-test:compileDebugAndroidTestKotlin
+
+> Configure project :geo
+Evaluating project ':geo' using build file '/Users/vivekgupta/workspace/collect/geo/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :geo:compileDebugAndroidTestKotlin
+
+> Configure project :google-maps
+Evaluating project ':google-maps' using build file '/Users/vivekgupta/workspace/collect/google-maps/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :google-maps:compileDebugAndroidTestKotlin
+
+> Configure project :icons
+Evaluating project ':icons' using build file '/Users/vivekgupta/workspace/collect/icons/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :icons:compileDebugAndroidTestKotlin
+
+> Configure project :image-loader
+Evaluating project ':image-loader' using build file '/Users/vivekgupta/workspace/collect/image-loader/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :image-loader:compileDebugAndroidTestKotlin
+
+> Configure project :lists
+Evaluating project ':lists' using build file '/Users/vivekgupta/workspace/collect/lists/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :lists:compileDebugAndroidTestKotlin
+
+> Configure project :location
+Evaluating project ':location' using build file '/Users/vivekgupta/workspace/collect/location/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :location:compileDebugAndroidTestKotlin
+
+> Configure project :maps
+Evaluating project ':maps' using build file '/Users/vivekgupta/workspace/collect/maps/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-parcelize']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :maps:compileDebugAndroidTestKotlin
+
+> Configure project :material
+Evaluating project ':material' using build file '/Users/vivekgupta/workspace/collect/material/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :material:compileDebugAndroidTestKotlin
+
+> Configure project :metadata
+Evaluating project ':metadata' using build file '/Users/vivekgupta/workspace/collect/metadata/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :metadata:compileDebugAndroidTestKotlin
+
+> Configure project :mobile-device-management
+Evaluating project ':mobile-device-management' using build file '/Users/vivekgupta/workspace/collect/mobile-device-management/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :mobile-device-management:compileDebugAndroidTestKotlin
+
+> Configure project :nbistubs
+Evaluating project ':nbistubs' using build file '/Users/vivekgupta/workspace/collect/nbistubs/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Using default execution profile
+
+> Configure project :open-rosa
+Evaluating project ':open-rosa' using build file '/Users/vivekgupta/workspace/collect/open-rosa/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :open-rosa:compileDebugAndroidTestKotlin
+
+> Configure project :osmdroid
+Evaluating project ':osmdroid' using build file '/Users/vivekgupta/workspace/collect/osmdroid/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :osmdroid:compileDebugAndroidTestKotlin
+
+> Configure project :permissions
+Evaluating project ':permissions' using build file '/Users/vivekgupta/workspace/collect/permissions/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :permissions:compileDebugAndroidTestKotlin
+
+> Configure project :printer
+Evaluating project ':printer' using build file '/Users/vivekgupta/workspace/collect/printer/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :printer:compileDebugAndroidTestKotlin
+
+> Configure project :projects
+Evaluating project ':projects' using build file '/Users/vivekgupta/workspace/collect/projects/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :projects:compileDebugAndroidTestKotlin
+
+> Configure project :qr-code
+Evaluating project ':qr-code' using build file '/Users/vivekgupta/workspace/collect/qr-code/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.1.0']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :qr-code:compileDebugAndroidTestKotlin
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+
+> Configure project :selfie-camera
+Evaluating project ':selfie-camera' using build file '/Users/vivekgupta/workspace/collect/selfie-camera/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :selfie-camera:compileDebugAndroidTestKotlin
+
+> Configure project :service-test
+Evaluating project ':service-test' using build file '/Users/vivekgupta/workspace/collect/service-test/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :service-test:compileDebugAndroidTestKotlin
+
+> Configure project :settings
+Evaluating project ':settings' using build file '/Users/vivekgupta/workspace/collect/settings/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :settings:compileDebugAndroidTestKotlin
+
+> Configure project :shadows
+Evaluating project ':shadows' using build file '/Users/vivekgupta/workspace/collect/shadows/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :shadows:compileDebugAndroidTestKotlin
+
+> Configure project :shared
+Evaluating project ':shared' using build file '/Users/vivekgupta/workspace/collect/shared/build.gradle.kts'.
+Resolved plugin [id: 'java-library']
+Resolved plugin [id: 'kotlin']
+Using Kotlin Gradle Plugin gradle85 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :strings
+Evaluating project ':strings' using build file '/Users/vivekgupta/workspace/collect/strings/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :strings:compileDebugAndroidTestKotlin
+
+> Configure project :test-forms
+Evaluating project ':test-forms' using build file '/Users/vivekgupta/workspace/collect/test-forms/build.gradle.kts'.
+Resolved plugin [id: 'java-library']
+Resolved plugin [id: 'kotlin']
+Using Kotlin Gradle Plugin gradle85 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+
+> Configure project :test-shared
+Evaluating project ':test-shared' using build file '/Users/vivekgupta/workspace/collect/test-shared/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :test-shared:compileDebugAndroidTestKotlin
+
+> Configure project :upgrade
+Evaluating project ':upgrade' using build file '/Users/vivekgupta/workspace/collect/upgrade/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Resolved plugin [id: 'kotlin-kapt']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :upgrade:compileDebugAndroidTestKotlin
+
+> Configure project :web-page
+Evaluating project ':web-page' using build file '/Users/vivekgupta/workspace/collect/web-page/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'kotlin-android']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :web-page:compileDebugAndroidTestKotlin
+All projects evaluated.
+Task path ':aiims-auth-module:compileDebugUnitTestKotlin' matched project ':aiims-auth-module'
+Task name matched 'compileDebugUnitTestKotlin'
+Selected primary task 'compileDebugUnitTestKotlin' from project :aiims-auth-module
+Starting process 'command '/usr/libexec/java_home''. Working directory: /Users/vivekgupta/.gradle/daemon/9.0.0 Command: /usr/libexec/java_home -V
+Successfully started process 'command '/usr/libexec/java_home''
+Tasks to be executed: [task ':shared:checkKotlinGradlePluginConfigurationErrors', task ':shared:compileKotlin', task ':shared:compileJava', task ':shared:processResources', task ':shared:classes', task ':shared:jar', task ':aiims-auth-module:checkKotlinGradlePluginConfigurationErrors', task ':aiims-auth-module:preBuild', task ':aiims-auth-module:preDebugBuild', task ':aiims-auth-module:dataBindingMergeDependencyArtifactsDebug', task ':aiims-auth-module:generateDebugResValues', task ':aiims-auth-module:generateDebugResources', task ':aiims-auth-module:packageDebugResources', task ':aiims-auth-module:processDebugNavigationResources', task ':aiims-auth-module:parseDebugLocalResources', task ':analytics:preBuild', task ':analytics:preDebugBuild', task ':analytics:generateDebugResValues', task ':analytics:generateDebugResources', task ':analytics:packageDebugResources', task ':analytics:processDebugNavigationResources', task ':analytics:parseDebugLocalResources', task ':analytics:generateDebugRFile', task ':androidshared:preBuild', task ':androidshared:preDebugBuild', task ':androidshared:dataBindingMergeDependencyArtifactsDebug', task ':androidshared:generateDebugResValues', task ':androidshared:generateDebugResources', task ':androidshared:packageDebugResources', task ':androidshared:processDebugNavigationResources', task ':androidshared:parseDebugLocalResources', task ':async:preBuild', task ':async:preDebugBuild', task ':async:generateDebugResValues', task ':async:generateDebugResources', task ':async:packageDebugResources', task ':async:processDebugNavigationResources', task ':async:parseDebugLocalResources', task ':async:generateDebugRFile', task ':fragments-test:preBuild', task ':fragments-test:preDebugBuild', task ':fragments-test:generateDebugResValues', task ':fragments-test:generateDebugResources', task ':fragments-test:packageDebugResources', task ':fragments-test:processDebugNavigationResources', task ':fragments-test:parseDebugLocalResources', task ':fragments-test:generateDebugRFile', task ':icons:preBuild', task ':icons:preDebugBuild', task ':icons:generateDebugResValues', task ':icons:generateDebugResources', task ':icons:packageDebugResources', task ':icons:processDebugNavigationResources', task ':icons:parseDebugLocalResources', task ':icons:generateDebugRFile', task ':strings:preBuild', task ':strings:preDebugBuild', task ':strings:generateDebugResValues', task ':strings:generateDebugResources', task ':strings:packageDebugResources', task ':strings:processDebugNavigationResources', task ':strings:parseDebugLocalResources', task ':strings:generateDebugRFile', task ':androidshared:dataBindingGenBaseClassesDebug', task ':androidshared:generateDebugRFile', task ':material:preBuild', task ':material:preDebugBuild', task ':material:dataBindingMergeDependencyArtifactsDebug', task ':material:generateDebugResValues', task ':material:generateDebugResources', task ':material:packageDebugResources', task ':material:processDebugNavigationResources', task ':material:parseDebugLocalResources', task ':material:dataBindingGenBaseClassesDebug', task ':material:generateDebugRFile', task ':projects:preBuild', task ':projects:preDebugBuild', task ':projects:dataBindingMergeDependencyArtifactsDebug', task ':projects:generateDebugResValues', task ':projects:generateDebugResources', task ':projects:packageDebugResources', task ':projects:processDebugNavigationResources', task ':projects:parseDebugLocalResources', task ':projects:dataBindingGenBaseClassesDebug', task ':projects:generateDebugRFile', task ':settings:preBuild', task ':settings:preDebugBuild', task ':settings:generateDebugResValues', task ':settings:generateDebugResources', task ':settings:packageDebugResources', task ':settings:processDebugNavigationResources', task ':settings:parseDebugLocalResources', task ':settings:generateDebugRFile', task ':aiims-auth-module:dataBindingGenBaseClassesDebug', task ':aiims-auth-module:dataBindingTriggerDebug', task ':aiims-auth-module:generateDebugBuildConfig', task ':aiims-auth-module:generateDebugRFile', task ':androidshared:checkKotlinGradlePluginConfigurationErrors', task ':analytics:checkKotlinGradlePluginConfigurationErrors', task ':analytics:compileDebugKotlin', task ':analytics:javaPreCompileDebug', task ':analytics:compileDebugJavaWithJavac', task ':analytics:bundleLibCompileToJarDebug', task ':async:checkKotlinGradlePluginConfigurationErrors', task ':icons:checkKotlinGradlePluginConfigurationErrors', task ':icons:compileDebugKotlin', task ':icons:javaPreCompileDebug', task ':icons:compileDebugJavaWithJavac', task ':icons:bundleLibCompileToJarDebug', task ':async:compileDebugKotlin', task ':async:javaPreCompileDebug', task ':async:compileDebugJavaWithJavac', task ':async:bundleLibCompileToJarDebug', task ':fragments-test:checkKotlinGradlePluginConfigurationErrors', task ':fragments-test:compileDebugKotlin', task ':fragments-test:javaPreCompileDebug', task ':fragments-test:compileDebugJavaWithJavac', task ':fragments-test:bundleLibCompileToJarDebug', task ':strings:checkKotlinGradlePluginConfigurationErrors', task ':strings:compileDebugKotlin', task ':strings:javaPreCompileDebug', task ':strings:compileDebugJavaWithJavac', task ':strings:bundleLibCompileToJarDebug', task ':androidshared:kaptGenerateStubsDebugKotlin', task ':androidshared:kaptDebugKotlin', task ':androidshared:compileDebugKotlin', task ':androidshared:javaPreCompileDebug', task ':androidshared:compileDebugJavaWithJavac', task ':androidshared:bundleLibCompileToJarDebug', task ':material:checkKotlinGradlePluginConfigurationErrors', task ':material:compileDebugKotlin', task ':material:javaPreCompileDebug', task ':material:compileDebugJavaWithJavac', task ':material:bundleLibCompileToJarDebug', task ':projects:checkKotlinGradlePluginConfigurationErrors', task ':projects:kaptGenerateStubsDebugKotlin', task ':projects:kaptDebugKotlin', task ':projects:compileDebugKotlin', task ':projects:javaPreCompileDebug', task ':projects:compileDebugJavaWithJavac', task ':projects:bundleLibCompileToJarDebug', task ':settings:checkKotlinGradlePluginConfigurationErrors', task ':settings:kaptGenerateStubsDebugKotlin', task ':settings:kaptDebugKotlin', task ':settings:compileDebugKotlin', task ':settings:javaPreCompileDebug', task ':settings:compileDebugJavaWithJavac', task ':settings:bundleLibCompileToJarDebug', task ':aiims-auth-module:kspDebugKotlin', task ':aiims-auth-module:compileDebugKotlin', task ':aiims-auth-module:javaPreCompileDebug', task ':aiims-auth-module:compileDebugJavaWithJavac', task ':aiims-auth-module:bundleLibCompileToJarDebug', task ':aiims-auth-module:preDebugUnitTestBuild', task ':aiims-auth-module:generateDebugUnitTestStubRFile', task ':aiims-auth-module:kspDebugUnitTestKotlin', task ':aiims-auth-module:compileDebugUnitTestKotlin']
+Tasks that were excluded: []
+work action Parameters of JetifyTransform (Thread[Execution worker,5,main]) started.
+work action Parameters of JetifyTransform (Thread[Execution worker Thread 2,5,main]) started.
+work action Parameters of JetifyTransform (Thread[Execution worker Thread 3,5,main]) started.
+work action Parameters of JetifyTransform (Thread[Execution worker Thread 4,5,main]) started.
+Resolve mutations for :shared:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 5,5,main]) started.
+Resolve mutations for :analytics:preBuild (Thread[Execution worker Thread 6,5,main]) started.
+work action Parameters of IdentityTransform (Thread[Execution worker Thread 3,5,main]) started.
+work action Parameters of IdentityTransform (Thread[Execution worker,5,main]) started.
+work action Parameters of IdentityTransform (Thread[Execution worker Thread 7,5,main]) started.
+Resolve mutations for :async:preBuild (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :fragments-test:preBuild (Thread[Execution worker,5,main]) started.
+:analytics:preBuild (Thread[Execution worker Thread 6,5,main]) started.
+work action Parameters of IdentityTransform (Thread[Execution worker Thread 9,5,main]) started.
+Resolve mutations for :material:preBuild (Thread[included builds,5,main]) started.
+Resolve mutations for :androidshared:preBuild (Thread[Execution worker Thread 7,5,main]) started.
+:shared:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 5,5,main]) started.
+:androidshared:preBuild (Thread[Execution worker Thread 7,5,main]) started.
+:material:preBuild (Thread[included builds,5,main]) started.
+Resolve mutations for :projects:preBuild (Thread[Execution worker Thread 9,5,main]) started.
+Resolve mutations for :strings:preBuild (Thread[Execution worker Thread 8,5,main]) started.
+:projects:preBuild (Thread[Execution worker Thread 9,5,main]) started.
+:strings:preBuild (Thread[Execution worker Thread 8,5,main]) started.
+:fragments-test:preBuild (Thread[Execution worker Thread 2,5,main]) started.
+:async:preBuild (Thread[Execution worker,5,main]) started.
+Resolve mutations for :icons:preBuild (Thread[Execution worker Thread 4,5,main]) started.
+Resolve mutations for :aiims-auth-module:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 3,5,main]) started.
+:icons:preBuild (Thread[Execution worker Thread 4,5,main]) started.
+:aiims-auth-module:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':shared:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+
+> Task :material:preBuild UP-TO-DATE
+Skipping task ':material:preBuild' as it has no actions.
+
+> Task :analytics:preBuild UP-TO-DATE
+Skipping task ':analytics:preBuild' as it has no actions.
+Resolve mutations for :analytics:preDebugBuild (Thread[Execution worker Thread 6,5,main]) started.
+
+> Task :fragments-test:preBuild UP-TO-DATE
+Skipping task ':fragments-test:preBuild' as it has no actions.
+
+> Task :strings:preBuild UP-TO-DATE
+Skipping task ':strings:preBuild' as it has no actions.
+Resolve mutations for :fragments-test:preDebugBuild (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :projects:preBuild UP-TO-DATE
+Skipping task ':projects:preBuild' as it has no actions.
+:analytics:preDebugBuild (Thread[Execution worker Thread 6,5,main]) started.
+:fragments-test:preDebugBuild (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :async:preBuild UP-TO-DATE
+Skipping task ':async:preBuild' as it has no actions.
+
+> Task :androidshared:preBuild UP-TO-DATE
+Skipping task ':androidshared:preBuild' as it has no actions.
+
+> Task :aiims-auth-module:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':aiims-auth-module:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :androidshared:preDebugBuild (Thread[Execution worker Thread 7,5,main]) started.
+Resolve mutations for :async:preDebugBuild (Thread[Execution worker,5,main]) started.
+:androidshared:preDebugBuild (Thread[Execution worker Thread 7,5,main]) started.
+:async:preDebugBuild (Thread[Execution worker,5,main]) started.
+
+> Task :fragments-test:preDebugBuild UP-TO-DATE
+Skipping task ':fragments-test:preDebugBuild' as it has no actions.
+Resolve mutations for :fragments-test:generateDebugResValues (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :projects:preDebugBuild (Thread[Execution worker Thread 9,5,main]) started.
+:fragments-test:generateDebugResValues (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :strings:preDebugBuild (Thread[Execution worker Thread 8,5,main]) started.
+:strings:preDebugBuild (Thread[Execution worker Thread 8,5,main]) started.
+Resolve mutations for :material:preDebugBuild (Thread[included builds,5,main]) started.
+Resolve mutations for :shared:compileKotlin (Thread[Execution worker Thread 5,5,main]) started.
+:material:preDebugBuild (Thread[included builds,5,main]) started.
+
+> Task :strings:preDebugBuild UP-TO-DATE
+Skipping task ':strings:preDebugBuild' as it has no actions.
+
+> Task :icons:preBuild UP-TO-DATE
+Skipping task ':icons:preBuild' as it has no actions.
+Resolve mutations for :icons:preDebugBuild (Thread[Execution worker Thread 4,5,main]) started.
+:projects:preDebugBuild (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :projects:preDebugBuild UP-TO-DATE
+Skipping task ':projects:preDebugBuild' as it has no actions.
+
+> Task :analytics:preDebugBuild UP-TO-DATE
+Skipping task ':analytics:preDebugBuild' as it has no actions.
+
+> Task :async:preDebugBuild UP-TO-DATE
+Skipping task ':async:preDebugBuild' as it has no actions.
+Resolve mutations for :async:generateDebugResValues (Thread[Execution worker,5,main]) started.
+Resolve mutations for :aiims-auth-module:preBuild (Thread[Execution worker Thread 3,5,main]) started.
+:async:generateDebugResValues (Thread[Execution worker,5,main]) started.
+Resolve mutations for :analytics:generateDebugResValues (Thread[Execution worker Thread 6,5,main]) started.
+Resolve mutations for :projects:dataBindingMergeDependencyArtifactsDebug (Thread[Execution worker Thread 9,5,main]) started.
+:shared:compileKotlin (Thread[Execution worker Thread 5,5,main]) started.
+:icons:preDebugBuild (Thread[Execution worker Thread 4,5,main]) started.
+Resolve mutations for :strings:generateDebugResValues (Thread[Execution worker Thread 8,5,main]) started.
+
+> Task :material:preDebugBuild UP-TO-DATE
+Skipping task ':material:preDebugBuild' as it has no actions.
+:strings:generateDebugResValues (Thread[Execution worker Thread 8,5,main]) started.
+:projects:dataBindingMergeDependencyArtifactsDebug (Thread[Execution worker Thread 6,5,main]) started.
+:analytics:generateDebugResValues (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :androidshared:preDebugBuild UP-TO-DATE
+Skipping task ':androidshared:preDebugBuild' as it has no actions.
+:aiims-auth-module:preBuild (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :fragments-test:generateDebugResValues UP-TO-DATE
+Caching disabled for task ':fragments-test:generateDebugResValues' because:
+  Build cache is disabled
+Skipping task ':fragments-test:generateDebugResValues' as it is up-to-date.
+
+> Task :aiims-auth-module:preBuild UP-TO-DATE
+Skipping task ':aiims-auth-module:preBuild' as it has no actions.
+Resolve mutations for :fragments-test:generateDebugResources (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :androidshared:dataBindingMergeDependencyArtifactsDebug (Thread[Execution worker Thread 7,5,main]) started.
+:fragments-test:generateDebugResources (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :icons:preDebugBuild UP-TO-DATE
+Skipping task ':icons:preDebugBuild' as it has no actions.
+
+> Task :async:generateDebugResValues UP-TO-DATE
+Caching disabled for task ':async:generateDebugResValues' because:
+  Build cache is disabled
+Skipping task ':async:generateDebugResValues' as it is up-to-date.
+Resolve mutations for :material:dataBindingMergeDependencyArtifactsDebug (Thread[included builds,5,main]) started.
+:material:dataBindingMergeDependencyArtifactsDebug (Thread[included builds,5,main]) started.
+Resolve mutations for :async:generateDebugResources (Thread[Execution worker,5,main]) started.
+Resolve mutations for :icons:generateDebugResValues (Thread[Execution worker Thread 4,5,main]) started.
+:async:generateDebugResources (Thread[Execution worker,5,main]) started.
+:icons:generateDebugResValues (Thread[Execution worker Thread 4,5,main]) started.
+:androidshared:dataBindingMergeDependencyArtifactsDebug (Thread[Execution worker Thread 7,5,main]) started.
+
+> Task :strings:generateDebugResValues UP-TO-DATE
+Caching disabled for task ':strings:generateDebugResValues' because:
+  Build cache is disabled
+Skipping task ':strings:generateDebugResValues' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:preDebugBuild (Thread[Execution worker Thread 3,5,main]) started.
+Resolve mutations for :strings:generateDebugResources (Thread[Execution worker Thread 8,5,main]) started.
+:aiims-auth-module:preDebugBuild (Thread[Execution worker Thread 3,5,main]) started.
+:strings:generateDebugResources (Thread[Execution worker Thread 8,5,main]) started.
+
+> Task :aiims-auth-module:preDebugBuild UP-TO-DATE
+Skipping task ':aiims-auth-module:preDebugBuild' as it has no actions.
+Resolve mutations for :aiims-auth-module:dataBindingMergeDependencyArtifactsDebug (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :fragments-test:generateDebugResources UP-TO-DATE
+Caching disabled for task ':fragments-test:generateDebugResources' because:
+  Build cache is disabled
+Skipping task ':fragments-test:generateDebugResources' as it is up-to-date.
+Resolve mutations for :fragments-test:packageDebugResources (Thread[Execution worker Thread 2,5,main]) started.
+:aiims-auth-module:dataBindingMergeDependencyArtifactsDebug (Thread[Execution worker Thread 3,5,main]) started.
+:fragments-test:packageDebugResources (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :analytics:generateDebugResValues UP-TO-DATE
+Caching disabled for task ':analytics:generateDebugResValues' because:
+  Build cache is disabled
+Skipping task ':analytics:generateDebugResValues' as it is up-to-date.
+Resolve mutations for :analytics:generateDebugResources (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :async:generateDebugResources UP-TO-DATE
+Caching disabled for task ':async:generateDebugResources' because:
+  Build cache is disabled
+Skipping task ':async:generateDebugResources' as it is up-to-date.
+:analytics:generateDebugResources (Thread[Execution worker Thread 9,5,main]) started.
+Resolve mutations for :async:packageDebugResources (Thread[Execution worker,5,main]) started.
+:async:packageDebugResources (Thread[Execution worker,5,main]) started.
+
+> Task :fragments-test:packageDebugResources UP-TO-DATE
+Caching disabled for task ':fragments-test:packageDebugResources' because:
+  Build cache is disabled
+Skipping task ':fragments-test:packageDebugResources' as it is up-to-date.
+Resolve mutations for :fragments-test:processDebugNavigationResources (Thread[Execution worker Thread 2,5,main]) started.
+:fragments-test:processDebugNavigationResources (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :async:packageDebugResources UP-TO-DATE
+Caching disabled for task ':async:packageDebugResources' because:
+  Build cache is disabled
+Skipping task ':async:packageDebugResources' as it is up-to-date.
+Resolve mutations for :async:processDebugNavigationResources (Thread[Execution worker,5,main]) started.
+:async:processDebugNavigationResources (Thread[Execution worker,5,main]) started.
+
+> Task :icons:generateDebugResValues UP-TO-DATE
+Caching disabled for task ':icons:generateDebugResValues' because:
+  Build cache is disabled
+Skipping task ':icons:generateDebugResValues' as it is up-to-date.
+
+> Task :async:processDebugNavigationResources UP-TO-DATE
+Caching disabled for task ':async:processDebugNavigationResources' because:
+  Build cache is disabled
+Skipping task ':async:processDebugNavigationResources' as it is up-to-date.
+Resolve mutations for :async:parseDebugLocalResources (Thread[Execution worker,5,main]) started.
+:async:parseDebugLocalResources (Thread[Execution worker,5,main]) started.
+
+> Task :strings:generateDebugResources UP-TO-DATE
+Caching disabled for task ':strings:generateDebugResources' because:
+  Build cache is disabled
+Skipping task ':strings:generateDebugResources' as it is up-to-date.
+Resolve mutations for :strings:packageDebugResources (Thread[Execution worker Thread 8,5,main]) started.
+Resolve mutations for :icons:generateDebugResources (Thread[Execution worker Thread 4,5,main]) started.
+:strings:packageDebugResources (Thread[Execution worker Thread 8,5,main]) started.
+:icons:generateDebugResources (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :analytics:generateDebugResources UP-TO-DATE
+Caching disabled for task ':analytics:generateDebugResources' because:
+  Build cache is disabled
+Skipping task ':analytics:generateDebugResources' as it is up-to-date.
+Resolve mutations for :analytics:packageDebugResources (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :strings:packageDebugResources UP-TO-DATE
+Caching disabled for task ':strings:packageDebugResources' because:
+  Build cache is disabled
+Skipping task ':strings:packageDebugResources' as it is up-to-date.
+Resolve mutations for :strings:processDebugNavigationResources (Thread[Execution worker Thread 8,5,main]) started.
+:analytics:packageDebugResources (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :icons:generateDebugResources UP-TO-DATE
+Caching disabled for task ':icons:generateDebugResources' because:
+  Build cache is disabled
+Skipping task ':icons:generateDebugResources' as it is up-to-date.
+Resolve mutations for :icons:packageDebugResources (Thread[Execution worker Thread 4,5,main]) started.
+:icons:packageDebugResources (Thread[Execution worker Thread 4,5,main]) started.
+:strings:processDebugNavigationResources (Thread[Execution worker Thread 8,5,main]) started.
+
+> Task :fragments-test:processDebugNavigationResources UP-TO-DATE
+Caching disabled for task ':fragments-test:processDebugNavigationResources' because:
+  Build cache is disabled
+Skipping task ':fragments-test:processDebugNavigationResources' as it is up-to-date.
+
+> Task :analytics:packageDebugResources UP-TO-DATE
+Caching disabled for task ':analytics:packageDebugResources' because:
+  Build cache is disabled
+Skipping task ':analytics:packageDebugResources' as it is up-to-date.
+Resolve mutations for :fragments-test:parseDebugLocalResources (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :analytics:processDebugNavigationResources (Thread[Execution worker Thread 9,5,main]) started.
+:analytics:processDebugNavigationResources (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :analytics:processDebugNavigationResources UP-TO-DATE
+Caching disabled for task ':analytics:processDebugNavigationResources' because:
+  Build cache is disabled
+Skipping task ':analytics:processDebugNavigationResources' as it is up-to-date.
+Resolve mutations for :analytics:parseDebugLocalResources (Thread[Execution worker Thread 9,5,main]) started.
+:analytics:parseDebugLocalResources (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :icons:packageDebugResources UP-TO-DATE
+Caching disabled for task ':icons:packageDebugResources' because:
+  Build cache is disabled
+Skipping task ':icons:packageDebugResources' as it is up-to-date.
+Resolve mutations for :icons:processDebugNavigationResources (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :strings:processDebugNavigationResources UP-TO-DATE
+Caching disabled for task ':strings:processDebugNavigationResources' because:
+  Build cache is disabled
+Skipping task ':strings:processDebugNavigationResources' as it is up-to-date.
+:fragments-test:parseDebugLocalResources (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :strings:parseDebugLocalResources (Thread[Execution worker Thread 4,5,main]) started.
+:strings:parseDebugLocalResources (Thread[Execution worker Thread 4,5,main]) started.
+:icons:processDebugNavigationResources (Thread[Execution worker Thread 8,5,main]) started.
+
+> Task :icons:processDebugNavigationResources UP-TO-DATE
+Caching disabled for task ':icons:processDebugNavigationResources' because:
+  Build cache is disabled
+Skipping task ':icons:processDebugNavigationResources' as it is up-to-date.
+Resolve mutations for :icons:parseDebugLocalResources (Thread[Execution worker Thread 8,5,main]) started.
+:icons:parseDebugLocalResources (Thread[Execution worker Thread 8,5,main]) started.
+
+> Task :analytics:parseDebugLocalResources UP-TO-DATE
+Caching disabled for task ':analytics:parseDebugLocalResources' because:
+  Build cache is disabled
+Skipping task ':analytics:parseDebugLocalResources' as it is up-to-date.
+Resolve mutations for :analytics:generateDebugRFile (Thread[Execution worker Thread 9,5,main]) started.
+:analytics:generateDebugRFile (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :analytics:generateDebugRFile UP-TO-DATE
+Caching disabled for task ':analytics:generateDebugRFile' because:
+  Build cache is disabled
+Skipping task ':analytics:generateDebugRFile' as it is up-to-date.
+work action resolve package-aware-r.txt (project :analytics) (Thread[Execution worker Thread 9,5,main]) started.
+Resolve mutations for :settings:preBuild (Thread[Execution worker Thread 9,5,main]) started.
+:settings:preBuild (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :settings:preBuild UP-TO-DATE
+Skipping task ':settings:preBuild' as it has no actions.
+Resolve mutations for :settings:preDebugBuild (Thread[Execution worker Thread 9,5,main]) started.
+:settings:preDebugBuild (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :settings:preDebugBuild UP-TO-DATE
+Skipping task ':settings:preDebugBuild' as it has no actions.
+Resolve mutations for :settings:generateDebugResValues (Thread[Execution worker Thread 9,5,main]) started.
+:settings:generateDebugResValues (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :settings:generateDebugResValues UP-TO-DATE
+Caching disabled for task ':settings:generateDebugResValues' because:
+  Build cache is disabled
+Skipping task ':settings:generateDebugResValues' as it is up-to-date.
+Resolve mutations for :settings:generateDebugResources (Thread[Execution worker Thread 9,5,main]) started.
+:settings:generateDebugResources (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :settings:generateDebugResources UP-TO-DATE
+Caching disabled for task ':settings:generateDebugResources' because:
+  Build cache is disabled
+Skipping task ':settings:generateDebugResources' as it is up-to-date.
+Resolve mutations for :settings:packageDebugResources (Thread[Execution worker Thread 9,5,main]) started.
+:settings:packageDebugResources (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :async:parseDebugLocalResources UP-TO-DATE
+Caching disabled for task ':async:parseDebugLocalResources' because:
+  Build cache is disabled
+Skipping task ':async:parseDebugLocalResources' as it is up-to-date.
+Resolve mutations for :async:generateDebugRFile (Thread[Execution worker,5,main]) started.
+:async:generateDebugRFile (Thread[Execution worker,5,main]) started.
+
+> Task :fragments-test:parseDebugLocalResources UP-TO-DATE
+Caching disabled for task ':fragments-test:parseDebugLocalResources' because:
+  Build cache is disabled
+Skipping task ':fragments-test:parseDebugLocalResources' as it is up-to-date.
+Resolve mutations for :fragments-test:generateDebugRFile (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :strings:parseDebugLocalResources UP-TO-DATE
+Caching disabled for task ':strings:parseDebugLocalResources' because:
+  Build cache is disabled
+Skipping task ':strings:parseDebugLocalResources' as it is up-to-date.
+Resolve mutations for :strings:generateDebugRFile (Thread[Execution worker Thread 4,5,main]) started.
+:fragments-test:generateDebugRFile (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :async:generateDebugRFile UP-TO-DATE
+Caching disabled for task ':async:generateDebugRFile' because:
+  Build cache is disabled
+Skipping task ':async:generateDebugRFile' as it is up-to-date.
+work action resolve package-aware-r.txt (project :async) (Thread[Execution worker,5,main]) started.
+Resolve mutations for :analytics:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker,5,main]) started.
+:strings:generateDebugRFile (Thread[Execution worker Thread 4,5,main]) started.
+:analytics:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker,5,main]) started.
+
+> Task :analytics:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':analytics:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :analytics:compileDebugKotlin (Thread[Execution worker,5,main]) started.
+:analytics:compileDebugKotlin (Thread[Execution worker,5,main]) started.
+
+> Task :settings:packageDebugResources UP-TO-DATE
+Caching disabled for task ':settings:packageDebugResources' because:
+  Build cache is disabled
+Skipping task ':settings:packageDebugResources' as it is up-to-date.
+Resolve mutations for :settings:processDebugNavigationResources (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :icons:parseDebugLocalResources UP-TO-DATE
+Caching disabled for task ':icons:parseDebugLocalResources' because:
+  Build cache is disabled
+Skipping task ':icons:parseDebugLocalResources' as it is up-to-date.
+Resolve mutations for :icons:generateDebugRFile (Thread[Execution worker Thread 8,5,main]) started.
+:settings:processDebugNavigationResources (Thread[Execution worker Thread 9,5,main]) started.
+:icons:generateDebugRFile (Thread[Execution worker Thread 8,5,main]) started.
+
+> Task :strings:generateDebugRFile UP-TO-DATE
+Caching disabled for task ':strings:generateDebugRFile' because:
+  Build cache is disabled
+Skipping task ':strings:generateDebugRFile' as it is up-to-date.
+
+> Task :fragments-test:generateDebugRFile UP-TO-DATE
+Caching disabled for task ':fragments-test:generateDebugRFile' because:
+  Build cache is disabled
+Skipping task ':fragments-test:generateDebugRFile' as it is up-to-date.
+work action resolve package-aware-r.txt (project :fragments-test) (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :async:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 2,5,main]) started.
+:async:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :async:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':async:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :async:javaPreCompileDebug (Thread[Execution worker Thread 2,5,main]) started.
+:async:javaPreCompileDebug (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :icons:generateDebugRFile UP-TO-DATE
+Caching disabled for task ':icons:generateDebugRFile' because:
+  Build cache is disabled
+Skipping task ':icons:generateDebugRFile' as it is up-to-date.
+work action resolve package-aware-r.txt (project :icons) (Thread[Execution worker Thread 8,5,main]) started.
+Resolve mutations for :icons:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 8,5,main]) started.
+:icons:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 8,5,main]) started.
+
+> Task :icons:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':icons:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :icons:compileDebugKotlin (Thread[Execution worker Thread 8,5,main]) started.
+
+> Task :settings:processDebugNavigationResources UP-TO-DATE
+Caching disabled for task ':settings:processDebugNavigationResources' because:
+  Build cache is disabled
+Skipping task ':settings:processDebugNavigationResources' as it is up-to-date.
+Resolve mutations for :settings:parseDebugLocalResources (Thread[Execution worker Thread 9,5,main]) started.
+work action resolve package-aware-r.txt (project :strings) (Thread[Execution worker Thread 4,5,main]) started.
+:settings:parseDebugLocalResources (Thread[Execution worker Thread 9,5,main]) started.
+Resolve mutations for :fragments-test:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 4,5,main]) started.
+:fragments-test:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :fragments-test:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':fragments-test:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :fragments-test:compileDebugKotlin (Thread[Execution worker Thread 4,5,main]) started.
+:icons:compileDebugKotlin (Thread[Execution worker Thread 8,5,main]) started.
+:fragments-test:compileDebugKotlin (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :icons:compileDebugKotlin NO-SOURCE
+Skipping task ':icons:compileDebugKotlin' as it has no source files and no previous output files.
+Resolve mutations for :icons:javaPreCompileDebug (Thread[Execution worker Thread 8,5,main]) started.
+:icons:javaPreCompileDebug (Thread[Execution worker Thread 8,5,main]) started.
+
+> Task :async:javaPreCompileDebug UP-TO-DATE
+Caching disabled for task ':async:javaPreCompileDebug' because:
+  Build cache is disabled
+Skipping task ':async:javaPreCompileDebug' as it is up-to-date.
+Resolve mutations for :strings:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :settings:parseDebugLocalResources UP-TO-DATE
+Caching disabled for task ':settings:parseDebugLocalResources' because:
+  Build cache is disabled
+Skipping task ':settings:parseDebugLocalResources' as it is up-to-date.
+Resolve mutations for :settings:generateDebugRFile (Thread[Execution worker Thread 9,5,main]) started.
+:settings:generateDebugRFile (Thread[Execution worker Thread 9,5,main]) started.
+:strings:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :strings:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':strings:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :strings:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :icons:javaPreCompileDebug UP-TO-DATE
+Caching disabled for task ':icons:javaPreCompileDebug' because:
+  Build cache is disabled
+Skipping task ':icons:javaPreCompileDebug' as it is up-to-date.
+Resolve mutations for :icons:compileDebugJavaWithJavac (Thread[Execution worker Thread 8,5,main]) started.
+:icons:compileDebugJavaWithJavac (Thread[Execution worker Thread 8,5,main]) started.
+:strings:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :settings:generateDebugRFile UP-TO-DATE
+Caching disabled for task ':settings:generateDebugRFile' because:
+  Build cache is disabled
+Skipping task ':settings:generateDebugRFile' as it is up-to-date.
+work action resolve package-aware-r.txt (project :settings) (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :icons:compileDebugJavaWithJavac NO-SOURCE
+Skipping task ':icons:compileDebugJavaWithJavac' as it has no source files and no previous output files.
+Resolve mutations for :settings:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 9,5,main]) started.
+Resolve mutations for :icons:bundleLibCompileToJarDebug (Thread[Execution worker Thread 8,5,main]) started.
+:settings:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 9,5,main]) started.
+:icons:bundleLibCompileToJarDebug (Thread[Execution worker Thread 8,5,main]) started.
+
+> Task :settings:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':settings:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :settings:javaPreCompileDebug (Thread[Execution worker Thread 9,5,main]) started.
+:settings:javaPreCompileDebug (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :icons:bundleLibCompileToJarDebug UP-TO-DATE
+Caching disabled for task ':icons:bundleLibCompileToJarDebug' because:
+  Build cache is disabled
+  Simple merging task
+Skipping task ':icons:bundleLibCompileToJarDebug' as it is up-to-date.
+work action resolve classes.jar (project :icons) (Thread[Execution worker Thread 8,5,main]) started.
+
+> Task :settings:javaPreCompileDebug UP-TO-DATE
+Caching disabled for task ':settings:javaPreCompileDebug' because:
+  Build cache is disabled
+Skipping task ':settings:javaPreCompileDebug' as it is up-to-date.
+
+> Task :shared:compileKotlin UP-TO-DATE
+Caching disabled for task ':shared:compileKotlin' because:
+  Build cache is disabled
+Skipping task ':shared:compileKotlin' as it is up-to-date.
+Resolve mutations for :shared:compileJava (Thread[Execution worker Thread 5,5,main]) started.
+:shared:compileJava (Thread[Execution worker Thread 5,5,main]) started.
+
+> Task :shared:compileJava UP-TO-DATE
+Caching disabled for task ':shared:compileJava' because:
+  Build cache is disabled
+Skipping task ':shared:compileJava' as it is up-to-date.
+No compile result for :shared:compileJava
+Resolve mutations for :shared:processResources (Thread[Execution worker Thread 5,5,main]) started.
+:shared:processResources (Thread[Execution worker Thread 5,5,main]) started.
+
+> Task :shared:processResources NO-SOURCE
+Skipping task ':shared:processResources' as it has no source files and no previous output files.
+Resolve mutations for :shared:classes (Thread[Execution worker Thread 5,5,main]) started.
+:shared:classes (Thread[Execution worker Thread 5,5,main]) started.
+
+> Task :shared:classes UP-TO-DATE
+Skipping task ':shared:classes' as it has no actions.
+Resolve mutations for :shared:jar (Thread[Execution worker Thread 5,5,main]) started.
+:shared:jar (Thread[Execution worker Thread 5,5,main]) started.
+
+> Task :shared:jar UP-TO-DATE
+Caching disabled for task ':shared:jar' because:
+  Build cache is disabled
+  Not worth caching
+Skipping task ':shared:jar' as it is up-to-date.
+work action resolve shared.jar (project :shared) (Thread[Execution worker Thread 5,5,main]) started.
+JetifyTransform (Thread[Execution worker Thread 5,5,main]) started.
+JetifyTransform (Thread[Execution worker Thread 9,5,main]) started.
+JetifyTransform (Thread[Execution worker Thread 8,5,main]) started.
+IdentityTransform (Thread[Execution worker Thread 8,5,main]) started.
+IdentityTransform (Thread[Execution worker Thread 5,5,main]) started.
+IdentityTransform (Thread[Execution worker Thread 9,5,main]) started.
+JetifyTransform (Thread[Execution worker Thread 9,5,main]) started.
+IdentityTransform (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :strings:compileDebugKotlin UP-TO-DATE
+Caching disabled for task ':strings:compileDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':strings:compileDebugKotlin' as it is up-to-date.
+Resolve mutations for :strings:javaPreCompileDebug (Thread[Execution worker Thread 2,5,main]) started.
+:strings:javaPreCompileDebug (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :strings:javaPreCompileDebug UP-TO-DATE
+Caching disabled for task ':strings:javaPreCompileDebug' because:
+  Build cache is disabled
+Skipping task ':strings:javaPreCompileDebug' as it is up-to-date.
+Resolve mutations for :strings:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+:strings:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :fragments-test:compileDebugKotlin UP-TO-DATE
+Caching disabled for task ':fragments-test:compileDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':fragments-test:compileDebugKotlin' as it is up-to-date.
+Resolve mutations for :fragments-test:javaPreCompileDebug (Thread[Execution worker Thread 4,5,main]) started.
+:fragments-test:javaPreCompileDebug (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :strings:compileDebugJavaWithJavac NO-SOURCE
+Skipping task ':strings:compileDebugJavaWithJavac' as it has no source files and no previous output files.
+Resolve mutations for :strings:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+:strings:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :strings:bundleLibCompileToJarDebug UP-TO-DATE
+Caching disabled for task ':strings:bundleLibCompileToJarDebug' because:
+  Build cache is disabled
+  Simple merging task
+Skipping task ':strings:bundleLibCompileToJarDebug' as it is up-to-date.
+work action resolve classes.jar (project :strings) (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :fragments-test:javaPreCompileDebug UP-TO-DATE
+Caching disabled for task ':fragments-test:javaPreCompileDebug' because:
+  Build cache is disabled
+Skipping task ':fragments-test:javaPreCompileDebug' as it is up-to-date.
+Resolve mutations for :fragments-test:compileDebugJavaWithJavac (Thread[Execution worker Thread 4,5,main]) started.
+:fragments-test:compileDebugJavaWithJavac (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :fragments-test:compileDebugJavaWithJavac NO-SOURCE
+Skipping task ':fragments-test:compileDebugJavaWithJavac' as it has no source files and no previous output files.
+Resolve mutations for :fragments-test:bundleLibCompileToJarDebug (Thread[Execution worker Thread 4,5,main]) started.
+:fragments-test:bundleLibCompileToJarDebug (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :fragments-test:bundleLibCompileToJarDebug UP-TO-DATE
+Caching disabled for task ':fragments-test:bundleLibCompileToJarDebug' because:
+  Build cache is disabled
+  Simple merging task
+Skipping task ':fragments-test:bundleLibCompileToJarDebug' as it is up-to-date.
+work action resolve classes.jar (project :fragments-test) (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :projects:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+Caching disabled for task ':projects:dataBindingMergeDependencyArtifactsDebug' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':projects:dataBindingMergeDependencyArtifactsDebug' as it is up-to-date.
+
+> Task :material:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+Caching disabled for task ':material:dataBindingMergeDependencyArtifactsDebug' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':material:dataBindingMergeDependencyArtifactsDebug' as it is up-to-date.
+Resolve mutations for :projects:generateDebugResValues (Thread[Execution worker Thread 6,5,main]) started.
+Resolve mutations for :material:generateDebugResValues (Thread[included builds,5,main]) started.
+:projects:generateDebugResValues (Thread[Execution worker Thread 4,5,main]) started.
+:material:generateDebugResValues (Thread[included builds,5,main]) started.
+
+> Task :projects:generateDebugResValues UP-TO-DATE
+Caching disabled for task ':projects:generateDebugResValues' because:
+  Build cache is disabled
+Skipping task ':projects:generateDebugResValues' as it is up-to-date.
+Resolve mutations for :projects:generateDebugResources (Thread[Execution worker Thread 4,5,main]) started.
+:projects:generateDebugResources (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :projects:generateDebugResources UP-TO-DATE
+Caching disabled for task ':projects:generateDebugResources' because:
+  Build cache is disabled
+Skipping task ':projects:generateDebugResources' as it is up-to-date.
+Resolve mutations for :projects:packageDebugResources (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :material:generateDebugResValues UP-TO-DATE
+Caching disabled for task ':material:generateDebugResValues' because:
+  Build cache is disabled
+Skipping task ':material:generateDebugResValues' as it is up-to-date.
+Resolve mutations for :material:generateDebugResources (Thread[included builds,5,main]) started.
+:material:generateDebugResources (Thread[included builds,5,main]) started.
+
+> Task :material:generateDebugResources UP-TO-DATE
+Caching disabled for task ':material:generateDebugResources' because:
+  Build cache is disabled
+Skipping task ':material:generateDebugResources' as it is up-to-date.
+:projects:packageDebugResources (Thread[Execution worker Thread 4,5,main]) started.
+Resolve mutations for :material:packageDebugResources (Thread[included builds,5,main]) started.
+:material:packageDebugResources (Thread[included builds,5,main]) started.
+
+> Task :analytics:compileDebugKotlin UP-TO-DATE
+Caching disabled for task ':analytics:compileDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':analytics:compileDebugKotlin' as it is up-to-date.
+Resolve mutations for :analytics:javaPreCompileDebug (Thread[Execution worker,5,main]) started.
+:analytics:javaPreCompileDebug (Thread[Execution worker,5,main]) started.
+
+> Task :projects:packageDebugResources UP-TO-DATE
+Caching disabled for task ':projects:packageDebugResources' because:
+  Build cache is disabled
+Skipping task ':projects:packageDebugResources' as it is up-to-date.
+
+> Task :material:packageDebugResources UP-TO-DATE
+Caching disabled for task ':material:packageDebugResources' because:
+  Build cache is disabled
+Skipping task ':material:packageDebugResources' as it is up-to-date.
+Resolve mutations for :material:processDebugNavigationResources (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :analytics:javaPreCompileDebug UP-TO-DATE
+Caching disabled for task ':analytics:javaPreCompileDebug' because:
+  Build cache is disabled
+Skipping task ':analytics:javaPreCompileDebug' as it is up-to-date.
+:material:processDebugNavigationResources (Thread[Execution worker Thread 4,5,main]) started.
+Resolve mutations for :projects:processDebugNavigationResources (Thread[included builds,5,main]) started.
+Resolve mutations for :analytics:compileDebugJavaWithJavac (Thread[Execution worker,5,main]) started.
+:projects:processDebugNavigationResources (Thread[included builds,5,main]) started.
+
+> Task :material:processDebugNavigationResources UP-TO-DATE
+Caching disabled for task ':material:processDebugNavigationResources' because:
+  Build cache is disabled
+Skipping task ':material:processDebugNavigationResources' as it is up-to-date.
+Resolve mutations for :material:parseDebugLocalResources (Thread[Execution worker Thread 4,5,main]) started.
+:material:parseDebugLocalResources (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :projects:processDebugNavigationResources UP-TO-DATE
+Caching disabled for task ':projects:processDebugNavigationResources' because:
+  Build cache is disabled
+Skipping task ':projects:processDebugNavigationResources' as it is up-to-date.
+Resolve mutations for :projects:parseDebugLocalResources (Thread[included builds,5,main]) started.
+:projects:parseDebugLocalResources (Thread[included builds,5,main]) started.
+:analytics:compileDebugJavaWithJavac (Thread[Execution worker,5,main]) started.
+
+> Task :projects:parseDebugLocalResources UP-TO-DATE
+Caching disabled for task ':projects:parseDebugLocalResources' because:
+  Build cache is disabled
+Skipping task ':projects:parseDebugLocalResources' as it is up-to-date.
+Resolve mutations for :projects:generateDebugRFile (Thread[included builds,5,main]) started.
+
+> Task :analytics:compileDebugJavaWithJavac NO-SOURCE
+Skipping task ':analytics:compileDebugJavaWithJavac' as it has no source files and no previous output files.
+Resolve mutations for :analytics:bundleLibCompileToJarDebug (Thread[Execution worker,5,main]) started.
+
+> Task :material:parseDebugLocalResources UP-TO-DATE
+Caching disabled for task ':material:parseDebugLocalResources' because:
+  Build cache is disabled
+Skipping task ':material:parseDebugLocalResources' as it is up-to-date.
+:projects:generateDebugRFile (Thread[included builds,5,main]) started.
+:analytics:bundleLibCompileToJarDebug (Thread[Execution worker,5,main]) started.
+Resolve mutations for :material:generateDebugRFile (Thread[Execution worker Thread 4,5,main]) started.
+:material:generateDebugRFile (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :analytics:bundleLibCompileToJarDebug UP-TO-DATE
+Caching disabled for task ':analytics:bundleLibCompileToJarDebug' because:
+  Build cache is disabled
+  Simple merging task
+Skipping task ':analytics:bundleLibCompileToJarDebug' as it is up-to-date.
+
+> Task :material:generateDebugRFile UP-TO-DATE
+Caching disabled for task ':material:generateDebugRFile' because:
+  Build cache is disabled
+Skipping task ':material:generateDebugRFile' as it is up-to-date.
+work action resolve classes.jar (project :analytics) (Thread[Execution worker Thread 2,5,main]) started.
+work action resolve package-aware-r.txt (project :material) (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :projects:generateDebugRFile UP-TO-DATE
+Caching disabled for task ':projects:generateDebugRFile' because:
+  Build cache is disabled
+Skipping task ':projects:generateDebugRFile' as it is up-to-date.
+Resolve mutations for :async:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :material:checkKotlinGradlePluginConfigurationErrors (Thread[included builds,5,main]) started.
+work action resolve package-aware-r.txt (project :projects) (Thread[Execution worker Thread 4,5,main]) started.
+:async:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:material:checkKotlinGradlePluginConfigurationErrors (Thread[included builds,5,main]) started.
+Resolve mutations for :projects:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 4,5,main]) started.
+:projects:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :material:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':material:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+
+> Task :projects:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':projects:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :projects:javaPreCompileDebug (Thread[Execution worker Thread 4,5,main]) started.
+Resolve mutations for :material:javaPreCompileDebug (Thread[included builds,5,main]) started.
+:projects:javaPreCompileDebug (Thread[Execution worker Thread 4,5,main]) started.
+:material:javaPreCompileDebug (Thread[included builds,5,main]) started.
+
+> Task :material:javaPreCompileDebug UP-TO-DATE
+Caching disabled for task ':material:javaPreCompileDebug' because:
+  Build cache is disabled
+Skipping task ':material:javaPreCompileDebug' as it is up-to-date.
+
+> Task :androidshared:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+Caching disabled for task ':androidshared:dataBindingMergeDependencyArtifactsDebug' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':androidshared:dataBindingMergeDependencyArtifactsDebug' as it is up-to-date.
+Resolve mutations for :androidshared:generateDebugResValues (Thread[Execution worker Thread 7,5,main]) started.
+:androidshared:generateDebugResValues (Thread[Execution worker Thread 7,5,main]) started.
+
+> Task :androidshared:generateDebugResValues UP-TO-DATE
+Caching disabled for task ':androidshared:generateDebugResValues' because:
+  Build cache is disabled
+Skipping task ':androidshared:generateDebugResValues' as it is up-to-date.
+Resolve mutations for :androidshared:generateDebugResources (Thread[Execution worker Thread 7,5,main]) started.
+:androidshared:generateDebugResources (Thread[Execution worker Thread 7,5,main]) started.
+
+> Task :androidshared:generateDebugResources UP-TO-DATE
+Caching disabled for task ':androidshared:generateDebugResources' because:
+  Build cache is disabled
+Skipping task ':androidshared:generateDebugResources' as it is up-to-date.
+Resolve mutations for :androidshared:packageDebugResources (Thread[Execution worker Thread 7,5,main]) started.
+:androidshared:packageDebugResources (Thread[Execution worker Thread 7,5,main]) started.
+
+> Task :aiims-auth-module:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+Caching disabled for task ':aiims-auth-module:dataBindingMergeDependencyArtifactsDebug' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':aiims-auth-module:dataBindingMergeDependencyArtifactsDebug' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:generateDebugResValues (Thread[Execution worker Thread 3,5,main]) started.
+:aiims-auth-module:generateDebugResValues (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :aiims-auth-module:generateDebugResValues UP-TO-DATE
+Caching disabled for task ':aiims-auth-module:generateDebugResValues' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:generateDebugResValues' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:generateDebugResources (Thread[Execution worker Thread 3,5,main]) started.
+:aiims-auth-module:generateDebugResources (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :aiims-auth-module:generateDebugResources UP-TO-DATE
+Caching disabled for task ':aiims-auth-module:generateDebugResources' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:generateDebugResources' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:packageDebugResources (Thread[Execution worker Thread 3,5,main]) started.
+:aiims-auth-module:packageDebugResources (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :androidshared:packageDebugResources UP-TO-DATE
+Caching disabled for task ':androidshared:packageDebugResources' because:
+  Build cache is disabled
+Skipping task ':androidshared:packageDebugResources' as it is up-to-date.
+Resolve mutations for :androidshared:processDebugNavigationResources (Thread[Execution worker Thread 7,5,main]) started.
+:androidshared:processDebugNavigationResources (Thread[Execution worker Thread 7,5,main]) started.
+
+> Task :aiims-auth-module:packageDebugResources UP-TO-DATE
+Caching disabled for task ':aiims-auth-module:packageDebugResources' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:packageDebugResources' as it is up-to-date.
+
+> Task :androidshared:processDebugNavigationResources UP-TO-DATE
+Caching disabled for task ':androidshared:processDebugNavigationResources' because:
+  Build cache is disabled
+Skipping task ':androidshared:processDebugNavigationResources' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:processDebugNavigationResources (Thread[Execution worker Thread 3,5,main]) started.
+Resolve mutations for :androidshared:parseDebugLocalResources (Thread[Execution worker Thread 7,5,main]) started.
+:aiims-auth-module:processDebugNavigationResources (Thread[Execution worker Thread 3,5,main]) started.
+:androidshared:parseDebugLocalResources (Thread[Execution worker Thread 7,5,main]) started.
+
+> Task :aiims-auth-module:processDebugNavigationResources UP-TO-DATE
+Caching disabled for task ':aiims-auth-module:processDebugNavigationResources' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:processDebugNavigationResources' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:parseDebugLocalResources (Thread[Execution worker Thread 3,5,main]) started.
+:aiims-auth-module:parseDebugLocalResources (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :androidshared:parseDebugLocalResources UP-TO-DATE
+Caching disabled for task ':androidshared:parseDebugLocalResources' because:
+  Build cache is disabled
+Skipping task ':androidshared:parseDebugLocalResources' as it is up-to-date.
+Resolve mutations for :androidshared:dataBindingGenBaseClassesDebug (Thread[Execution worker Thread 7,5,main]) started.
+:androidshared:dataBindingGenBaseClassesDebug (Thread[Execution worker Thread 7,5,main]) started.
+
+> Task :aiims-auth-module:parseDebugLocalResources UP-TO-DATE
+Caching disabled for task ':aiims-auth-module:parseDebugLocalResources' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:parseDebugLocalResources' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:dataBindingTriggerDebug (Thread[Execution worker Thread 3,5,main]) started.
+:aiims-auth-module:dataBindingTriggerDebug (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :aiims-auth-module:dataBindingTriggerDebug UP-TO-DATE
+Caching disabled for task ':aiims-auth-module:dataBindingTriggerDebug' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':aiims-auth-module:dataBindingTriggerDebug' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:generateDebugBuildConfig (Thread[Execution worker Thread 3,5,main]) started.
+:aiims-auth-module:generateDebugBuildConfig (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :aiims-auth-module:generateDebugBuildConfig UP-TO-DATE
+Caching disabled for task ':aiims-auth-module:generateDebugBuildConfig' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:generateDebugBuildConfig' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:generateDebugRFile (Thread[Execution worker Thread 3,5,main]) started.
+:aiims-auth-module:generateDebugRFile (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :aiims-auth-module:generateDebugRFile UP-TO-DATE
+Caching disabled for task ':aiims-auth-module:generateDebugRFile' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:generateDebugRFile' as it is up-to-date.
+work action resolve package-aware-r.txt (project :aiims-auth-module) (Thread[Execution worker Thread 3,5,main]) started.
+Resolve mutations for :aiims-auth-module:javaPreCompileDebug (Thread[Execution worker Thread 3,5,main]) started.
+:aiims-auth-module:javaPreCompileDebug (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :projects:javaPreCompileDebug UP-TO-DATE
+Caching disabled for task ':projects:javaPreCompileDebug' because:
+  Build cache is disabled
+Skipping task ':projects:javaPreCompileDebug' as it is up-to-date.
+
+> Task :androidshared:dataBindingGenBaseClassesDebug UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+Caching disabled for task ':androidshared:dataBindingGenBaseClassesDebug' because:
+  Build cache is disabled
+Skipping task ':androidshared:dataBindingGenBaseClassesDebug' as it is up-to-date.
+work action resolve out (project :androidshared) (Thread[Execution worker Thread 4,5,main]) started.
+Resolve mutations for :androidshared:generateDebugRFile (Thread[Execution worker Thread 4,5,main]) started.
+:androidshared:generateDebugRFile (Thread[Execution worker Thread 4,5,main]) started.
+
+> Task :androidshared:generateDebugRFile UP-TO-DATE
+Caching disabled for task ':androidshared:generateDebugRFile' because:
+  Build cache is disabled
+Skipping task ':androidshared:generateDebugRFile' as it is up-to-date.
+work action resolve package-aware-r.txt (project :androidshared) (Thread[Execution worker Thread 4,5,main]) started.
+Resolve mutations for :material:dataBindingGenBaseClassesDebug (Thread[Execution worker Thread 4,5,main]) started.
+Resolve mutations for :androidshared:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 9,5,main]) started.
+:material:dataBindingGenBaseClassesDebug (Thread[Execution worker Thread 5,5,main]) started.
+:androidshared:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :androidshared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':androidshared:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :androidshared:javaPreCompileDebug (Thread[Execution worker Thread 9,5,main]) started.
+:androidshared:javaPreCompileDebug (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :async:compileDebugKotlin UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+Caching disabled for task ':async:compileDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':async:compileDebugKotlin' as it is up-to-date.
+Resolve mutations for :async:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :androidshared:javaPreCompileDebug UP-TO-DATE
+Caching disabled for task ':androidshared:javaPreCompileDebug' because:
+  Build cache is disabled
+Skipping task ':androidshared:javaPreCompileDebug' as it is up-to-date.
+:async:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :async:compileDebugJavaWithJavac NO-SOURCE
+Skipping task ':async:compileDebugJavaWithJavac' as it has no source files and no previous output files.
+Resolve mutations for :async:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+:async:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :async:bundleLibCompileToJarDebug UP-TO-DATE
+Caching disabled for task ':async:bundleLibCompileToJarDebug' because:
+  Build cache is disabled
+  Simple merging task
+Skipping task ':async:bundleLibCompileToJarDebug' as it is up-to-date.
+work action resolve classes.jar (project :async) (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :androidshared:kaptGenerateStubsDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:androidshared:kaptGenerateStubsDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :material:dataBindingGenBaseClassesDebug UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+Caching disabled for task ':material:dataBindingGenBaseClassesDebug' because:
+  Build cache is disabled
+Skipping task ':material:dataBindingGenBaseClassesDebug' as it is up-to-date.
+work action resolve out (project :material) (Thread[Execution worker Thread 5,5,main]) started.
+Resolve mutations for :projects:dataBindingGenBaseClassesDebug (Thread[Execution worker Thread 5,5,main]) started.
+:projects:dataBindingGenBaseClassesDebug (Thread[Execution worker Thread 5,5,main]) started.
+
+> Task :projects:dataBindingGenBaseClassesDebug UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+Caching disabled for task ':projects:dataBindingGenBaseClassesDebug' because:
+  Build cache is disabled
+Skipping task ':projects:dataBindingGenBaseClassesDebug' as it is up-to-date.
+work action resolve out (project :projects) (Thread[Execution worker Thread 5,5,main]) started.
+
+> Task :aiims-auth-module:javaPreCompileDebug UP-TO-DATE
+Caching disabled for task ':aiims-auth-module:javaPreCompileDebug' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:javaPreCompileDebug' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:dataBindingGenBaseClassesDebug (Thread[Execution worker Thread 3,5,main]) started.
+:aiims-auth-module:dataBindingGenBaseClassesDebug (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :aiims-auth-module:dataBindingGenBaseClassesDebug UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+Caching disabled for task ':aiims-auth-module:dataBindingGenBaseClassesDebug' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:dataBindingGenBaseClassesDebug' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:preDebugUnitTestBuild (Thread[Execution worker Thread 3,5,main]) started.
+:aiims-auth-module:preDebugUnitTestBuild (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :aiims-auth-module:preDebugUnitTestBuild UP-TO-DATE
+Skipping task ':aiims-auth-module:preDebugUnitTestBuild' as it has no actions.
+Resolve mutations for :aiims-auth-module:generateDebugUnitTestStubRFile (Thread[Execution worker Thread 3,5,main]) started.
+:aiims-auth-module:generateDebugUnitTestStubRFile (Thread[Execution worker Thread 3,5,main]) started.
+
+> Task :androidshared:kaptGenerateStubsDebugKotlin UP-TO-DATE
+Caching disabled for task ':androidshared:kaptGenerateStubsDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':androidshared:kaptGenerateStubsDebugKotlin' as it is up-to-date.
+Resolve mutations for :androidshared:kaptDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:androidshared:kaptDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :androidshared:kaptDebugKotlin SKIPPED
+No annotation processors provided. Skip KAPT processing.
+Skipping task ':androidshared:kaptDebugKotlin' as task onlyIf 'Task satisfies onlyIf spec' is false.
+Resolve mutations for :androidshared:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:androidshared:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :aiims-auth-module:generateDebugUnitTestStubRFile UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+Caching disabled for task ':aiims-auth-module:generateDebugUnitTestStubRFile' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:generateDebugUnitTestStubRFile' as it is up-to-date.
+
+> Task :androidshared:compileDebugKotlin UP-TO-DATE
+Caching disabled for task ':androidshared:compileDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':androidshared:compileDebugKotlin' as it is up-to-date.
+Resolve mutations for :androidshared:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+:androidshared:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :androidshared:compileDebugJavaWithJavac UP-TO-DATE
+Custom actions are attached to task ':androidshared:compileDebugJavaWithJavac'.
+Caching disabled for task ':androidshared:compileDebugJavaWithJavac' because:
+  Build cache is disabled
+Skipping task ':androidshared:compileDebugJavaWithJavac' as it is up-to-date.
+No compile result for :androidshared:compileDebugJavaWithJavac
+Resolve mutations for :androidshared:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+:androidshared:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :androidshared:bundleLibCompileToJarDebug UP-TO-DATE
+Caching disabled for task ':androidshared:bundleLibCompileToJarDebug' because:
+  Build cache is disabled
+  Simple merging task
+Skipping task ':androidshared:bundleLibCompileToJarDebug' as it is up-to-date.
+work action resolve classes.jar (project :androidshared) (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :material:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:material:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :material:compileDebugKotlin UP-TO-DATE
+Caching disabled for task ':material:compileDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':material:compileDebugKotlin' as it is up-to-date.
+Resolve mutations for :material:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+:material:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :material:compileDebugJavaWithJavac UP-TO-DATE
+Custom actions are attached to task ':material:compileDebugJavaWithJavac'.
+Caching disabled for task ':material:compileDebugJavaWithJavac' because:
+  Build cache is disabled
+Skipping task ':material:compileDebugJavaWithJavac' as it is up-to-date.
+No compile result for :material:compileDebugJavaWithJavac
+Resolve mutations for :material:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+:material:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :material:bundleLibCompileToJarDebug UP-TO-DATE
+Caching disabled for task ':material:bundleLibCompileToJarDebug' because:
+  Build cache is disabled
+  Simple merging task
+Skipping task ':material:bundleLibCompileToJarDebug' as it is up-to-date.
+work action resolve classes.jar (project :material) (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :projects:kaptGenerateStubsDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:projects:kaptGenerateStubsDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :projects:kaptGenerateStubsDebugKotlin UP-TO-DATE
+Caching disabled for task ':projects:kaptGenerateStubsDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':projects:kaptGenerateStubsDebugKotlin' as it is up-to-date.
+Resolve mutations for :projects:kaptDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:projects:kaptDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :projects:kaptDebugKotlin UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/debug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/debug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/debug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/debug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/debug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/debug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/main/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/main/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/main/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/main/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/main/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/main/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/debug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/debug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/debug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/debug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/debug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/debug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/projects/src/debug/java', not found
+Caching disabled for task ':projects:kaptDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':projects:kaptDebugKotlin' as it is up-to-date.
+Resolve mutations for :projects:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:projects:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :projects:compileDebugKotlin UP-TO-DATE
+Caching disabled for task ':projects:compileDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':projects:compileDebugKotlin' as it is up-to-date.
+Resolve mutations for :projects:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+:projects:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :projects:compileDebugJavaWithJavac UP-TO-DATE
+Custom actions are attached to task ':projects:compileDebugJavaWithJavac'.
+Caching disabled for task ':projects:compileDebugJavaWithJavac' because:
+  Build cache is disabled
+Skipping task ':projects:compileDebugJavaWithJavac' as it is up-to-date.
+No compile result for :projects:compileDebugJavaWithJavac
+Resolve mutations for :projects:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+:projects:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :projects:bundleLibCompileToJarDebug UP-TO-DATE
+Caching disabled for task ':projects:bundleLibCompileToJarDebug' because:
+  Build cache is disabled
+  Simple merging task
+Skipping task ':projects:bundleLibCompileToJarDebug' as it is up-to-date.
+work action resolve classes.jar (project :projects) (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :settings:kaptGenerateStubsDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:settings:kaptGenerateStubsDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :settings:kaptGenerateStubsDebugKotlin UP-TO-DATE
+Caching disabled for task ':settings:kaptGenerateStubsDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':settings:kaptGenerateStubsDebugKotlin' as it is up-to-date.
+Resolve mutations for :settings:kaptDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:settings:kaptDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :settings:kaptDebugKotlin SKIPPED
+No annotation processors provided. Skip KAPT processing.
+Skipping task ':settings:kaptDebugKotlin' as task onlyIf 'Task satisfies onlyIf spec' is false.
+Resolve mutations for :settings:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:settings:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :settings:compileDebugKotlin UP-TO-DATE
+Caching disabled for task ':settings:compileDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':settings:compileDebugKotlin' as it is up-to-date.
+Resolve mutations for :settings:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+:settings:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :settings:compileDebugJavaWithJavac UP-TO-DATE
+Custom actions are attached to task ':settings:compileDebugJavaWithJavac'.
+Caching disabled for task ':settings:compileDebugJavaWithJavac' because:
+  Build cache is disabled
+Skipping task ':settings:compileDebugJavaWithJavac' as it is up-to-date.
+No compile result for :settings:compileDebugJavaWithJavac
+Resolve mutations for :settings:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+:settings:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :settings:bundleLibCompileToJarDebug UP-TO-DATE
+Caching disabled for task ':settings:bundleLibCompileToJarDebug' because:
+  Build cache is disabled
+  Simple merging task
+Skipping task ':settings:bundleLibCompileToJarDebug' as it is up-to-date.
+work action resolve classes.jar (project :settings) (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :aiims-auth-module:kspDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:aiims-auth-module:kspDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :aiims-auth-module:kspDebugKotlin UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/debug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/debug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/main/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/debug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/debug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/debug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/main/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/debug/java', not found
+Caching disabled for task ':aiims-auth-module:kspDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:kspDebugKotlin' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:aiims-auth-module:compileDebugKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :aiims-auth-module:compileDebugKotlin UP-TO-DATE
+Caching disabled for task ':aiims-auth-module:compileDebugKotlin' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:compileDebugKotlin' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+:aiims-auth-module:compileDebugJavaWithJavac (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :aiims-auth-module:compileDebugJavaWithJavac UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/build/generated/ksp/debug/classes', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/build/generated/ksp/debug/classes', not found
+file or directory '/Users/vivekgupta/workspace/collect/async/libs', not found
+Custom actions are attached to task ':aiims-auth-module:compileDebugJavaWithJavac'.
+Caching disabled for task ':aiims-auth-module:compileDebugJavaWithJavac' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:compileDebugJavaWithJavac' as it is up-to-date.
+No compile result for :aiims-auth-module:compileDebugJavaWithJavac
+Resolve mutations for :aiims-auth-module:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+:aiims-auth-module:bundleLibCompileToJarDebug (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :aiims-auth-module:bundleLibCompileToJarDebug UP-TO-DATE
+Caching disabled for task ':aiims-auth-module:bundleLibCompileToJarDebug' because:
+  Build cache is disabled
+  Simple merging task
+Skipping task ':aiims-auth-module:bundleLibCompileToJarDebug' as it is up-to-date.
+work action resolve classes.jar (project :aiims-auth-module) (Thread[Execution worker Thread 2,5,main]) started.
+Resolve mutations for :aiims-auth-module:kspDebugUnitTestKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:aiims-auth-module:kspDebugUnitTestKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :aiims-auth-module:kspDebugUnitTestKotlin UP-TO-DATE
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/debugUnitTest/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/debugUnitTest/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+Caching disabled for task ':aiims-auth-module:kspDebugUnitTestKotlin' because:
+  Build cache is disabled
+Skipping task ':aiims-auth-module:kspDebugUnitTestKotlin' as it is up-to-date.
+Resolve mutations for :aiims-auth-module:compileDebugUnitTestKotlin (Thread[Execution worker Thread 2,5,main]) started.
+:aiims-auth-module:compileDebugUnitTestKotlin (Thread[Execution worker Thread 2,5,main]) started.
+
+> Task :aiims-auth-module:compileDebugUnitTestKotlin FAILED
+Caching disabled for task ':aiims-auth-module:compileDebugUnitTestKotlin' because:
+  Build cache is disabled
+Task ':aiims-auth-module:compileDebugUnitTestKotlin' is not up-to-date because:
+  Task has failed previously.
+The input changes require a full rebuild for incremental task ':aiims-auth-module:compileDebugUnitTestKotlin'.
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/debugUnitTest/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/build/generated/ksp/debugUnitTest/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/debugUnitTest/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/build/generated/ksp/debugUnitTest/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/debugUnitTest/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/build/generated/ksp/debugUnitTest/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/debugUnitTest/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/build/generated/ksp/debugUnitTest/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/debugUnitTest/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/build/generated/ksp/debugUnitTest/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/kotlin', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+file or directory '/Users/vivekgupta/workspace/collect/aiims-auth-module/src/testDebug/java', not found
+Kotlin source files: /Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsAuthManagerTest.kt, /Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/utils/TokenRevocationManagerTest.kt, /Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/utils/PinManagerTest.kt, /Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/utils/AiimsSecurityUtilsTest.kt, /Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/utils/AiimsProjectUtilsTest.kt, /Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/utils/AiimsAppLockTest.kt, /Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/fakes/FakeTelemetryDao.kt, /Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/fakes/FakeAiimsAuthStorage.kt, /Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/fakes/FakeAiimsSecureStorage.kt, /Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/api/RealAuthClientTest.kt, /Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/activities/ProjectConfigurationTest.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: null
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), areFileChangesKnown=false, modifiedFiles=null, deletedFiles=null, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/vivekgupta/workspace/collect/aiims-auth-module/build/kotlin/compileDebugUnitTestKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/vivekgupta/workspace/collect/aiims-auth-module/build/kotlin/compileDebugUnitTestKotlin/local-state/build-history.bin, useModuleDetection=true), usePreciseJavaTracking=true, icFeatures=IncrementalCompilationFeatures(withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false), outputFiles=[/Users/vivekgupta/workspace/collect/aiims-auth-module/build/tmp/kotlin-classes/debugUnitTest, /Users/vivekgupta/workspace/collect/aiims-auth-module/build/kotlin/compileDebugUnitTestKotlin/cacheable, /Users/vivekgupta/workspace/collect/aiims-auth-module/build/kotlin/compileDebugUnitTestKotlin/local-state])
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsAuthManagerTest.kt:336:9 Name contains illegal characters: /.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/utils/AiimsAppLockTest.kt:78:13 No value passed for parameter 'telemetryDao'.
+Finished executing kotlin compiler using DAEMON strategy
+
+[Incubating] Problems report is available at: file:///Users/vivekgupta/workspace/collect/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':aiims-auth-module:compileDebugUnitTestKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --debug option to get more log output.
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.0.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 3s
+115 actionable tasks: 1 executed, 114 up-to-date
+Watched directory hierarchies: [/Users/vivekgupta/workspace/collect]

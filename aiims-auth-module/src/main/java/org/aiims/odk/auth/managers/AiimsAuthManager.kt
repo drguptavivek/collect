@@ -46,7 +46,8 @@ class AiimsAuthManager @Inject constructor(
     private val projectCleaner: ProjectCleaner,
     private val pinManager: org.aiims.odk.auth.utils.PinManager,
     private val authStorage: AiimsAuthStorage,
-    secureStorage: AiimsSecureStorage
+    secureStorage: AiimsSecureStorage,
+    private val telemetryDao: org.aiims.odk.auth.storage.db.TelemetryDao
 ) {
 
     companion object {
@@ -676,42 +677,54 @@ class AiimsAuthManager @Inject constructor(
             .getString("metadata_installid", "unknown_device") ?: "unknown_device"
     }
 
+    private val gson = Gson()
+
     /**
      * Submit telemetry data to the backend immediately.
      */
     suspend fun submitTelemetry(location: android.location.Location?, event: TelemetryEvent? = null) {
         val pid = activeProjectId ?: return
-        val token = getPersistedToken(pid) ?: return
-        val apiUrl = getApiUrlForProject(pid) ?: return
+        val token = getPersistedToken(pid)
+        val apiUrl = getApiUrlForProject(pid)
+
+        // Queue if no token or URL (shouldn't happen if logged in, but just in case)
+        if (token == null || apiUrl == null) {
+             // Can't queue without project context effectively if not logged in? 
+             // Actually we have pid. But if we don't have API URL yet...
+             // Let's assume valid session for now.
+             return
+        }
 
         scope.launch(ioDispatcherForTesting ?: Dispatchers.IO) {
-            try {
-                val client = getAuthClient(apiUrl)
-                val deviceId = getDeviceId()
+            val deviceId = getDeviceId()
 
-                // Format location
-                val telemetryLocation = if (location != null) {
-                    TelemetryLocation(
-                        latitude = location.latitude,
-                        longitude = location.longitude,
-                        altitude = if (location.hasAltitude()) location.altitude else null,
-                        accuracy = if (location.hasAccuracy()) location.accuracy else null,
-                        speed = if (location.hasSpeed()) location.speed else null,
-                        bearing = if (location.hasBearing()) location.bearing else null,
-                        provider = location.provider
-                    )
-                } else {
-                    null
-                }
-
-                val request = TelemetryRequest(
-                    deviceId = deviceId,
-                    collectVersion = "Collect/Unknown",
-                    deviceDateTime = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date()),
-                    location = telemetryLocation,
-                    events = if (event != null) listOf(event) else null
+            // Format location
+            val telemetryLocation = if (location != null) {
+                TelemetryLocation(
+                    latitude = location.latitude,
+                    longitude = location.longitude,
+                    altitude = if (location.hasAltitude()) location.altitude else null,
+                    accuracy = if (location.hasAccuracy()) location.accuracy else null,
+                    speed = if (location.hasSpeed()) location.speed else null,
+                    bearing = if (location.hasBearing()) location.bearing else null,
+                    provider = location.provider
                 )
+            } else {
+                null
+            }
 
+            val request = TelemetryRequest(
+                deviceId = deviceId,
+                collectVersion = "Collect/Unknown",
+                deviceDateTime = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date()),
+                location = telemetryLocation,
+                events = if (event != null) listOf(event) else null
+            )
+
+            try {
+                // Try to send immediately
+                val client = getAuthClient(apiUrl)
+                // Check reachability first? Or just try? Just try.
                 val result = client.submitTelemetry(pid, token, request)
 
                 if (result != null) {
@@ -730,25 +743,88 @@ class AiimsAuthManager @Inject constructor(
                     }
 
                     // Sync clock with server time from telemetry response
-                    // This provides continuous clock validation (every 20 minutes)
                     if (result.serverTime != null) {
                         val serverTime = parseIsoDateTime(result.serverTime)
                         if (serverTime != null) {
                             clockValidator.syncWithServerTime(
                                 serverTime = serverTime,
                                 localTime = System.currentTimeMillis(),
-                                forceSync = false  // Only adjust if offset is reasonable
+                                forceSync = false
                             )
-                            Log.d("AiimsAuthManager", "Clock synced with server time from telemetry")
-                            
-                            // Update time flows to reflect new sync state immediately
                             updateTimeState()
                         }
                     }
+                    
+                    // IF we are here, online submission worked.
+                    // Process any queued items for this project?
+                    processQueuedTelemetry(pid, token, apiUrl)
                 }
             } catch (e: Exception) {
-                android.util.Log.e("AiimsAuthManager", "Failed to submit telemetry", e)
+                android.util.Log.e("AiimsAuthManager", "Failed to submit telemetry. Queuing.", e)
+                queueTelemetry(request, pid)
             }
+        }
+    }
+
+    private suspend fun queueTelemetry(request: TelemetryRequest, projectId: String) {
+        try {
+            val json = gson.toJson(request)
+            val entity = org.aiims.odk.auth.storage.db.TelemetryEntity(
+                data = json,
+                projectId = projectId
+            )
+            telemetryDao.insert(entity)
+            android.util.Log.d("AiimsAuthManager", "Queued telemetry event offline for project $projectId.")
+        } catch (e: Exception) {
+            android.util.Log.e("AiimsAuthManager", "Failed to queue telemetry", e)
+        }
+    }
+
+    suspend fun processQueuedTelemetry(projectId: String, token: String, apiUrl: String) {
+        // This should probably be called by Worker or after successful submit
+        try {
+            val pending = telemetryDao.getAll()
+            if (pending.isEmpty()) return
+
+            val client = getAuthClient(apiUrl)
+            
+            pending.forEach { entity ->
+                // Only process for this project
+                if (entity.projectId == projectId) {
+                    try {
+                        val request = gson.fromJson(entity.data, TelemetryRequest::class.java)
+                        val result = client.submitTelemetry(projectId, token, request)
+                        // If successful (no exception), delete
+                        telemetryDao.delete(entity.id)
+                        android.util.Log.d("AiimsAuthManager", "Processed queued telemetry id ${entity.id}")
+                    } catch (e: Exception) {
+                        android.util.Log.e("AiimsAuthManager", "Failed to process queued item ${entity.id}", e)
+                        // Keep in DB, retry later
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("AiimsAuthManager", "Error processing queue", e)
+        }
+    }
+
+    suspend fun flushOfflineQueue() {
+        try {
+            val pending = telemetryDao.getAll()
+            if (pending.isEmpty()) return
+
+            val projects = pending.map { it.projectId }.distinct()
+            
+            projects.forEach { pid ->
+                val token = getPersistedToken(pid)
+                val apiUrl = getApiUrlForProject(pid)
+                
+                if (token != null && apiUrl != null) {
+                   processQueuedTelemetry(pid, token, apiUrl)
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("AiimsAuthManager", "Failed to flush offline queue", e)
         }
     }
 

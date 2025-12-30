@@ -11,7 +11,8 @@ dagger = "2.57.1"
 glide = "5.0.5"
 camerax = "1.4.2" # Newer versions require minSdkVersion >= 23
 espresso = "3.7.0"
-kotlin = "2.2.20"
+kotlin = "2.1.0"
+room = "2.8.4"
 
 [libraries]
 firebaseCrashlyticsGradle = { group = "com.google.firebase", name = "firebase-crashlytics-gradle", version = "3.0.6" }
@@ -100,6 +101,10 @@ jsoup = { group = "org.jsoup", name = "jsoup", version = "1.21.2" }
 mlkit-barcodescanning = { group = "com.google.android.gms", name = "play-services-mlkit-barcode-scanning", version = "18.3.1" }
 camera-mlkit-vision = { group = "androidx.camera", name = "camera-mlkit-vision", version.ref = "camerax" }
 
+androidxRoomRuntime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidxRoomCompiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidxRoomKtx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+
 # Test dependencies
 junit = { group = "junit", name = "junit", version = "4.13.2" }
 mockitoAndroid = { group = "org.mockito", name = "mockito-android", version = "5.19.0" }
@@ -132,4 +137,4 @@ safeargs = { id = "androidx.navigation.safeargs" }
 ossLicenses = { id = "com.google.android.gms.oss-licenses-plugin" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 hiltAndroid = { id = "com.google.dagger.hilt.android", version.ref = "dagger" }
-ksp = { id = "com.google.devtools.ksp", version = "2.2.20-1.0.29" }
+ksp = { id = "com.google.devtools.ksp", version = "2.1.0-1.0.29" }
