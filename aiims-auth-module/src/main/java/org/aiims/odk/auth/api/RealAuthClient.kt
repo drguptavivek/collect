@@ -311,21 +311,29 @@ class RealAuthClient private constructor(
         }
     }
 
-    override suspend fun submitTelemetry(projectId: String, authToken: String, request: TelemetryRequest): TelemetryResponse? {
+    override suspend fun submitTelemetry(projectId: String, authToken: String, request: TelemetryRequest): TelemetryResult {
         return withContext(Dispatchers.IO) {
             try {
                 val header = "Bearer $authToken"
                 val response = getApiService().submitTelemetry(projectId, header, request)
 
                 if (response.isSuccessful) {
-                    response.body()
+                    val body = response.body()
+                    if (body != null) {
+                        TelemetryResult.Success(body)
+                    } else {
+                        TelemetryResult.ApiError("Empty response body", response.code())
+                    }
                 } else {
                     Log.e("AiimsAuthClient", "Telemetry failed: ${response.code()}")
-                    null
+                    when (response.code()) {
+                        401 -> TelemetryResult.AuthError
+                        else -> TelemetryResult.ApiError("Telemetry submission failed", response.code())
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("AiimsAuthClient", "Telemetry exception: ${e.message}", e)
-                null
+                TelemetryResult.NetworkError
             }
         }
     }

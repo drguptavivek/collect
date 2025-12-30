@@ -341,8 +341,8 @@ class AiimsAuthManagerTest {
         authManager.setActiveProject(projectId)
         advanceUntilIdle()
 
-        // Simulate Error
-        whenever(authClient.submitTelemetry(any(), any(), any())).thenThrow(RuntimeException("Network Error"))
+        // Simulate Error (Network)
+        whenever(authClient.submitTelemetry(any(), any(), any())).thenReturn(org.aiims.odk.auth.api.TelemetryResult.NetworkError)
 
         authManager.submitTelemetry(null)
         advanceUntilIdle()
@@ -370,7 +370,8 @@ class AiimsAuthManagerTest {
         telemetryDao.insert(entity)
 
         // Mock success for flush
-        whenever(authClient.submitTelemetry(any(), any(), any())).thenReturn(org.aiims.odk.auth.api.TelemetryResponse(1, "now", null, "ok"))
+        val response = org.aiims.odk.auth.api.TelemetryResponse(1, "now", null, "ok")
+        whenever(authClient.submitTelemetry(any(), any(), any())).thenReturn(org.aiims.odk.auth.api.TelemetryResult.Success(response))
 
         authManager.flushOfflineQueue()
         advanceUntilIdle()
@@ -400,6 +401,9 @@ class AiimsAuthManagerTest {
         whenever(mockLocation.longitude).thenReturn(20.0)
         whenever(mockLocation.provider).thenReturn("gps")
 
+        val response = org.aiims.odk.auth.api.TelemetryResponse(1, "now", null, "ok")
+        whenever(authClient.submitTelemetry(any(), any(), any())).thenReturn(org.aiims.odk.auth.api.TelemetryResult.Success(response))
+
         authManager.submitTelemetry(mockLocation)
         advanceUntilIdle()
 
@@ -421,6 +425,9 @@ class AiimsAuthManagerTest {
         authManager.login(projectId, "user", "pass", "url")
         authManager.setActiveProject(projectId)
         advanceUntilIdle()
+
+        val response = org.aiims.odk.auth.api.TelemetryResponse(1, "now", null, "ok")
+        whenever(authClient.submitTelemetry(any(), any(), any())).thenReturn(org.aiims.odk.auth.api.TelemetryResult.Success(response))
 
         authManager.submitTelemetry(null)
         advanceUntilIdle()
@@ -447,6 +454,9 @@ class AiimsAuthManagerTest {
             payload = mapOf("key" to "value")
         )
 
+        val response = org.aiims.odk.auth.api.TelemetryResponse(1, "now", null, "ok")
+        whenever(authClient.submitTelemetry(any(), any(), any())).thenReturn(org.aiims.odk.auth.api.TelemetryResult.Success(response))
+
         authManager.submitTelemetry(null, event)
         advanceUntilIdle()
 
@@ -456,5 +466,30 @@ class AiimsAuthManagerTest {
             assertThat(it.events!![0].type, equalTo("TEST_EVENT"))
             assertThat(it.events!![0].payload!!["key"], equalTo("value"))
         })
+    }
+
+    @Test
+    fun `#submitTelemetry queues on 401 AuthError without logging out`() = runTest {
+        val projectId = "1"
+        val user = User("100", "testuser", projectId, "2099-01-01T00:00:00.000Z")
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        authManager.login(projectId, "user", "pass", "url")
+        authManager.setActiveProject(projectId)
+        advanceUntilIdle()
+
+        // Mock 401
+        whenever(authClient.submitTelemetry(any(), any(), any())).thenReturn(org.aiims.odk.auth.api.TelemetryResult.AuthError)
+
+        authManager.submitTelemetry(null)
+        advanceUntilIdle()
+
+        // Verify queued
+        runBlocking {
+            val pending = telemetryDao.getAll()
+            assertThat("Should be queued on 401", pending.size, equalTo(1))
+        }
+
+        // Verify NOT logged out
+        assertThat("Should NOT log out on 401 from telemetry", authManager.authState.first(), equalTo(AuthState.LOGGED_IN))
     }
 }

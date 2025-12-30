@@ -722,29 +722,22 @@ class AiimsAuthManager @Inject constructor(
             )
 
             try {
-                // Try to send immediately
-                val client = getAuthClient(apiUrl)
-                // Check reachability first? Or just try? Just try.
-                val result = client.submitTelemetry(pid, token, request)
+            // Try to send immediately
+            val client = getAuthClient(apiUrl)
+            val result = client.submitTelemetry(pid, token, request)
 
-                if (result != null) {
+            when (result) {
+                is org.aiims.odk.auth.api.TelemetryResult.Success -> {
+                    val body = result.response
                     // Check for server-side invalidation
-                    if (result.status == "invalidated") {
-                         val msg = "Session expired by server. Please login again."
-                         android.util.Log.w("AiimsAuthManager", "Telemetry response indicates session invalidated. Logging out project $pid.")
-                         _errorMessage.value = msg
-                         try {
-                             showSessionExpiredNotification(msg)
-                         } catch (e: Exception) {
-                             android.util.Log.e("AiimsAuthManager", "Failed to show notification", e)
-                         }
-                         logoutProject(pid)
-                         return@launch
+                    if (body.status == "invalidated") {
+                         android.util.Log.w("AiimsAuthManager", "Telemetry response indicates session invalidated for pid: $pid.")
+                         // Note: Logout is handled by dedicated auth processes, not here.
                     }
 
                     // Sync clock with server time from telemetry response
-                    if (result.serverTime != null) {
-                        val serverTime = parseIsoDateTime(result.serverTime)
+                    if (body.serverTime != null) {
+                        val serverTime = parseIsoDateTime(body.serverTime)
                         if (serverTime != null) {
                             clockValidator.syncWithServerTime(
                                 serverTime = serverTime,
@@ -755,14 +748,23 @@ class AiimsAuthManager @Inject constructor(
                         }
                     }
                     
-                    // IF we are here, online submission worked.
-                    // Process any queued items for this project?
+                    // Process any queued items
                     processQueuedTelemetry(pid, token, apiUrl)
                 }
-            } catch (e: Exception) {
-                android.util.Log.e("AiimsAuthManager", "Failed to submit telemetry. Queuing.", e)
-                queueTelemetry(request, pid)
+                is org.aiims.odk.auth.api.TelemetryResult.AuthError -> {
+                    android.util.Log.w("AiimsAuthManager", "Telemetry submission failed with 401. Queuing for pid: $pid.")
+                    queueTelemetry(request, pid)
+                }
+                is org.aiims.odk.auth.api.TelemetryResult.NetworkError,
+                is org.aiims.odk.auth.api.TelemetryResult.ApiError -> {
+                    android.util.Log.e("AiimsAuthManager", "Telemetry submission failed. Queuing for pid: $pid.")
+                    queueTelemetry(request, pid)
+                }
             }
+        } catch (e: Exception) {
+            android.util.Log.e("AiimsAuthManager", "Unexpected error in telemetry submission. Queuing.", e)
+            queueTelemetry(request, pid)
+        }
         }
     }
 
@@ -794,9 +796,26 @@ class AiimsAuthManager @Inject constructor(
                     try {
                         val request = gson.fromJson(entity.data, TelemetryRequest::class.java)
                         val result = client.submitTelemetry(projectId, token, request)
-                        // If successful (no exception), delete
-                        telemetryDao.delete(entity.id)
-                        android.util.Log.d("AiimsAuthManager", "Processed queued telemetry id ${entity.id}")
+            
+                        when (result) {
+                            is org.aiims.odk.auth.api.TelemetryResult.Success -> {
+                                // Success, delete from DB
+                                telemetryDao.delete(entity.id)
+                                android.util.Log.d("AiimsAuthManager", "Successfully submitted queued telemetry id: ${entity.id}")
+                            }
+                            is org.aiims.odk.auth.api.TelemetryResult.AuthError -> {
+                                // 401 error, server did not record it. Keep in queue.
+                                // Stop processing this project for now as it will likely continue to fail 401
+                                android.util.Log.w("AiimsAuthManager", "Queued telemetry submission failed with 401. Keeping in queue for pid: $projectId")
+                                return@forEach
+                            }
+                            is org.aiims.odk.auth.api.TelemetryResult.NetworkError,
+                            is org.aiims.odk.auth.api.TelemetryResult.ApiError -> {
+                                // Error, keep in queue for retry. 
+                                // Increment attempt count maybe?
+                                return@forEach
+                            }
+                        }
                     } catch (e: Exception) {
                         android.util.Log.e("AiimsAuthManager", "Failed to process queued item ${entity.id}", e)
                         // Keep in DB, retry later
@@ -804,7 +823,7 @@ class AiimsAuthManager @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            android.util.Log.e("AiimsAuthManager", "Error processing queue", e)
+            android.util.Log.e("AiimsAuthManager", "Error processing queued telemetry", e)
         }
     }
 
