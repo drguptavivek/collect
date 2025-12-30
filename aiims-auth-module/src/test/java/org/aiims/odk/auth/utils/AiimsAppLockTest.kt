@@ -2,16 +2,17 @@ package org.aiims.odk.auth.utils
 
 import android.app.Activity
 import android.app.Application
+import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.aiims.odk.auth.activities.AiimsLoginActivity
 import org.aiims.odk.auth.activities.PinEntryActivity
 import org.aiims.odk.auth.managers.AiimsAuthManager
 import org.aiims.odk.auth.managers.AuthState
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.equalTo
+import org.aiims.odk.auth.managers.ProjectCleaner
+import org.aiims.odk.auth.storage.FakeAiimsAuthStorage
+import org.aiims.odk.auth.storage.FakeAiimsSecureStorage
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,12 +28,7 @@ import org.robolectric.annotation.Config
 /**
  * Unit tests for AiimsAppLock.
  * 
- * Tests the app lock behavior on lifecycle transitions including:
- * - PIN requirement after background/foreground transition
- * - Soft expiry redirect to login
- * - Auth flow activity detection
- * 
- * Uses Robolectric to mock Android framework classes.
+ * Uses Real AiimsAuthManager with Fakes to avoid mocking final classes.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [28])
@@ -40,8 +36,13 @@ class AiimsAppLockTest {
 
     private lateinit var application: Application
 
+    // Use Real AuthManager with Fakes
+    private lateinit var authManager: AiimsAuthManager
+    private lateinit var authStorage: FakeAiimsAuthStorage
+    private lateinit var secureStorage: FakeAiimsSecureStorage
+    
     @Mock
-    private lateinit var mockAuthManager: AiimsAuthManager
+    private lateinit var mockProjectCleaner: ProjectCleaner
 
     @Mock
     private lateinit var mockPinManager: PinManager
@@ -63,20 +64,34 @@ class AiimsAppLockTest {
         MockitoAnnotations.openMocks(this)
         application = ApplicationProvider.getApplicationContext()
         spyApplication = spy(application)
-        appLock = AiimsAppLock(spyApplication, mockAuthManager, mockPinManager)
+        
+        // Setup Fakes
+        authStorage = FakeAiimsAuthStorage()
+        secureStorage = FakeAiimsSecureStorage()
+        
+        // Initialize Real AuthManager
+        authManager = AiimsAuthManager(
+            context = application,
+            projectCleaner = mockProjectCleaner,
+            pinManager = mockPinManager,
+            authStorage = authStorage,
+            secureStorage = secureStorage
+        )
+        
+        appLock = AiimsAppLock(spyApplication, authManager, mockPinManager)
     }
 
     @Test
-    fun `onActivityStarted does not require PIN when not returning from background`() {
-        // Arrange: First activity start (not returning from background)
-        `when`(mockAuthManager.getCurrentAuthState()).thenReturn(AuthState.LOGGED_IN)
+    fun `onActivityStarted launches PinEntryActivity on app launch`() {
+        // Arrange: First activity start (fresh launch)
+        authManager.updateAuthState(AuthState.LOGGED_IN)
         `when`(mockPinManager.isPinSet()).thenReturn(true)
 
         // Act
         appLock.onActivityStarted(mockActivity)
 
-        // Assert: No PIN activity should be launched
-        verify(spyApplication, never()).startActivity(any())
+        // Assert: PIN activity SHOULD be launched
+        verify(spyApplication).startActivity(any(Intent::class.java))
     }
 
     @Test
@@ -88,9 +103,8 @@ class AiimsAppLockTest {
         appLock.onActivityStopped(mockActivity)
 
         // Assert: Internal state should now require PIN
-        // We verify this by starting a new activity and checking PIN is launched
-        `when`(mockAuthManager.getCurrentAuthState()).thenReturn(AuthState.LOGGED_IN)
-        `when`(mockAuthManager.getIsSoftExpiry()).thenReturn(false)
+        authManager.updateAuthState(AuthState.LOGGED_IN)
+        // Soft expiry false by default in Fake/Manager
         `when`(mockPinManager.isPinSet()).thenReturn(true)
 
         appLock.onActivityStarted(mockActivity)
@@ -105,8 +119,7 @@ class AiimsAppLockTest {
         appLock.onActivityStarted(mockActivity)
         appLock.onActivityStopped(mockActivity)
 
-        `when`(mockAuthManager.getCurrentAuthState()).thenReturn(AuthState.LOGGED_IN)
-        `when`(mockAuthManager.getIsSoftExpiry()).thenReturn(false)
+        authManager.updateAuthState(AuthState.LOGGED_IN)
         `when`(mockPinManager.isPinSet()).thenReturn(true)
 
         // Act
@@ -117,12 +130,28 @@ class AiimsAppLockTest {
     }
 
     @Test
+    fun `onActivityStarted launches LoginActivity for reauth when soft expiry`() {
+        // Arrange: Simulate app going to background then foreground
+        appLock.onActivityStarted(mockActivity)
+        appLock.onActivityStopped(mockActivity)
+
+        authManager.updateAuthState(AuthState.LOGGED_IN)
+        authManager.setIsSoftExpiry(true)
+
+        // Act
+        appLock.onActivityStarted(mockActivity)
+
+        // Assert: Login activity should be launched
+        verify(spyApplication).startActivity(any(Intent::class.java))
+    }
+
+    @Test
     fun `onActivityStarted does not launch PIN when user is not logged in`() {
         // Arrange: Simulate background/foreground but not logged in
         appLock.onActivityStarted(mockActivity)
         appLock.onActivityStopped(mockActivity)
 
-        `when`(mockAuthManager.getCurrentAuthState()).thenReturn(AuthState.LOGGED_OUT)
+        authManager.updateAuthState(AuthState.LOGGED_OUT)
 
         // Act
         appLock.onActivityStarted(mockActivity)
@@ -137,8 +166,7 @@ class AiimsAppLockTest {
         appLock.onActivityStarted(mockActivity)
         appLock.onActivityStopped(mockActivity)
 
-        `when`(mockAuthManager.getCurrentAuthState()).thenReturn(AuthState.LOGGED_IN)
-        `when`(mockAuthManager.getIsSoftExpiry()).thenReturn(false)
+        authManager.updateAuthState(AuthState.LOGGED_IN)
         `when`(mockPinManager.isPinSet()).thenReturn(false)
 
         // Act
@@ -148,21 +176,7 @@ class AiimsAppLockTest {
         verify(spyApplication, never()).startActivity(any())
     }
 
-    @Test
-    fun `onActivityStarted launches LoginActivity for reauth when soft expiry`() {
-        // Arrange
-        appLock.onActivityStarted(mockActivity)
-        appLock.onActivityStopped(mockActivity)
 
-        `when`(mockAuthManager.getCurrentAuthState()).thenReturn(AuthState.LOGGED_IN)
-        `when`(mockAuthManager.getIsSoftExpiry()).thenReturn(true)
-
-        // Act
-        appLock.onActivityStarted(mockActivity)
-
-        // Assert: Login activity should be launched
-        verify(spyApplication).startActivity(any(Intent::class.java))
-    }
 
     @Test
     fun `onActivityStarted skips PIN for auth flow activities`() {
@@ -200,7 +214,7 @@ class AiimsAppLockTest {
         appLock.onActivityStopped(mockActivity)
 
         // Start a new activity - should not require PIN
-        `when`(mockAuthManager.getCurrentAuthState()).thenReturn(AuthState.LOGGED_IN)
+        authManager.updateAuthState(AuthState.LOGGED_IN)
         `when`(mockPinManager.isPinSet()).thenReturn(true)
 
         appLock.onActivityStarted(mockActivity)

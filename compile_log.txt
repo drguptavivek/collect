@@ -1,0 +1,207 @@
+
+> Configure project :aiims-auth-module
+WARNING: The option setting 'android.jetifier.ignorelist=jackson-core' is experimental.
+
+> Configure project :collect_app
+collect_app: 'annotationProcessor' dependencies won't be recognized as kapt annotation processors. Please change the configuration name to 'kapt' for these artifacts: 'com.google.dagger:dagger-android-processor:2.57.1'.
+
+> Task :projects:preBuild UP-TO-DATE
+> Task :aiims-auth-module:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :material:preBuild UP-TO-DATE
+> Task :androidshared:preBuild UP-TO-DATE
+> Task :shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :aiims-auth-module:preBuild UP-TO-DATE
+> Task :async:preBuild UP-TO-DATE
+> Task :fragments-test:preBuild UP-TO-DATE
+> Task :material:preDebugBuild UP-TO-DATE
+> Task :aiims-auth-module:preDebugBuild UP-TO-DATE
+> Task :icons:preBuild UP-TO-DATE
+> Task :analytics:preBuild UP-TO-DATE
+> Task :strings:preBuild UP-TO-DATE
+> Task :async:preDebugBuild UP-TO-DATE
+> Task :androidshared:preDebugBuild UP-TO-DATE
+> Task :analytics:preDebugBuild UP-TO-DATE
+> Task :strings:preDebugBuild UP-TO-DATE
+> Task :fragments-test:preDebugBuild UP-TO-DATE
+> Task :icons:preDebugBuild UP-TO-DATE
+> Task :projects:preDebugBuild UP-TO-DATE
+> Task :analytics:generateDebugResValues UP-TO-DATE
+> Task :fragments-test:generateDebugResValues UP-TO-DATE
+> Task :async:generateDebugResValues UP-TO-DATE
+> Task :icons:generateDebugResValues UP-TO-DATE
+> Task :analytics:generateDebugResources UP-TO-DATE
+> Task :strings:generateDebugResValues UP-TO-DATE
+> Task :fragments-test:generateDebugResources UP-TO-DATE
+> Task :async:generateDebugResources UP-TO-DATE
+> Task :strings:generateDebugResources UP-TO-DATE
+> Task :icons:generateDebugResources UP-TO-DATE
+> Task :fragments-test:packageDebugResources UP-TO-DATE
+> Task :analytics:packageDebugResources UP-TO-DATE
+> Task :strings:packageDebugResources UP-TO-DATE
+> Task :icons:packageDebugResources UP-TO-DATE
+> Task :async:packageDebugResources UP-TO-DATE
+> Task :fragments-test:processDebugNavigationResources UP-TO-DATE
+> Task :analytics:processDebugNavigationResources UP-TO-DATE
+> Task :icons:processDebugNavigationResources UP-TO-DATE
+> Task :async:processDebugNavigationResources UP-TO-DATE
+> Task :strings:processDebugNavigationResources UP-TO-DATE
+> Task :analytics:parseDebugLocalResources UP-TO-DATE
+> Task :async:parseDebugLocalResources UP-TO-DATE
+> Task :icons:parseDebugLocalResources UP-TO-DATE
+> Task :analytics:generateDebugRFile UP-TO-DATE
+> Task :settings:preBuild UP-TO-DATE
+> Task :settings:preDebugBuild UP-TO-DATE
+> Task :settings:generateDebugResValues UP-TO-DATE
+> Task :icons:generateDebugRFile UP-TO-DATE
+> Task :fragments-test:parseDebugLocalResources UP-TO-DATE
+> Task :settings:generateDebugResources UP-TO-DATE
+> Task :async:generateDebugRFile UP-TO-DATE
+> Task :strings:parseDebugLocalResources UP-TO-DATE
+> Task :fragments-test:generateDebugRFile UP-TO-DATE
+> Task :async:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :analytics:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :icons:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :settings:packageDebugResources UP-TO-DATE
+> Task :settings:processDebugNavigationResources UP-TO-DATE
+> Task :icons:compileDebugKotlin NO-SOURCE
+> Task :async:javaPreCompileDebug UP-TO-DATE
+> Task :fragments-test:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :icons:javaPreCompileDebug UP-TO-DATE
+> Task :settings:parseDebugLocalResources UP-TO-DATE
+> Task :strings:generateDebugRFile UP-TO-DATE
+> Task :strings:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :icons:compileDebugJavaWithJavac NO-SOURCE
+> Task :settings:generateDebugRFile UP-TO-DATE
+> Task :icons:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :settings:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :settings:javaPreCompileDebug UP-TO-DATE
+> Task :shared:compileKotlin UP-TO-DATE
+> Task :shared:compileJava UP-TO-DATE
+> Task :shared:processResources NO-SOURCE
+> Task :shared:classes UP-TO-DATE
+> Task :shared:jar UP-TO-DATE
+> Task :strings:compileDebugKotlin UP-TO-DATE
+> Task :fragments-test:compileDebugKotlin UP-TO-DATE
+> Task :strings:javaPreCompileDebug UP-TO-DATE
+> Task :fragments-test:javaPreCompileDebug UP-TO-DATE
+> Task :strings:compileDebugJavaWithJavac NO-SOURCE
+> Task :strings:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :fragments-test:compileDebugJavaWithJavac NO-SOURCE
+> Task :fragments-test:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :projects:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :material:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :material:generateDebugResValues UP-TO-DATE
+> Task :projects:generateDebugResValues UP-TO-DATE
+> Task :material:generateDebugResources UP-TO-DATE
+> Task :projects:generateDebugResources UP-TO-DATE
+> Task :analytics:compileDebugKotlin UP-TO-DATE
+> Task :analytics:javaPreCompileDebug UP-TO-DATE
+> Task :projects:packageDebugResources UP-TO-DATE
+> Task :material:packageDebugResources UP-TO-DATE
+> Task :projects:processDebugNavigationResources UP-TO-DATE
+> Task :material:processDebugNavigationResources UP-TO-DATE
+> Task :analytics:compileDebugJavaWithJavac NO-SOURCE
+> Task :analytics:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :projects:parseDebugLocalResources UP-TO-DATE
+> Task :projects:generateDebugRFile UP-TO-DATE
+> Task :projects:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :material:parseDebugLocalResources UP-TO-DATE
+> Task :material:generateDebugRFile UP-TO-DATE
+> Task :material:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :material:javaPreCompileDebug UP-TO-DATE
+> Task :aiims-auth-module:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :aiims-auth-module:generateDebugResValues UP-TO-DATE
+> Task :aiims-auth-module:generateDebugResources UP-TO-DATE
+> Task :aiims-auth-module:packageDebugResources UP-TO-DATE
+> Task :aiims-auth-module:processDebugNavigationResources UP-TO-DATE
+> Task :aiims-auth-module:parseDebugLocalResources UP-TO-DATE
+> Task :aiims-auth-module:dataBindingTriggerDebug UP-TO-DATE
+> Task :aiims-auth-module:generateDebugBuildConfig UP-TO-DATE
+> Task :aiims-auth-module:generateDebugRFile UP-TO-DATE
+> Task :async:compileDebugKotlin UP-TO-DATE
+> Task :async:compileDebugJavaWithJavac NO-SOURCE
+> Task :async:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :projects:javaPreCompileDebug UP-TO-DATE
+> Task :aiims-auth-module:javaPreCompileDebug UP-TO-DATE
+> Task :aiims-auth-module:preDebugUnitTestBuild UP-TO-DATE
+> Task :androidshared:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :androidshared:generateDebugResValues UP-TO-DATE
+> Task :androidshared:generateDebugResources UP-TO-DATE
+> Task :androidshared:packageDebugResources UP-TO-DATE
+> Task :androidshared:processDebugNavigationResources UP-TO-DATE
+> Task :androidshared:parseDebugLocalResources UP-TO-DATE
+> Task :androidshared:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :androidshared:generateDebugRFile UP-TO-DATE
+> Task :androidshared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :material:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :projects:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :androidshared:kaptGenerateStubsDebugKotlin UP-TO-DATE
+> Task :androidshared:kaptDebugKotlin SKIPPED
+> Task :aiims-auth-module:generateDebugUnitTestStubRFile UP-TO-DATE
+> Task :aiims-auth-module:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :androidshared:compileDebugKotlin UP-TO-DATE
+> Task :androidshared:javaPreCompileDebug UP-TO-DATE
+> Task :androidshared:compileDebugJavaWithJavac UP-TO-DATE
+> Task :androidshared:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :material:compileDebugKotlin UP-TO-DATE
+> Task :material:compileDebugJavaWithJavac UP-TO-DATE
+> Task :material:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :projects:kaptGenerateStubsDebugKotlin UP-TO-DATE
+> Task :projects:kaptDebugKotlin UP-TO-DATE
+> Task :projects:compileDebugKotlin UP-TO-DATE
+> Task :projects:compileDebugJavaWithJavac UP-TO-DATE
+> Task :projects:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :settings:kaptGenerateStubsDebugKotlin UP-TO-DATE
+> Task :settings:kaptDebugKotlin SKIPPED
+> Task :settings:compileDebugKotlin UP-TO-DATE
+> Task :settings:compileDebugJavaWithJavac UP-TO-DATE
+> Task :settings:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :aiims-auth-module:kaptGenerateStubsDebugKotlin UP-TO-DATE
+> Task :aiims-auth-module:kaptDebugKotlin UP-TO-DATE
+> Task :aiims-auth-module:compileDebugKotlin UP-TO-DATE
+> Task :aiims-auth-module:compileDebugJavaWithJavac UP-TO-DATE
+> Task :aiims-auth-module:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :aiims-auth-module:kaptGenerateStubsDebugUnitTestKotlin UP-TO-DATE
+> Task :aiims-auth-module:kaptDebugUnitTestKotlin UP-TO-DATE
+
+> Task :aiims-auth-module:compileDebugUnitTestKotlin FAILED
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsAuthManagerTest.kt:101:9 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsAuthManagerTest.kt:101:18 Only expressions are allowed in this context.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsAuthManagerTest.kt:102:9 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsAuthManagerTest.kt:102:18 Only expressions are allowed in this context.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsAuthManagerTest.kt:103:9 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsAuthManagerTest.kt:103:18 Only expressions are allowed in this context.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsAuthManagerTest.kt:104:9 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsAuthManagerTest.kt:104:18 Only expressions are allowed in this context.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsTelemetryTest.kt:84:9 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsTelemetryTest.kt:84:18 Only expressions are allowed in this context.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsTelemetryTest.kt:85:9 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsTelemetryTest.kt:85:18 Only expressions are allowed in this context.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsTelemetryTest.kt:86:9 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsTelemetryTest.kt:86:18 Only expressions are allowed in this context.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsTelemetryTest.kt:87:9 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///Users/vivekgupta/workspace/collect/aiims-auth-module/src/test/java/org/aiims/odk/auth/managers/AiimsTelemetryTest.kt:87:18 Only expressions are allowed in this context.
+
+[Incubating] Problems report is available at: file:///Users/vivekgupta/workspace/collect/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':aiims-auth-module:compileDebugUnitTestKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.0.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 2s
+117 actionable tasks: 1 executed, 116 up-to-date

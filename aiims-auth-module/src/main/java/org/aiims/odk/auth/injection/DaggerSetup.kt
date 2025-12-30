@@ -13,7 +13,9 @@ import org.aiims.odk.auth.activities.SetupPinActivity
 import org.aiims.odk.auth.managers.AiimsAuthManager
 import org.aiims.odk.auth.managers.ProjectCleaner
 import org.aiims.odk.auth.storage.AiimsAuthStorage
+import org.aiims.odk.auth.storage.AiimsAuthStorageImpl
 import org.aiims.odk.auth.storage.AiimsSecureStorage
+import org.aiims.odk.auth.storage.AiimsSecureStorageImpl
 import org.aiims.odk.auth.utils.PinManager
 import javax.inject.Singleton
 
@@ -56,13 +58,13 @@ open class AiimsAuthDependencyModule {
     @Provides
     @Singleton
     open fun providesAiimsSecureStorage(application: Application): AiimsSecureStorage {
-        return AiimsSecureStorage.getInstance(application)
+        return AiimsSecureStorageImpl.getInstance(application)
     }
 
     @Provides
     @Singleton
     open fun providesAiimsAuthStorage(application: Application): AiimsAuthStorage {
-        return AiimsAuthStorage.getInstance(application)
+        return AiimsAuthStorageImpl.getInstance(application)
     }
 
     @Provides

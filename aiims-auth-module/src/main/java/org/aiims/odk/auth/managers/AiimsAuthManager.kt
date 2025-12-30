@@ -624,6 +624,11 @@ class AiimsAuthManager @Inject constructor(
         _authState.value = state
     }
 
+    @androidx.annotation.VisibleForTesting
+    fun setIsSoftExpiry(value: Boolean) {
+        _isSoftExpiry.value = value
+    }
+
     fun logoutDueToFailedPin() {
         scope.launch {
             logout()

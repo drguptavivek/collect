@@ -24,7 +24,7 @@ class AiimsApiClient private constructor(
 
         private fun createInstance(context: Context): AiimsApiClient {
             // Ensure authStorage is created on the same thread
-            val authStorage = org.aiims.odk.auth.storage.AiimsAuthStorage.getInstance(context)
+            val authStorage = org.aiims.odk.auth.storage.AiimsAuthStorageImpl.getInstance(context)
             return AiimsApiClient(context, authStorage)
         }
     }

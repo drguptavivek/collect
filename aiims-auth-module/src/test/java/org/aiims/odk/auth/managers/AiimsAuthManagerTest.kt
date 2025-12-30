@@ -16,6 +16,8 @@ import kotlinx.coroutines.test.setMain
 import org.aiims.odk.auth.api.AuthClient
 import org.aiims.odk.auth.api.AuthResult
 import org.aiims.odk.auth.api.User
+import org.aiims.odk.auth.storage.FakeAiimsAuthStorage
+import org.aiims.odk.auth.storage.FakeAiimsSecureStorage
 import org.aiims.odk.auth.utils.PinManager
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
@@ -41,6 +43,10 @@ class AiimsAuthManagerTest {
     private val projectCleaner: ProjectCleaner = mock()
     private val authClient: AuthClient = mock()
     private lateinit var pinManager: PinManager
+    
+    // Fakes
+    private lateinit var authStorage: FakeAiimsAuthStorage
+    private lateinit var secureStorage: FakeAiimsSecureStorage
 
     @Before
     fun setUp() {
@@ -48,18 +54,21 @@ class AiimsAuthManagerTest {
         Dispatchers.setMain(StandardTestDispatcher())
         context = ApplicationProvider.getApplicationContext()
 
-        // Ensure clean state
+        // Initialize Fakes
+        authStorage = FakeAiimsAuthStorage()
+        secureStorage = FakeAiimsSecureStorage()
+
+        // Ensure clean state (Though fakes are new instances)
         context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE).edit().clear().commit()
 
         // Initialize Managers
         pinManager = PinManager(context)
-        authManager = AiimsAuthManager(context, projectCleaner, pinManager)
+        authManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage)
         authManager.setAuthClient(authClient)
         // Note: We don't attach testScheduler here because setUp runs outside runTest
         // But StandardTestDispatcher() works.
         authManager.setIoDispatcher(StandardTestDispatcher())
 
-        pinManager = PinManager(context)
         pinManager.clearPin()
     }
 
@@ -88,6 +97,10 @@ class AiimsAuthManagerTest {
         assertThat(authManager.authState.first(), equalTo(AuthState.LOGGED_IN))
         assertThat(authManager.currentUser.first()?.username, equalTo("testuser"))
         assertThat(authManager.getActiveProjectToken(), equalTo(token))
+        
+        // Verify against Fake
+        assertThat(authStorage.deviceToken, equalTo(token))
+        assertThat(authStorage.userId, equalTo("100"))
     }
 
     @Test
@@ -174,6 +187,10 @@ class AiimsAuthManagerTest {
         
         assertThat(authManager.authState.first(), equalTo(AuthState.LOGGED_OUT))
         assertThat(authManager.getActiveProjectToken(), nullValue())
+        
+        // Check Fake Storage
+        assertThat(authStorage.isAuthenticated, equalTo(false))
+        assertThat(authStorage.deviceToken, equalTo("")) // Cleared
     }
 
     @Test
@@ -234,7 +251,8 @@ class AiimsAuthManagerTest {
             doReturn(false).whenever(authClient).checkReachability()
         }
 
-        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager)
+        // Recreating authManager to simulate app restart, using SAME Fakes
+        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
 
@@ -262,10 +280,8 @@ class AiimsAuthManagerTest {
         whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
         authManager.login(projectId, "user", "pass", "url")
 
-        // even if server is unreachable, hard deadline kills it (actually code doesn't check reachability for hard deadline)
-        // refreshState checks hard deadline first
-
-        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager)
+        // Reuse Fakes for persistence check
+        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
 
@@ -298,7 +314,7 @@ class AiimsAuthManagerTest {
             doReturn(true).whenever(authClient).checkReachability()
         }
 
-        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager)
+        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
 

@@ -69,6 +69,23 @@ Run `bd prime` for workflow context, or install hooks (`bd hooks install`) for a
 
 For full workflow details: `bd prime`
 
+### All issues need to be linked to Github issues as well
+- use gh cli
+- Issue format - [PRIORITY] Title (bead-id) 
+- Then add a valid gh label to the gh issue 
+   - bug: Indicates an unexpected problem or unintended behavior.
+   - enhancement: Indicates new feature requests.
+   - documentation: Indicates a need for improvements or additions to documentation.
+   - wontfix: Indicates that work won't continue on the issue, pull request, or discussion.
+   - duplicate: Indicates similar issues, pull requests, or discussions.
+   - good first issue: Indicates an issue suitable for first-time contributors.
+   - help wanted: Indicates that a maintainer wants help on the issue or pull request.
+   - invalid: Indicates that an issue, pull request, or discussion is no longer relevant.
+   - question: Indicates a need for more information or discussion.
+- Include full details as per the bead and the proposed resolution in gh issue
+ 
+
+
 ---
 ## Knowledge Base Integration
 
@@ -383,3 +400,11 @@ bd close collect-abc --reason "RESOLUTION:
 
 <!-- end-bd-agent-instructions -->
 
+
+## FIXING
+- Fix issues one by one.... explore beads... epics .. top priority high yield issues first. 
+- Use TDD.
+- After each fix, run tests and verify that they pass and app compiles. 
+- Close bead and close corresponding GH issue with full detaiuls of fix implemented . 
+- Do not prompt when closing beads or pushing to github or commiting to git.. 
+- Update docs in @docs as app changes
