@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.setMain
 import org.aiims.odk.auth.api.AuthClient
 import org.aiims.odk.auth.api.AuthResult
 import org.aiims.odk.auth.api.User
+import org.aiims.odk.auth.api.TelemetryEvent
 import org.aiims.odk.auth.storage.FakeAiimsAuthStorage
 import org.aiims.odk.auth.storage.FakeAiimsSecureStorage
 import org.aiims.odk.auth.utils.PinManager
@@ -264,6 +265,7 @@ class AiimsAuthManagerTest {
         val state = newAuthManager.authState.first()
         assertThat("State should be LOGGED_IN during grace period", state, equalTo(AuthState.LOGGED_IN))
         assertThat("Should not be Soft Expiry if unreachable", newAuthManager.getIsSoftExpiry(), equalTo(false))
+        // Verify reachability was checked (Note: might need spy or proper verification if newManager calls it)
         verify(authClient).checkReachability()
     }
 
@@ -332,7 +334,7 @@ class AiimsAuthManagerTest {
     }
 
     @Test
-    fun `#submitTelemetry sends correct data`() = runTest {
+    fun `#submitTelemetry sends correct data with location`() = runTest {
         val projectId = "1"
         val user = User("100", "testuser", projectId, "2099-01-01T00:00:00.000Z")
         whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
@@ -351,10 +353,56 @@ class AiimsAuthManagerTest {
 
         verify(authClient).submitTelemetry(org.mockito.kotlin.eq(projectId), org.mockito.kotlin.eq("token"), org.mockito.kotlin.check {
             assertThat(it.deviceId, equalTo("unknown_device"))
-            assertThat(it.location.latitude.toString(), equalTo("10.0"))
-            assertThat(it.location.longitude.toString(), equalTo("20.0"))
-            assertThat(it.location.provider, equalTo("gps"))
+            assertThat(it.location!!.latitude.toString(), equalTo("10.0"))
+            assertThat(it.location!!.longitude.toString(), equalTo("20.0"))
+            assertThat(it.location!!.provider, equalTo("gps"))
             assertThat(it.deviceDateTime, notNullValue())
+            assertThat(it.events, nullValue())
+        })
+    }
+
+    @Test
+    fun `#submitTelemetry sends null location if not provided`() = runTest {
+        val projectId = "1"
+        val user = User("100", "testuser", projectId, "2099-01-01T00:00:00.000Z")
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        authManager.login(projectId, "user", "pass", "url")
+        authManager.setActiveProject(projectId)
+        advanceUntilIdle()
+
+        authManager.submitTelemetry(null)
+        advanceUntilIdle()
+
+        verify(authClient).submitTelemetry(org.mockito.kotlin.eq(projectId), org.mockito.kotlin.eq("token"), org.mockito.kotlin.check {
+            assertThat(it.location, nullValue())
+            assertThat(it.events, nullValue())
+        })
+    }
+
+    @Test
+    fun `#submitTelemetry sends events if provided`() = runTest {
+        val projectId = "1"
+        val user = User("100", "testuser", projectId, "2099-01-01T00:00:00.000Z")
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        authManager.login(projectId, "user", "pass", "url")
+        authManager.setActiveProject(projectId)
+        advanceUntilIdle()
+
+        val event = TelemetryEvent(
+            id = AiimsAuthManager.generateEventId(),
+            type = "TEST_EVENT",
+            timestamp = "2025-01-01",
+            payload = mapOf("key" to "value")
+        )
+
+        authManager.submitTelemetry(null, event)
+        advanceUntilIdle()
+
+        verify(authClient).submitTelemetry(org.mockito.kotlin.eq(projectId), org.mockito.kotlin.eq("token"), org.mockito.kotlin.check {
+            assertThat(it.events, notNullValue())
+            assertThat(it.events!!.size, equalTo(1))
+            assertThat(it.events!![0].type, equalTo("TEST_EVENT"))
+            assertThat(it.events!![0].payload!!["key"], equalTo("value"))
         })
     }
 }

@@ -22,6 +22,7 @@ import org.aiims.odk.auth.api.RealAuthClient
 import org.aiims.odk.auth.api.TelemetryLocation
 import org.aiims.odk.auth.api.TelemetryRequest
 import org.aiims.odk.auth.api.User
+import org.aiims.odk.auth.api.TelemetryEvent
 import org.aiims.odk.auth.storage.AiimsAuthStorage
 import org.aiims.odk.auth.storage.AiimsSecureStorage
 import org.aiims.odk.auth.work.TelemetryWorker
@@ -53,6 +54,10 @@ class AiimsAuthManager @Inject constructor(
 
         // Global keys
         private const val KEY_ACTIVE_PROJECT_ID = "active_project_id"
+
+        fun generateEventId(): String {
+            return java.util.UUID.randomUUID().toString()
+        }
     }
 
     // Clock validator for detecting clock manipulation
@@ -674,7 +679,7 @@ class AiimsAuthManager @Inject constructor(
     /**
      * Submit telemetry data to the backend immediately.
      */
-    suspend fun submitTelemetry(location: android.location.Location?) {
+    suspend fun submitTelemetry(location: android.location.Location?, event: TelemetryEvent? = null) {
         val pid = activeProjectId ?: return
         val token = getPersistedToken(pid) ?: return
         val apiUrl = getApiUrlForProject(pid) ?: return
@@ -696,14 +701,15 @@ class AiimsAuthManager @Inject constructor(
                         provider = location.provider
                     )
                 } else {
-                    TelemetryLocation(0.0, 0.0, null, null, null, null, "unknown")
+                    null
                 }
 
                 val request = TelemetryRequest(
                     deviceId = deviceId,
                     collectVersion = "Collect/Unknown",
                     deviceDateTime = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date()),
-                    location = telemetryLocation
+                    location = telemetryLocation,
+                    events = if (event != null) listOf(event) else null
                 )
 
                 val result = client.submitTelemetry(pid, token, request)

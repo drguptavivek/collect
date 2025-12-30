@@ -71,7 +71,15 @@ data class TelemetryRequest(
     val deviceId: String,
     val collectVersion: String,
     val deviceDateTime: String, // UTC ISO
-    val location: TelemetryLocation
+    val location: TelemetryLocation?,
+    val events: List<TelemetryEvent>? = null
+)
+
+data class TelemetryEvent(
+    val id: String,
+    val type: String,
+    val timestamp: String,
+    val payload: Map<String, String>? = null
 )
 
 data class TelemetryLocation(
