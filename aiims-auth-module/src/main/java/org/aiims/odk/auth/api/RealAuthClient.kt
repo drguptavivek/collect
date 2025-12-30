@@ -8,13 +8,16 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.net.HttpURLConnection
 import java.net.URL
+import org.aiims.odk.auth.managers.AiimsAuthManager
+import org.aiims.odk.auth.storage.AiimsTokenProvider
 
 /**
  * Real authentication client that connects to backend API
  */
 class RealAuthClient private constructor(
     private val context: Context,
-    private val apiUrl: String
+    private val apiUrl: String,
+    private val authManager: AiimsAuthManager? = null
 ) : AuthClient {
     private var retrofit: Retrofit? = null
     private var apiService: AuthApiService? = null
@@ -27,6 +30,14 @@ class RealAuthClient private constructor(
 
             if (shouldUseUnsafeClient(apiUrl)) {
                 configureUnsafeClient(clientBuilder)
+            }
+
+            // ADD GLOBAL 401 INTERCEPTOR
+            authManager?.let { am: AiimsAuthManager ->
+                clientBuilder.addInterceptor(AuthInterceptor(
+                    am,
+                    AiimsTokenProvider.getInstance(context)
+                ))
             }
 
             // Sanitize URL: Remove project path if present, as ApiService adds it
@@ -113,22 +124,7 @@ class RealAuthClient private constructor(
         }
     }
 
-    companion object {
-        @Volatile
-        private var INSTANCE: RealAuthClient? = null
 
-        @Volatile
-        private var lastBaseUrl: String? = null
-
-        fun getInstance(context: Context, apiUrl: String): RealAuthClient {
-            return INSTANCE?.takeIf { lastBaseUrl == apiUrl } ?: synchronized(this) {
-                INSTANCE?.takeIf { lastBaseUrl == apiUrl } ?: RealAuthClient(context, apiUrl).also {
-                    INSTANCE = it
-                    lastBaseUrl = apiUrl
-                }
-            }
-        }
-    }
 
     /**
      * Login to the real API
@@ -360,7 +356,27 @@ class RealAuthClient private constructor(
         }
     }
 
-    /**
-     * Generate or retrieve device ID
-     */
+
+    companion object {
+        @Volatile
+        private var INSTANCE: RealAuthClient? = null
+
+        @Volatile
+        private var lastBaseUrl: String? = null
+
+        @Volatile
+        private var lastAuthManager: AiimsAuthManager? = null
+
+        fun getInstance(context: Context, apiUrl: String, authManager: AiimsAuthManager? = null): RealAuthClient {
+            return INSTANCE?.takeIf { lastBaseUrl == apiUrl && lastAuthManager == authManager } 
+                ?: synchronized(this) {
+                    INSTANCE?.takeIf { lastBaseUrl == apiUrl && lastAuthManager == authManager } 
+                        ?: RealAuthClient(context, apiUrl, authManager).also {
+                            INSTANCE = it
+                            lastBaseUrl = apiUrl
+                            lastAuthManager = authManager
+                        }
+                }
+        }
+    }
 }

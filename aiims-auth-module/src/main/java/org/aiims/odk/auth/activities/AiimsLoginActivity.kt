@@ -341,6 +341,9 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
                     // Navigate based on reauth mode and PIN state
                     if (isReauthMode) {
+                        // Notify manager that re-auth succeeded
+                        authManager.onReauthenticationComplete(true)
+
                         // Category A: Token Refresh - PIN should already be set
                         if (pinManager.isPinSet()) {
                             navigateToMain()
@@ -387,6 +390,9 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
     override fun onBackPressed() {
         if (isReauthMode) {
+            // Cancel re-authentication
+            authManager.onReauthenticationComplete(false)
+            
             // In re-auth mode, return to PIN entry (cancel the refresh attempt)
             val intent = Intent(this, PinEntryActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

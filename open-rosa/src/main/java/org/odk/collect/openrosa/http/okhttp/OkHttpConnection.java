@@ -12,6 +12,7 @@ import org.odk.collect.openrosa.http.HttpHeadResult;
 import org.odk.collect.openrosa.http.HttpPostResult;
 import org.odk.collect.openrosa.http.OpenRosaHttpInterface;
 import org.odk.collect.shared.strings.Md5;
+import org.aiims.odk.auth.managers.AiimsAuthManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -46,8 +47,8 @@ public class OkHttpConnection implements OpenRosaHttpInterface {
     private final String userAgent;
 
     public OkHttpConnection(@Nullable String cacheDir, @NonNull FileToContentTypeMapper fileToContentTypeMapper,
-            @NonNull String userAgent, boolean isDebug, TokenProvider tokenProvider) {
-        this.clientFactory = new OkHttpOpenRosaServerClientProvider(cacheDir, isDebug, tokenProvider);
+            @NonNull String userAgent, boolean isDebug, TokenProvider tokenProvider, AiimsAuthManager authManager) {
+        this.clientFactory = new OkHttpOpenRosaServerClientProvider(cacheDir, isDebug, tokenProvider, authManager);
         this.fileToContentTypeMapper = fileToContentTypeMapper;
         this.userAgent = userAgent;
     }
@@ -56,7 +57,7 @@ public class OkHttpConnection implements OpenRosaHttpInterface {
     // false (safe)
     public OkHttpConnection(@Nullable String cacheDir, @NonNull FileToContentTypeMapper fileToContentTypeMapper,
             @NonNull String userAgent) {
-        this(cacheDir, fileToContentTypeMapper, userAgent, false, () -> null);
+        this(cacheDir, fileToContentTypeMapper, userAgent, false, () -> null, null);
     }
 
     @NonNull

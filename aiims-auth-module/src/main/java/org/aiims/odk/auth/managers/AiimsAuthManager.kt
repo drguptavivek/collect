@@ -1,7 +1,9 @@
 package org.aiims.odk.auth.managers
 
 import android.util.Log
+import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -14,7 +16,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import org.aiims.odk.auth.api.AuthClient
 import org.aiims.odk.auth.api.AuthResult
@@ -118,6 +124,12 @@ class AiimsAuthManager @Inject constructor(
     }
 
     // Reactive state for the *Active* Project
+    // Re-authentication Coordination
+    private val reauthMutex = Mutex()
+    private var reauthDeferred: CompletableDeferred<Boolean>? = null
+    private val _isReauthenticating = MutableStateFlow(false)
+    val isReauthenticating: StateFlow<Boolean> = _isReauthenticating.asStateFlow()
+
     private val _authState = MutableStateFlow(AuthState.INITIAL)
     val authState: Flow<AuthState> = _authState.asStateFlow()
 
@@ -635,6 +647,74 @@ class AiimsAuthManager @Inject constructor(
         _isSoftExpiry.value = value
     }
 
+    /**
+     * Called by the global AuthInterceptor when it detects a 401.
+     * Pauses the request until re-authentication is complete.
+     */
+    suspend fun awaitReauthentication(): Boolean {
+        // If re-auth is already in progress, just wait for it
+        reauthMutex.withLock {
+            if (_isReauthenticating.value) {
+                return reauthDeferred?.await() ?: false
+            }
+        }
+        
+        // Trigger re-authentication
+        return onAuthenticationRequired()
+    }
+
+    /**
+     * Triggers the re-authentication UI (AiimsLoginActivity in re-auth mode).
+     * Returns true if re-authentication succeeded.
+     */
+    suspend fun onAuthenticationRequired(): Boolean {
+        reauthMutex.withLock {
+            if (_isReauthenticating.value) {
+                return reauthDeferred?.await() ?: false
+            }
+
+            _isReauthenticating.value = true
+            val deferred = CompletableDeferred<Boolean>()
+            reauthDeferred = deferred
+
+            android.util.Log.i("AiimsAuthManager", "Authentication required. Launching re-auth UI.")
+            
+            // Launch Login Activity in Re-Auth mode
+            launchReauthUi()
+            
+            return try {
+                deferred.await()
+            } finally {
+                _isReauthenticating.value = false
+                reauthDeferred = null
+            }
+        }
+    }
+
+    /**
+     * Called by AiimsLoginActivity or PinEntryActivity when re-authentication is finished.
+     */
+    fun onReauthenticationComplete(success: Boolean) {
+        android.util.Log.i("AiimsAuthManager", "Re-authentication complete. Success: $success")
+        reauthDeferred?.complete(success)
+    }
+
+    private fun launchReauthUi() {
+        val application = context as Application
+        val intent = Intent()
+        intent.setClassName(application.packageName, "org.aiims.odk.auth.activities.AiimsLoginActivity")
+        intent.putExtra("EXTRA_IS_REAUTH", true)
+        
+        // Try to get current username
+        val user = _currentUser.value
+        user?.let { u ->
+            intent.putExtra("EXTRA_REAUTH_USERNAME", u.username)
+        }
+        
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        application.startActivity(intent)
+    }
+
     fun logoutDueToFailedPin() {
         scope.launch {
             logout()
@@ -669,7 +749,7 @@ class AiimsAuthManager @Inject constructor(
     }
 
     private fun getAuthClient(apiUrl: String): AuthClient {
-        return authClientForTesting ?: RealAuthClient.getInstance(context, apiUrl)
+        return authClientForTesting ?: RealAuthClient.getInstance(context, apiUrl, this)
     }
 
     private fun getDeviceId(): String {
