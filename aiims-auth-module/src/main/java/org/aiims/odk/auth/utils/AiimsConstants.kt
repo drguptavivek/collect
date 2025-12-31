@@ -53,6 +53,16 @@ object AiimsConstants {
     const val HOUR_IN_MS = 60 * 60 * 1000L
     const val MINUTE_IN_MS = 60 * 1000L
 
+    // Expiry Reminder Tiers (in milliseconds before expiry)
+    val EXPIRY_REMINDER_TIERS_MS = listOf(
+        8L * HOUR_IN_MS,   // 8 hours
+        3L * HOUR_IN_MS,   // 3 hours
+        1L * HOUR_IN_MS,   // 1 hour
+        30L * MINUTE_IN_MS, // 30 minutes
+        15L * MINUTE_IN_MS, // 15 minutes
+        3L * MINUTE_IN_MS   // 3 minutes
+    )
+
     // Biometric Constants
     const val BIOMETRIC_PROMPT_TITLE = "AIIMS Authentication"
     const val BIOMETRIC_PROMPT_SUBTITLE = "Use your fingerprint to authenticate"

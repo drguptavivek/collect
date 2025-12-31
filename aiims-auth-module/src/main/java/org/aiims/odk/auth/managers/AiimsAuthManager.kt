@@ -42,7 +42,7 @@ import org.odk.collect.projects.Project
 import org.odk.collect.projects.SharedPreferencesProjectsRepository
 import org.odk.collect.shared.strings.UUIDGenerator
 import org.odk.collect.settings.keys.MetaKeys
-
+import org.aiims.odk.auth.utils.AiimsConstants
 /**
  * Authentication Manager for Central Backend.
  * Supports Multi-Project Isolation.
@@ -153,6 +153,10 @@ class AiimsAuthManager @Inject constructor(
     private val _isExpiringSoon = MutableStateFlow(false)
     val isExpiringSoon: StateFlow<Boolean> = _isExpiringSoon.asStateFlow()
 
+    // Time remaining until token expiry (for UI countdown/tier display)
+    private val _timeRemainingMs = MutableStateFlow(Long.MAX_VALUE)
+    val timeRemainingMs: StateFlow<Long> = _timeRemainingMs.asStateFlow()
+
     private val _tokenExpiryTime = MutableStateFlow(0L)
     val tokenExpiryTime: StateFlow<Long> = _tokenExpiryTime.asStateFlow()
 
@@ -169,8 +173,6 @@ class AiimsAuthManager @Inject constructor(
 
     // 6 Hours in Milliseconds
     private val GRACE_PERIOD_MS = 6L * 60 * 60 * 1000
-    // 24 Hours in Milliseconds for reminder
-    private val EXPIRATION_THRESHOLD_MS = 24L * 60 * 60 * 1000
 
     init {
         // Restore last active project or default state
@@ -227,8 +229,10 @@ class AiimsAuthManager @Inject constructor(
 
                 val hardDeadline = expiryTime + GRACE_PERIOD_MS
 
-                // Check if expiring soon (within 24 hours)
-                _isExpiringSoon.value = currentTime + EXPIRATION_THRESHOLD_MS > expiryTime
+                // Calculate time remaining and check if expiring soon (any tier crossed)
+                val timeRemaining = expiryTime - currentTime
+                _timeRemainingMs.value = timeRemaining
+                _isExpiringSoon.value = AiimsConstants.EXPIRY_REMINDER_TIERS_MS.any { tier -> timeRemaining <= tier }
 
                 if (currentTime > hardDeadline) {
                     // HARD LOGOUT: Exceeded 6-hour grace
