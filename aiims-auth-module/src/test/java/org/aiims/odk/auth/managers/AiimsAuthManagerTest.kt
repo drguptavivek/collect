@@ -53,10 +53,12 @@ class AiimsAuthManagerTest {
     private lateinit var secureStorage: FakeAiimsSecureStorage
     private lateinit var telemetryDao: FakeTelemetryDao
 
+    private lateinit var testDispatcher: kotlinx.coroutines.test.TestDispatcher
+
     @Before
     fun setUp() {
-        // Use StandardTestDispatcher for control
-        Dispatchers.setMain(StandardTestDispatcher())
+        testDispatcher = kotlinx.coroutines.test.UnconfinedTestDispatcher()
+        Dispatchers.setMain(testDispatcher)
         context = ApplicationProvider.getApplicationContext()
 
         // Initialize Fakes
@@ -71,9 +73,7 @@ class AiimsAuthManagerTest {
         pinManager = PinManager(context)
         authManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
         authManager.setAuthClient(authClient)
-        // Note: We don't attach testScheduler here because setUp runs outside runTest
-        // But StandardTestDispatcher() works.
-        authManager.setIoDispatcher(StandardTestDispatcher())
+        authManager.setIoDispatcher(testDispatcher)
 
         pinManager.clearPin()
     }
@@ -256,7 +256,7 @@ class AiimsAuthManagerTest {
         // Recreating authManager to simulate app restart, using SAME Fakes
         val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
         newAuthManager.setAuthClient(authClient)
-        newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
+        newAuthManager.setIoDispatcher(testDispatcher)
 
         newAuthManager.setActiveProject(projectId)
 
@@ -285,7 +285,7 @@ class AiimsAuthManagerTest {
         // Reuse Fakes for persistence check
         val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
         newAuthManager.setAuthClient(authClient)
-        newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
+        newAuthManager.setIoDispatcher(testDispatcher)
 
         newAuthManager.setActiveProject(projectId)
 
@@ -317,7 +317,7 @@ class AiimsAuthManagerTest {
 
         val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
         newAuthManager.setAuthClient(authClient)
-        newAuthManager.setIoDispatcher(StandardTestDispatcher(testScheduler))
+        newAuthManager.setIoDispatcher(testDispatcher)
 
         newAuthManager.setActiveProject(projectId)
 
