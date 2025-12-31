@@ -66,9 +66,9 @@ This document defines the architectural boundaries between the AIIMS customizati
  
  ## 5. Cleanup Rules & Shared Device Boundary
  
- - **Logout**: AIIMS logic clears AIIMS-specific tokens and user metadata.
- - **Data Retention**: Standard ODK *forms* are wiped by AIIMS `ProjectCleaner` to prevent cross-user visibility. However, ODK *instances* (completed submissions) are **preserved**.
- - **Rationale**: This explicitly satisfies the **Shared Device Safety** requirement (originally defined in `multiuser-persistence.md`), allowing multiple users to operate on the same device without data loss while maintaining user privacy via form cleanup.
+ - **Logout**: AIIMS logic clears AIIMS-specific tokens, PIN, and user metadata.
+- **Data Retention (Option B)**: Standard ODK *forms*, *instances*, and *settings* are **preserved** to support shared device scenarios. (See [Data Isolation](data-isolation.md#6-security-cleanup-logoutwipe-behavior)).
+- **Rationale**: This ensures that when User B logs into the same project on a shared tablet, they do not need to re-download forms and can see User A's drafts if continuity is required.
  
  > [!IMPORTANT]
  > **Bridge Mechanism & Circularity**: The `ProjectCleaner` is provided by the standard ODK core but consumed by the AIIMS `AiimsAuthManager`. To avoid a `StackOverflowError` during Dagger initialization, it is injected as `dagger.Lazy<ProjectCleaner>`. This breaks the circular dependency chain: `AiimsAuthManager` → `ProjectCleaner` → `InstancesDataService` → `OpenRosaHttpInterface` → `AiimsAuthManager`.

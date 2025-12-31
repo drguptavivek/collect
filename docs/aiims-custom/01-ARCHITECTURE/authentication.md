@@ -189,31 +189,46 @@ flowchart TD
 
 ## Data Structures
 
-### SharedPreferences: `aiims_auth_prefs`
+### SharedPreferences: `aiims_auth_prefs` (Metadata)
 
 | Key | Type | Description | Example |
 |-----|------|-------------|---------|
-| `active_project_id` | String/Int | Currently selected Central project ID | `"1"` |
-| `auth_token_{projectId}` | String | JWT bearer token | `"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."` |
-| `user_data_{projectId}` | JSON String | User profile (id, username, displayName) | `{"id": 12, "username": "user1", ...}` |
-| `expires_at_{projectId}` | ISO 8601 String | Token expiry timestamp | `"2025-12-31T23:59:59.000Z"` |
-| `api_url_{projectId}` | String | Central server base URL | `"https://central.example.com"` |
+| `active_project_id` | String | Currently selected Central project ID | `"1"` |
+| `user_data_{pid}` | JSON String | Cached user profile (id, username, etc.) | `{"id": "12", "username": "user1", ...}` |
+| `api_url_{pid}` | String | Base URL for the specific project | `"https://central.example.com"` |
+| `project_name_{pid}` | String | Cached project display name | `"Main Research Site"` |
 
-### LoginResponse (API)
+### Secure Storage: `aiims_auth_secure` (Encrypted)
 
+Sensitive data is stored via `EncryptedSharedPreferences` and is not visible to the standard preferences layer.
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `deviceToken` | String | JWT bearer token |
+| `tokenExpiry` | Long | Expiry timestamp in milliseconds |
+| `projectId` | String | Project ID associated with the token |
+| `userId` | String | User ID associated with the token |
+
+### API Data Models (Central Backend)
+
+#### LoginResponse
 ```kotlin
 data class LoginResponse(
-    val token: String,        // JWT bearer token
-    val expiresAt: String,    // ISO 8601 expiry timestamp
-    val projectId: Long,      // Central project ID
-    val user: AppUser         // User details
+    val token: String,
+    val projectId: Int,
+    val expiresAt: String,     // ISO 8601
+    val id: Int,               // App User ID
+    val serverTime: String?    // ISO 8601 server current time
 )
+```
 
-data class AppUser(
-    val id: Long,
+#### User (Internal Model)
+```kotlin
+data class User(
+    val id: String,
     val username: String,
-    val displayName: String,
-    val active: Boolean = true
+    val projectId: String,
+    val expiresAt: String?
 )
 ```
 
@@ -224,9 +239,63 @@ data class AppUser(
 | Constant | Value | Purpose |
 |----------|-------|---------|
 | `DEFAULT_TOKEN_TTL_DAYS` | 3 | Server-side default token lifetime |
-| `GRACE_PERIOD_MS` | `6 * 60 * 60 * 1000` (6h) | Offline grace after expiry |
-| `SOFT_EXPIRY_CHECK_INTERVAL` | Variable | How often to check server reachability |
-| `REAUTH_PROMPT_DELAY_MS` | 0 (immediate) | When to show re-auth after soft expiry |
+| `GRACE_PERIOD_MS` | 6h | Offline grace after expiry |
+| `EXPIRATION_THRESHOLD_MS` | 24h | Threshold for "Expiring Soon" reactive flag |
+| `REAUTH_PROMPT_DELAY_MS` | 0 | Immediate re-auth prompt after soft expiry |
+
+---
+
+## Authentication & Application States
+
+The system uses a combination of a core state machine (`AuthState`) and secondary reactive flags to determine the UI/UX behavior.
+
+### 1. Core Auth States (`AuthState`)
+
+| State | Description | UI Impact |
+|-------|-------------|-----------|
+| `INITIAL` | Project switched or manager just started | Loading state/Splash |
+| `LOGGED_IN` | User is authenticated with a valid (or grace) token | Accessible Main Menu |
+| `LOGGED_IN_REQUIRES_PIN` | Authenticated but PIN is missing or cleared | Redirect to PIN Setup |
+| `LOGGED_OUT` | No active session or hard expiry exceeded | Redirect to Login |
+| `ERROR` | Critical storage or logic failure | Show error, allow recovery |
+
+### 2. Secondary UX States (Reactive Flags)
+
+These flags further refine the user experience when the state is `LOGGED_IN`.
+
+| Goal | Flag | Logic | UX Behavior |
+|------|------|-------|-------------|
+| **Soft Expiry** | `isSoftExpiry` | `currentTime > expiresAt` AND `serverReachable` | Show "Session Expired" prompt; Allow Work Offline. |
+| **Offline Grace** | `isSoftExpiry` (false) | `currentTime > expiresAt` AND `serverUnreachable` | Silent operation; No prompt; Countdown to hard deadline begins. |
+| **Hard Expiry** | Transition to `LOGGED_OUT` | `currentTime > (expiresAt + 6h)` | Automated logout; Session revoked; User forced to Login. |
+| **Expiring Soon** | `isExpiringSoon` | `currentTime + 24h > expiresAt` | (Optional) Warning icon or message in settings. |
+| **Refreshing** | `isLoading` | Active login or refresh call | Show progress spinner; Disable buttons. |
+| **PIN Locked** | (Managed by `AiimsAppLock`) | Backgrounded OR Timeout | Intercepts navigation; Forces PIN validation before Main Menu. |
+
+### 3. State Transitions
+
+```mermaid
+graph TD
+    INITIAL -->|Load Project| LOGGED_OUT
+    INITIAL -->|Session Found| CHECK_PIN{PIN Set?}
+    
+    CHECK_PIN -->|No| LOGGED_IN_REQUIRES_PIN
+    CHECK_PIN -->|Yes| LOGGED_IN
+    
+    LOGGED_OUT -->|Login Success| CHECK_PIN
+    
+    LOGGED_IN_REQUIRES_PIN -->|PIN Setup| LOGGED_IN
+    
+    LOGGED_IN -->|Token Expired & Near Server| SOFT_EXPIRY[SOFT EXPIRY]
+    LOGGED_IN -->|Token Expired & No Server| OFFLINE_GRACE[OFFLINE GRACE]
+    
+    SOFT_EXPIRY -->|Login / Refresh| LOGGED_IN
+    SOFT_EXPIRY -->|Cancel| OFFLINE_GRACE
+    
+    OFFLINE_GRACE -->|Timer Exceeds 6h| LOGGED_OUT
+    
+    LOGGED_IN -->|Manual Logout| LOGGED_OUT
+```
 
 ---
 
@@ -309,7 +378,8 @@ context.startActivity(intent)
 | Token lifetime | Short-lived (default 3 days) |
 | Revocation | Server-side `/revoke` endpoint |
 | Offline grace | 6 hours hard limit |
-| Failed attempts | 3 PIN attempts = local logout |
+| Failed attempts | 3 failed PIN attempts = local wipe & logout |
+| **Cleanup Logic** | [See Data Isolation](data-isolation.md#6-security-cleanup-logoutwipe-behavior) | Preserves forms/instances for shared devices |
 
 ---
 
@@ -325,6 +395,9 @@ context.startActivity(intent)
 | Grace period exceeded | Local time > expiresAt + 6h | Force logout |
 | Network unavailable | Catch exception during reachability check | Allow offline work if in grace |
 | Malformed token | JWT parse exception | Treat as expired, trigger re-auth |
+| **Clock Manipulation** | Detected via `ClockValidator` | Disable re-auth prompt; Use "Last Valid Wall Time" for grace checks |
+| **Storage Corruption** | Catch during `refreshState` | Automated cleanup; Fallback to `LOGGED_OUT` |
+| **Project Mismatch** | `secureStorage.projectId != active` | Force `refreshState` to treat as LOGGED_OUT |
  
  ---
  
@@ -346,7 +419,10 @@ context.startActivity(intent)
 | `AiimsLoginActivity.kt` | Login and re-auth UI |
 | `RealAuthClient.kt` | Retrofit API calls |
 | `User.kt` | Data models for API responses |
-| `OkHttpOpenRosaServerClientProvider.java` | Token injection interceptor |
+| `AuthInterceptor.kt` | Intercepts 401s on AIIMS APIs to trigger re-auth |
+| `ClockValidator.kt` | Device/Server clock validation |
+| `AiimsAppLock.kt` | PIN Security lifecycle & Activity monitoring |
+| `OkHttpOpenRosaServerClientProvider.java` | Token injection interceptor (ODK Core) |
 | `AppDependencyModule.java` | TokenProvider implementation |
 
 ---

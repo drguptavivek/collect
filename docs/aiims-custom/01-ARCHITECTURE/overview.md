@@ -1,7 +1,7 @@
 # AIIMS ODK Collect - Architecture Overview
 
-> Last Updated: 2025-12-28
-> Reviewed At: 2025-12-28
+> Last Updated: 2025-12-31
+> Reviewed At: 2025-12-31
 
 This document provides a high-level architecture overview of the AIIMS customizations to ODK Collect.
 
@@ -51,8 +51,8 @@ graph TB
     end
 
     subgraph "Storage"
-        AuthPrefs["aiims_auth_prefs<br/>(Token, User, Expiry)"]
-        PinPrefs["PIN Hash/Salt<br/>(in aiims_auth_prefs)"]
+        AuthMetadata["aiims_auth_prefs<br/>(User, API URL, Names)"]
+        AuthSecure["aiims_auth_secure<br/>(Tokens, Expiry, PIN)"]
         ODKPrefs["general_prefs{UUID}<br/>(Server URL, Settings)"]
         MetaPrefs["meta_prefs<br/>(Current Project ID)"]
         DB[(SQLite DB<br/>Forms/Instances)]
@@ -70,13 +70,14 @@ graph TB
     TokenProvider --> OkHttp
     OkHttp --> Central
 
-    AuthMgr --> AuthPrefs
+    AuthMgr --> AuthMetadata
+    AuthMgr --> AuthSecure
     AuthMgr --> ODKPrefs
     AuthMgr --> MetaPrefs
     AuthMgr --> ProjectCleaner
 
     PinEntry --> PinMgr
-    PinMgr --> PinPrefs
+    PinMgr --> AuthSecure
     AppLock --> AuthMgr
     AppLock --> PinMgr
 
@@ -101,7 +102,7 @@ graph TB
     class AuthMgr,PinMgr,AppLock,ProjectCleaner,Telemetry auth;
     class TokenProvider,OkHttp,RealClient net;
     class Projects,Forms,Instances odk;
-    class AuthPrefs,PinPrefs,ODKPrefs,MetaPrefs,DB storage;
+    class AuthMetadata,AuthSecure,ODKPrefs,MetaPrefs,DB storage;
     class Central backend;
 ```
 
@@ -116,7 +117,13 @@ stateDiagram-v2
     LOGGED_OUT --> LOGGED_IN: User logs in (Credentials)
 
     state LOGGED_IN {
-        [*] --> Active: Token Valid
+        [*] --> CHECK_PIN: Authenticated
+        
+        CHECK_PIN --> LOGGED_IN_REQUIRES_PIN: PIN missing
+        CHECK_PIN --> Active: PIN set
+        
+        LOGGED_IN_REQUIRES_PIN --> Active: PIN setup complete
+        
         Active --> GracePeriod: Token Expired (Time > ExpiresAt)
 
         state GracePeriod {
@@ -276,7 +283,8 @@ graph TD
 |-----------|---------------|
 | `ProjectCleaner` | Form cleanup on logout (preserves instances) |
 | `TelemetryWorker` | Background telemetry (location, device info) |
-| `aiims_auth_prefs` | SharedPreferences for tokens, users, expiry, PIN |
+| `aiims_auth_prefs` | Metadata preferences: User names, API URLs, Project Names |
+| `aiims_auth_secure` | Secure storage: Token, Expiry, PIN Hash, Clock Validation |
 | `general_prefs{UUID}` | ODK project settings (server URL, protocol) |
 
 ### Network Layer
