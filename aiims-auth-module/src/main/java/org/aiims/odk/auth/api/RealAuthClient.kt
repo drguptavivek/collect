@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.net.HttpURLConnection
@@ -15,13 +17,17 @@ import org.aiims.odk.auth.analytics.AiimsAppAnalytics
 /**
  * Real authentication client that connects to backend API
  */
-class RealAuthClient private constructor(
-    private val context: Context,
-    private val apiUrl: String,
-    private val authManager: AiimsAuthManager? = null
+class RealAuthClient internal constructor(
+    internal val context: Context,
+    internal val apiUrl: String,
+    internal val authManager: AiimsAuthManager? = null
 ) : AuthClient {
     private var retrofit: Retrofit? = null
     private var apiService: AuthApiService? = null
+    
+    private val reachabilityMutex = Mutex()
+    private var lastReachabilityResult: Boolean? = null
+    private var lastReachabilityCheckTime: Long = 0
 
     // Lazy initialization of Retrofit
     private fun getRetrofit(): Retrofit {
@@ -326,29 +332,54 @@ class RealAuthClient private constructor(
     }
 
     override suspend fun checkReachability(): Boolean = withContext(Dispatchers.IO) {
-        try {
-            // Remove trailing slash if present then append /version.txt
-            val cleanUrl = if (apiUrl.endsWith("/")) apiUrl.dropLast(1) else apiUrl
-            val url = URL("$cleanUrl/version.txt")
+        val now = System.currentTimeMillis()
+        
+        // 1. Check Cache
+        reachabilityMutex.withLock {
+            if (lastReachabilityResult != null && (now - lastReachabilityCheckTime) < REACHABILITY_TTL_MS) {
+                Log.d("AiimsAuthClient", "Returning cached reachability result: $lastReachabilityResult")
+                return@withContext lastReachabilityResult!!
+            }
+        }
 
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.connectTimeout = 5000 // 5 seconds timeout
-            connection.readTimeout = 5000
-
-            // Handle different response codes gracefully
-            val responseCode = try {
-                connection.responseCode
-            } catch (e: java.io.IOException) {
-                -1 // Network failure
+        // 2. Perform Network Check with Mutex to deduplicate
+        reachabilityMutex.withLock {
+            // Re-check cache inside lock to double-verify if another thread just finished
+            if (lastReachabilityResult != null && (now - lastReachabilityCheckTime) < REACHABILITY_TTL_MS) {
+                return@withContext lastReachabilityResult!!
             }
 
-            val reachable = responseCode == HttpURLConnection.HTTP_OK
-            Log.d("AiimsAuthClient", "Reachability check to $url returned: $responseCode (Reachable: $reachable)")
-            reachable
-        } catch (e: Exception) {
-            Log.e("AiimsAuthClient", "Reachability check failed", e)
-            false
+            try {
+                // Remove trailing slash if present then append /version.txt
+                val cleanUrl = if (apiUrl.endsWith("/")) apiUrl.dropLast(1) else apiUrl
+                val url = URL("$cleanUrl/version.txt")
+
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "HEAD" // Optimized: Use HEAD instead of GET
+                connection.connectTimeout = 3000 // Reduced: 3 seconds timeout
+                connection.readTimeout = 3000
+
+                // Handle different response codes gracefully
+                val responseCode = try {
+                    connection.responseCode
+                } catch (e: java.io.IOException) {
+                    -1 // Network failure
+                }
+
+                val reachable = responseCode == HttpURLConnection.HTTP_OK
+                Log.d("AiimsAuthClient", "Reachability check to $url returned: $responseCode (Reachable: $reachable)")
+                
+                // Update Cache
+                lastReachabilityResult = reachable
+                lastReachabilityCheckTime = System.currentTimeMillis()
+                
+                reachable
+            } catch (e: Exception) {
+                Log.e("AiimsAuthClient", "Reachability check failed", e)
+                lastReachabilityResult = false
+                lastReachabilityCheckTime = System.currentTimeMillis()
+                false
+            }
         }
     }
 
@@ -403,6 +434,8 @@ class RealAuthClient private constructor(
 
 
     companion object {
+        private const val REACHABILITY_TTL_MS = 2 * 60 * 1000L // 2 minutes
+
         @Volatile
         private var INSTANCE: RealAuthClient? = null
 

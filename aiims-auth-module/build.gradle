@@ -129,6 +129,7 @@ dependencies {
     testImplementation libs.robolectric
     testImplementation libs.androidxTestCoreKtx
     testImplementation libs.androidxTestExtJunit
+    testImplementation libs.okhttp3Mockwebserver
     
     // Background Work
     implementation 'androidx.work:work-runtime-ktx:2.9.0'
