@@ -202,11 +202,12 @@ class AuthSettingsActivity : AiimsBaseActivity() {
                     
                     // Get base API URL for display
                     val apiUrl = authManager.getActiveProjectApiUrl() ?: "N/A"
+                    val displayUrl = org.aiims.odk.auth.utils.AiimsProjectUtils.formatUrlForDisplay(apiUrl)
 
                     val userDetails = """
                         Username: ${it.username}
                         Project: $projectName
-                        Server: $apiUrl
+                        Server: $displayUrl
                     """.trimIndent()
 
                     userDetailsText.text = userDetails

@@ -157,7 +157,8 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                     centralProjectId = authPid
                     authManager.setActiveProject(authPid!!)
                     
-                    binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, authPid, authUrl)
+                    val displayUrl = AiimsProjectUtils.formatUrlForDisplay(authUrl)
+                    binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, authPid, displayUrl)
                     binding.statusText.visibility = View.VISIBLE
                     
                     // Already configured (staged) -> Rescan
@@ -194,7 +195,8 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 // Ensure mapping is established
                 authManager.setProjectMapping(centralProjectId!!, currentSystemProjectId!!)
                 
-                binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, centralProjectId, serverUrl)
+                val displayUrl = AiimsProjectUtils.formatUrlForDisplay(serverUrl)
+                binding.statusText.text = getString(org.aiims.odk.auth.R.string.aiims_project_configured, centralProjectId, displayUrl)
                 binding.statusText.visibility = View.VISIBLE
                 
                 // Configured -> Rescan
@@ -425,7 +427,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
         // Set default values
         val currentUrl = serverUrl ?: "https://central.local"
-        baseUrlInput.setText(if (currentUrl.contains("/v1/projects")) currentUrl.substringBefore("/v1/projects") else currentUrl)
+        baseUrlInput.setText(AiimsProjectUtils.formatUrlForDisplay(currentUrl))
         projectIdInput.setText(centralProjectId ?: "1")
 
         // DEBUG ONLY: Show dev server section
@@ -462,8 +464,10 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                     }
 
                     if (baseUrl.isNotEmpty() && pid.isNotEmpty()) {
-                        // Construct full URL: Base + /v1/projects/ + ID
-                        val fullUrl = "$baseUrl/v1/projects/$pid"
+                        // Sanitize Base URL to ensure /v1 is present for internal use
+                        val apiBaseUrl = AiimsProjectUtils.formatUrlForApi(baseUrl)
+                        // Construct full URL: Base + /projects/ + ID
+                        val fullUrl = "$apiBaseUrl/projects/$pid"
                         manualConfigureProject(fullUrl)
                     } else {
                         Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_manual_config_missing), Toast.LENGTH_SHORT).show()
@@ -537,9 +541,9 @@ class AiimsLoginActivity : AiimsBaseActivity() {
                 metaSettings.save(org.odk.collect.settings.keys.MetaKeys.CURRENT_PROJECT_ID, targetProjectUuid)
 
                 // Update Local State
-                val displayUrl = url.substringBefore("/v1/projects")
+                val displayUrl = AiimsProjectUtils.formatUrlForDisplay(url)
                 currentSystemProjectId = targetProjectUuid
-                serverUrl = displayUrl
+                serverUrl = url // Store with /v1 internally
                 centralProjectId = centralPid
 
                 authManager.setActiveProject(centralPid)

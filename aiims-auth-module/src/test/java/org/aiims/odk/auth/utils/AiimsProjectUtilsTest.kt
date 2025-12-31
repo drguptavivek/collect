@@ -102,4 +102,46 @@ class AiimsProjectUtilsTest {
         val url = "https://central.example.com/projects/1/forms"
         assertThat(AiimsProjectUtils.getProjectIdFromUrl(url), nullValue())
     }
+
+    @Test
+    fun `#formatUrlForDisplay strips path segments`() {
+        val url = "https://central.example.com/v1/projects/1"
+        assertThat(AiimsProjectUtils.formatUrlForDisplay(url), equalTo("https://central.example.com"))
+    }
+
+    @Test
+    fun `#formatUrlForDisplay handles custom ports`() {
+        val url = "http://192.168.1.50:8383/v1/projects/2"
+        assertThat(AiimsProjectUtils.formatUrlForDisplay(url), equalTo("http://192.168.1.50:8383"))
+    }
+
+    @Test
+    fun `#formatUrlForDisplay handles simple base URL`() {
+        val url = "https://central.local"
+        assertThat(AiimsProjectUtils.formatUrlForDisplay(url), equalTo("https://central.local"))
+    }
+
+    @Test
+    fun `#formatUrlForApi appends v1 if missing`() {
+        val url = "https://central.example.com"
+        assertThat(AiimsProjectUtils.formatUrlForApi(url), equalTo("https://central.example.com/v1"))
+    }
+
+    @Test
+    fun `#formatUrlForApi preserves v1 if present`() {
+        val url = "https://central.example.com/v1"
+        assertThat(AiimsProjectUtils.formatUrlForApi(url), equalTo("https://central.example.com/v1"))
+    }
+
+    @Test
+    fun `#formatUrlForApi adds https if missing`() {
+        val url = "central.example.com"
+        assertThat(AiimsProjectUtils.formatUrlForApi(url), equalTo("https://central.example.com/v1"))
+    }
+
+    @Test
+    fun `#formatUrlForApi trims trailing slashes`() {
+        val url = "https://central.example.com/"
+        assertThat(AiimsProjectUtils.formatUrlForApi(url), equalTo("https://central.example.com/v1"))
+    }
 }
