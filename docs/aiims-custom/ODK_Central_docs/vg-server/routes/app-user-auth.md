@@ -22,7 +22,8 @@
   - Non-string `username`/`password` → `400.11` `invalidDataTypeOfParameter`.
   - Non-string `deviceId`/`comments` → `400.11` `invalidDataTypeOfParameter`.
 - Failure: HTTP 401.2 `authenticationFailed` (generic message).
-- Lockout: 5 failed attempts in 5 minutes per `username+IP` → 10-minute lock. Attempts are logged in `vg_app_user_login_attempts` with success/failure.
+- Lockout: defaults to 5 failed attempts in 5 minutes per `username+IP` → 10-minute lock. Attempts are logged in `vg_app_user_login_attempts` with success/failure; lockouts are tracked in `vg_app_user_lockouts`.
+  - Project overrides are read from `vg_project_settings` (see `docs/vg/vg-server/vg_settings.md`).
 
 ## Change password (self)
 **POST /projects/:projectId/app-users/:id/password/change**
@@ -42,6 +43,7 @@
 - Validation:
   - Missing or whitespace-only `oldPassword`/`newPassword` → `400.3` `missingParameters`.
   - Non-string `oldPassword`/`newPassword` → `400.11` `invalidDataTypeOfParameter`.
+  - `newPassword` longer than 72 chars → `400.38` `passwordTooLong`.
 
 ## Reset password (admin)
 **POST /projects/:projectId/app-users/:id/password/reset**
@@ -60,12 +62,15 @@
 - Validation:
   - Missing or whitespace-only `newPassword` → `400.3` `missingParameters`.
   - Non-string `newPassword` → `400.11` `invalidDataTypeOfParameter`.
+  - `newPassword` longer than 72 chars → `400.38` `passwordTooLong`.
 
 ## Revoke own sessions
 **POST /projects/:projectId/app-users/:id/revoke**
 
 - Auth: App user bearer token (self). `id` is the app-user ID returned by `/login`.
 - Behavior: revokes only the current token.
+- If the token belongs to a different project than `:projectId`, returns 404 (project-scoped not found).
+- If the current session is missing (unexpected auth context), returns 401 authentication failed.
 - Request (JSON):
   - `deviceId` (optional, string): Used for audit/logging.
 - Validation:
@@ -79,6 +84,29 @@
 **POST /projects/:projectId/app-users/:id/revoke-admin**
 
 - Auth: Admin/manager on the project (web UI).
+- If `:id` is not in the project, returns 404 (project-scoped not found).
+- Response — HTTP 200, application/json:
+  ```json
+  { "success": true }
+  ```
+
+## Project app-user settings (admin)
+**GET /projects/:projectId/app-users/settings**
+
+- Auth: Admin/manager on the project (`project.read`).
+- Response — HTTP 200, application/json:
+  ```json
+  { "vg_app_user_session_ttl_days": 3, "vg_app_user_session_cap": 3, "admin_pw": "vg_custom" }
+  ```
+  Values prefer project overrides from `vg_project_settings`, falling back to `vg_settings`.
+
+**PUT /projects/:projectId/app-users/settings**
+
+- Auth: Admin/manager on the project (`project.update`).
+- Request (JSON): any of
+  - `vg_app_user_session_ttl_days` (optional, positive integer)
+  - `vg_app_user_session_cap` (optional, positive integer)
+  - `admin_pw` (optional, non-empty string, max 72 chars)
 - Response — HTTP 200, application/json:
   ```json
   { "success": true }

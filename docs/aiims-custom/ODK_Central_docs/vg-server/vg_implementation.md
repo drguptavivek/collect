@@ -5,8 +5,10 @@ This document lists the key implementation points and modified core behavior.
 ## Tables
 
 - `vg_field_key_auth`: One-to-one with `field_keys` by `actorId`. Stores username, password hash, phone, and active flag.
-- `vg_settings`: Stores session TTL and cap values.
+- `vg_settings`: Stores session TTL, cap, and lockout defaults.
+- `vg_project_settings`: Stores project-level overrides for session TTL/cap and lockout settings.
 - `vg_app_user_login_attempts`: Stores login attempts for lockout enforcement.
+- `vg_app_user_lockouts`: Stores active lockout windows.
 - `vg_app_user_sessions`: Stores IP/device metadata (user agent, deviceId, comments) per active session (token FK to `sessions`).
 - `vg_app_user_telemetry`: Stores app-user device telemetry (deviceId, Collect version, device timestamps, location).
 
@@ -30,7 +32,8 @@ This document lists the key implementation points and modified core behavior.
   - `revokeSessions()`: terminates sessions for actor (optionally current token), emits audit.
   - `setActive()`: toggles active flag, terminates sessions on deactivate, emits audit.
 - `server/lib/model/query/vg-app-user-auth.js`
-  - `getSessionTtlDays()` / `getSessionCap()`: read settings with defaults (3 days, cap 3).
+  - `getSessionTtlDays()` / `getSessionCap()`: read defaults (3 days, cap 3).
+  - `getSettingWithProjectOverride()`: prefers project-level overrides when issuing sessions.
   - `insertAuth()`, `updatePassword()`, `updatePhone()`, `setActive()`: CRUD for `vg_field_key_auth`.
   - `recordAttempt()` / `getLockStatus()`: login attempt tracking and lockout checks.
   - `recordSession()` / `getActiveSessionsByActorId()`: session metadata tracking and listing.
@@ -58,6 +61,8 @@ This document lists the key implementation points and modified core behavior.
 - `POST /projects/:projectId/app-users/:id/revoke-admin` -> `vgAppUserAuth.setActive(false)`
 - `GET /projects/:projectId/app-users/:id/sessions` -> `vgAppUserAuth.listSessions()`
 - `POST /projects/:projectId/app-users/:id/active` -> `vgAppUserAuth.setActive(active)`
+- `GET /projects/:projectId/app-users/settings` -> `VgAppUserAuth.getSettingWithProjectOverride*()`
+- `PUT /projects/:projectId/app-users/settings` -> `VgAppUserAuth.upsertProjectSetting()`
 - `POST /projects/:projectId/app-users/telemetry` -> `vgTelemetry.recordTelemetry()`
 - `GET /system/app-users/telemetry` -> `VgTelemetry.getTelemetry()`
 - `GET /system/settings` -> `VgAppUserAuth.getSessionTtlDays()` + `getSessionCap()`
@@ -84,7 +89,9 @@ VG emits vg-prefixed actions for creation, login success/failure, password chang
 ## Rate limiting and lockouts
 
 - Login attempts are recorded in `vg_app_user_login_attempts` for username+IP lockouts.
-- Lockouts are enforced in `server/lib/domain/vg-app-user-auth.js` using `getLockStatus()` from `server/lib/model/query/vg-app-user-auth.js`.
+- Lockouts are stored in `vg_app_user_lockouts` with project overrides in `vg_project_settings`.
+- Session TTL and cap also support project overrides via `vg_project_settings`.
+- Lockouts are enforced in `server/lib/domain/vg-app-user-auth.js` using `getActiveLockout()` and `getLockStatus()` from `server/lib/model/query/vg-app-user-auth.js`.
 
 ## Operational command (Docker)
 
