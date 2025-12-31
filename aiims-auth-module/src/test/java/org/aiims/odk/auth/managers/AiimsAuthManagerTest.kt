@@ -71,7 +71,7 @@ class AiimsAuthManagerTest {
 
         // Initialize Managers
         pinManager = PinManager(context)
-        authManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
+        authManager = AiimsAuthManager(context, { projectCleaner }, pinManager, authStorage, secureStorage, telemetryDao)
         authManager.setAuthClient(authClient)
         authManager.setIoDispatcher(testDispatcher)
 
@@ -254,7 +254,7 @@ class AiimsAuthManagerTest {
         }
 
         // Recreating authManager to simulate app restart, using SAME Fakes
-        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
+        val newAuthManager = AiimsAuthManager(context, { projectCleaner }, pinManager, authStorage, secureStorage, telemetryDao)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(testDispatcher)
 
@@ -283,7 +283,7 @@ class AiimsAuthManagerTest {
         authManager.login(projectId, "user", "pass", "url")
 
         // Reuse Fakes for persistence check
-        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
+        val newAuthManager = AiimsAuthManager(context, { projectCleaner }, pinManager, authStorage, secureStorage, telemetryDao)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(testDispatcher)
 
@@ -315,7 +315,7 @@ class AiimsAuthManagerTest {
             doReturn(true).whenever(authClient).checkReachability()
         }
 
-        val newAuthManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
+        val newAuthManager = AiimsAuthManager(context, { projectCleaner }, pinManager, authStorage, secureStorage, telemetryDao)
         newAuthManager.setAuthClient(authClient)
         newAuthManager.setIoDispatcher(testDispatcher)
 

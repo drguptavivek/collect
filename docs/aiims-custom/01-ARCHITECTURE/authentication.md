@@ -1,7 +1,7 @@
 # Authentication System - AIIMS ODK Collect
 
-> Last Updated: 2025-12-30
-> Reviewed At: 2025-12-30
+> Last Updated: 2025-12-31
+> Reviewed At: 2025-12-31
 
 This document provides detailed documentation of the AIIMS authentication system, including the state machine, token lifecycle, and re-authentication flows.
 
@@ -325,10 +325,20 @@ context.startActivity(intent)
 | Grace period exceeded | Local time > expiresAt + 6h | Force logout |
 | Network unavailable | Catch exception during reachability check | Allow offline work if in grace |
 | Malformed token | JWT parse exception | Treat as expired, trigger re-auth |
-
----
-
-## Related Files
+ 
+ ---
+ 
+ ## Internal Dependencies & Lifecycle
+ 
+ ### The `ProjectCleaner` Bridge
+ To maintain architectural boundaries (see [Boundary Docs](aiims_vs_standard_boundary.md)), `AiimsAuthManager` does not directly invoke ODK project management. Instead, it uses the `ProjectCleaner` interface.
+ 
+ - **Role**: Triggers cleanup of forms and cache during security events (e.g., hard expiry) without exposing ODK internals to the auth module.
+ - **Lazy Injection**: Injected via `dagger.Lazy<ProjectCleaner>` to break a circular dependency with the networking layer (`OpenRosaHttpInterface`).
+ 
+ ---
+ 
+ ## Related Files
 
 | File | Purpose |
 |------|---------|

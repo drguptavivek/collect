@@ -92,7 +92,9 @@ open class AiimsAuthDependencyModule {
         secureStorage: AiimsSecureStorage,
         telemetryDao: org.aiims.odk.auth.storage.db.TelemetryDao
     ): AiimsAuthManager {
-        return AiimsAuthManager(application, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
+        // IMPORTANT: Must remain wrapped in Lazy { ... } to prevent Dagger circular dependency (StackOverflowError).
+        // This pattern MUST NOT be disturbed when writing tests or making code changes.
+        return AiimsAuthManager(application, { projectCleaner }, pinManager, authStorage, secureStorage, telemetryDao)
     }
 
     @Provides

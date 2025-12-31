@@ -49,7 +49,10 @@ import org.odk.collect.settings.keys.MetaKeys
 @Singleton
 class AiimsAuthManager @Inject constructor(
     private val context: Context,
-    private val projectCleaner: ProjectCleaner,
+    // IMPORTANT: Injected as Lazy to break circular dependency:
+    // AiimsAuthManager -> ProjectCleaner -> InstancesDataService -> OpenRosaHttpInterface -> AiimsAuthManager.
+    // This pattern MUST NOT be disturbed when writing tests or making code changes.
+    private val projectCleaner: dagger.Lazy<ProjectCleaner>,
     private val pinManager: org.aiims.odk.auth.utils.PinManager,
     private val authStorage: AiimsAuthStorage,
     secureStorage: AiimsSecureStorage,

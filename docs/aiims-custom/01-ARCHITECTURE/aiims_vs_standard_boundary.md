@@ -1,6 +1,6 @@
 # AIIMS vs. Standard ODK Boundaries
 
-> Last Updated: 2025-12-30
+> Last Updated: 2025-12-31
 
 ## Overview
 This document defines the architectural boundaries between the AIIMS customization and the standard ODK Collect codebase. The goal of this boundary is to ensure that AIIMS-specific logic is isolated, making it easier to sync with upstream ODK updates and preventing custom logic from inadvertently affecting standard ODK behavior.
@@ -69,6 +69,9 @@ This document defines the architectural boundaries between the AIIMS customizati
  - **Logout**: AIIMS logic clears AIIMS-specific tokens and user metadata.
  - **Data Retention**: Standard ODK *forms* are wiped by AIIMS `ProjectCleaner` to prevent cross-user visibility. However, ODK *instances* (completed submissions) are **preserved**.
  - **Rationale**: This explicitly satisfies the **Shared Device Safety** requirement (originally defined in `multiuser-persistence.md`), allowing multiple users to operate on the same device without data loss while maintaining user privacy via form cleanup.
+ 
+ > [!IMPORTANT]
+ > **Bridge Mechanism & Circularity**: The `ProjectCleaner` is provided by the standard ODK core but consumed by the AIIMS `AiimsAuthManager`. To avoid a `StackOverflowError` during Dagger initialization, it is injected as `dagger.Lazy<ProjectCleaner>`. This breaks the circular dependency chain: `AiimsAuthManager` → `ProjectCleaner` → `InstancesDataService` → `OpenRosaHttpInterface` → `AiimsAuthManager`.
  
  ---
  

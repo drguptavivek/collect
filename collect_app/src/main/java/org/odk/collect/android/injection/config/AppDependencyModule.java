@@ -182,11 +182,6 @@ public class AppDependencyModule {
     public OpenRosaHttpInterface provideHttpInterface(MimeTypeMap mimeTypeMap, UserAgentProvider userAgentProvider,
             Application application, VersionInformation versionInformation) {
         
-        // Use static accessor for AiimsAuthManager (since we can't easily inject it here without circular dependency or complex setup)
-        org.aiims.odk.auth.managers.AiimsAuthManager authManager = 
-            ((org.aiims.odk.auth.injection.AiimsAuthDependencyComponentProvider) application)
-                .getAiimsAuthDependencyComponent().getAuthManager();
-
         String cacheDir = application.getCacheDir().getAbsolutePath();
 
         // TOKEN PROVIDER: Delegate to AiimsTokenProvider (centralized token access)
