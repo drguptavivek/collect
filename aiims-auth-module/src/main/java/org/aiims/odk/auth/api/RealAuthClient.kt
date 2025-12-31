@@ -180,15 +180,21 @@ class RealAuthClient private constructor(
                     }
                 } else {
                     // Handle HTTP errors
-                    Log.e("AiimsAuthClient", "HTTP Error: ${response.code()}")
-                    when (response.code()) {
-                        400 -> AuthResult.Error("Invalid request")
-                        401 -> AuthResult.Error("Invalid credentials")
-                        403 -> AuthResult.Error("Access forbidden")
-                        404 -> AuthResult.Error("Project or User not found")
-                        500 -> AuthResult.Error("Server error")
-                        else -> AuthResult.Error("Login failed: HTTP ${response.code()}")
+                Log.e("AiimsAuthClient", "HTTP Error: ${response.code()}")
+                when (response.code()) {
+                    400 -> AuthResult.Error("Invalid request")
+                    401 -> AuthResult.Error("Invalid credentials")
+                    403 -> AuthResult.Error("Access forbidden")
+                    404 -> AuthResult.Error("Project or User not found")
+                    429 -> {
+                        // Rate limited - extract retry-after if present
+                        val retryAfter = response.headers()["Retry-After"]?.toLongOrNull() ?: 600 // Default 10 min
+                        val retryMinutes = (retryAfter / 60).coerceAtLeast(1)
+                        AuthResult.Error("Too many login attempts. Please try again in $retryMinutes minutes.")
                     }
+                    500 -> AuthResult.Error("Server error")
+                    else -> AuthResult.Error("Login failed: HTTP ${response.code()}")
+                }
                 }
             } catch (e: Exception) {
                 Log.e("AiimsAuthClient", "Login exception: ${e.message}", e)
