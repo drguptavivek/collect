@@ -43,6 +43,7 @@ import org.odk.collect.projects.SharedPreferencesProjectsRepository
 import org.odk.collect.shared.strings.UUIDGenerator
 import org.odk.collect.settings.keys.MetaKeys
 import org.aiims.odk.auth.utils.AiimsConstants
+import org.aiims.odk.auth.analytics.AiimsAppAnalytics
 /**
  * Authentication Manager for Central Backend.
  * Supports Multi-Project Isolation.
@@ -237,6 +238,7 @@ class AiimsAuthManager @Inject constructor(
                 if (currentTime > hardDeadline) {
                     // HARD LOGOUT: Exceeded 6-hour grace
                     println("DEBUG_AUTH: Hard deadline exceeded. Logging out.")
+                    AiimsAppAnalytics.logHardLogout("grace_period_exceeded")
                     // We need to launch logout
                     scope.launch(ioDispatcherForTesting ?: Dispatchers.Main) { logoutProject(pid) }
                     return
@@ -253,6 +255,7 @@ class AiimsAuthManager @Inject constructor(
                 } else {
                     // GRACE PERIOD (Expired but within 6h)
                     println("DEBUG_AUTH: In Grace Period. Token expired $expiresAt")
+                    AiimsAppAnalytics.logGracePeriodStarted()
 
                     // Optimistically allow login
                     _authState.value = AuthState.LOGGED_IN
@@ -345,6 +348,7 @@ class AiimsAuthManager @Inject constructor(
                 // Clock manipulation detected - allow grace but prevent re-auth
                 _errorMessage.value = "Clock manipulation detected: ${timeResult.reason}. Please correct your device time to re-authenticate."
                 _isSoftExpiry.value = false // Don't show re-auth prompt
+                AiimsAppAnalytics.logClockManipulationDetected()
                 // Calculate server/device difference (expected time is what we should use)
                 val deviceTime = System.currentTimeMillis()
                 _serverTimeDifferenceMs.value = deviceTime - timeResult.expectedTime

@@ -21,6 +21,7 @@ import org.aiims.odk.auth.managers.AiimsAuthManager
 import org.aiims.odk.auth.utils.AiimsProjectUtils
 import org.aiims.odk.auth.utils.PinManager
 import org.aiims.odk.auth.utils.TokenRevocationManager
+import org.aiims.odk.auth.analytics.AiimsAppAnalytics
 import javax.inject.Inject
 
 /**
@@ -98,6 +99,7 @@ class AiimsLoginActivity : AiimsBaseActivity() {
             
             // Focus on password field
             binding.passwordField.requestFocus()
+            AiimsAppAnalytics.logReauthPromptShown()
         }
         
         // Handle legacy soft expiry mode

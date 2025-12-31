@@ -10,6 +10,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import org.aiims.odk.auth.managers.AiimsAuthManager
 import org.aiims.odk.auth.storage.AiimsTokenProvider
+import org.aiims.odk.auth.analytics.AiimsAppAnalytics
 
 /**
  * Real authentication client that connects to backend API
@@ -137,8 +138,9 @@ class RealAuthClient private constructor(
         return withContext(Dispatchers.IO) {
             try {
                 Log.d("AiimsAuthClient", "Attempting login for user: $username on project: $projectId device: $deviceId")
+            AiimsAppAnalytics.logLoginAttempt()
 
-                // Create login request
+            // Create login request
                 val request = LoginRequest(
                     username = username,
                     password = password,
@@ -156,8 +158,9 @@ class RealAuthClient private constructor(
                     val body = response.body()
                     if (body != null) {
                         Log.d("AiimsAuthClient", "Login successful")
+                    AiimsAppAnalytics.logLoginSuccess()
 
-                        // Parse server time from response body (ISO 8601 format)
+                    // Parse server time from response body (ISO 8601 format)
                         val serverTime = body.serverTime?.let { parseIsoDateTime(it) }
 
                         // Construct User object from response + input
@@ -182,34 +185,58 @@ class RealAuthClient private constructor(
                     // Handle HTTP errors
                 Log.e("AiimsAuthClient", "HTTP Error: ${response.code()}")
                 when (response.code()) {
-                    400 -> AuthResult.Error("Invalid request")
-                    401 -> AuthResult.Error("Invalid credentials")
-                    403 -> AuthResult.Error("Access forbidden")
-                    404 -> AuthResult.Error("Project or User not found")
+                    400 -> {
+                        AiimsAppAnalytics.logLoginFailed("invalid_request_400")
+                        AuthResult.Error("Invalid request")
+                    }
+                    401 -> {
+                        AiimsAppAnalytics.logLoginFailed("invalid_credentials_401")
+                        AuthResult.Error("Invalid credentials")
+                    }
+                    403 -> {
+                         AiimsAppAnalytics.logLoginFailed("forbidden_403")
+                         AuthResult.Error("Access forbidden")
+                    }
+                    404 -> {
+                        AiimsAppAnalytics.logLoginFailed("not_found_404")
+                        AuthResult.Error("Project or User not found")
+                    }
                     429 -> {
                         // Rate limited - extract retry-after if present
                         val retryAfter = response.headers()["Retry-After"]?.toLongOrNull() ?: 600 // Default 10 min
                         val retryMinutes = (retryAfter / 60).coerceAtLeast(1)
+                        AiimsAppAnalytics.logLoginFailed("rate_limited")
                         AuthResult.Error("Too many login attempts. Please try again in $retryMinutes minutes.")
                     }
-                    500 -> AuthResult.Error("Server error")
-                    else -> AuthResult.Error("Login failed: HTTP ${response.code()}")
+                    500 -> {
+                         AiimsAppAnalytics.logLoginFailed("server_error_500")
+                         AuthResult.Error("Server error")
+                    }
+                    else -> {
+                        AiimsAppAnalytics.logLoginFailed("http_${response.code()}")
+                        AuthResult.Error("Login failed: HTTP ${response.code()}")
+                    }
                 }
                 }
             } catch (e: java.net.SocketTimeoutException) {
                 Log.e("AiimsAuthClient", "Login timeout: ${e.message}", e)
+                AiimsAppAnalytics.logNetworkError("timeout")
                 AuthResult.Error("Connection timed out. Please check your network and try again.")
             } catch (e: java.net.UnknownHostException) {
                 Log.e("AiimsAuthClient", "Login DNS error: ${e.message}", e)
+                AiimsAppAnalytics.logNetworkError("dns_error")
                 AuthResult.Error("Cannot reach server. Please check your internet connection.")
             } catch (e: java.net.ConnectException) {
                 Log.e("AiimsAuthClient", "Login connection refused: ${e.message}", e)
+                AiimsAppAnalytics.logNetworkError("connection_refused")
                 AuthResult.Error("Cannot connect to server. Please try again later.")
             } catch (e: java.io.IOException) {
                 Log.e("AiimsAuthClient", "Login IO error: ${e.message}", e)
+                AiimsAppAnalytics.logNetworkError("io_error")
                 AuthResult.Error("Network error. Please check your connection and try again.")
             } catch (e: Exception) {
                 Log.e("AiimsAuthClient", "Login exception: ${e.message}", e)
+                AiimsAppAnalytics.logLoginFailed("exception")
                 AuthResult.Error("Unexpected error: ${e.message}")
             }
         }
