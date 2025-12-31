@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.CompletableDeferred
@@ -64,6 +65,7 @@ class AiimsAuthManager @Inject constructor(
 
         // Global keys
         private const val KEY_ACTIVE_PROJECT_ID = "active_project_id"
+        private const val KEY_LAST_DISMISSAL_TIME = "last_soft_expiry_dismissal"
 
         fun generateEventId(): String {
             return java.util.UUID.randomUUID().toString()
@@ -134,29 +136,29 @@ class AiimsAuthManager @Inject constructor(
     val isReauthenticating: StateFlow<Boolean> = _isReauthenticating.asStateFlow()
 
     private val _authState = MutableStateFlow(AuthState.INITIAL)
-    val authState: Flow<AuthState> = _authState.asStateFlow()
+    val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
     private val _currentUser = MutableStateFlow<User?>(null)
-    val currentUser: Flow<User?> = _currentUser.asStateFlow()
+    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: Flow<Boolean> = _isLoading.asStateFlow()
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: Flow<String?> = _errorMessage.asStateFlow()
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     private val _isSoftExpiry = MutableStateFlow(false)
-    val isSoftExpiry: Flow<Boolean> = _isSoftExpiry.asStateFlow()
+    val isSoftExpiry: StateFlow<Boolean> = _isSoftExpiry.asStateFlow()
 
     private val _isExpiringSoon = MutableStateFlow(false)
-    val isExpiringSoon: Flow<Boolean> = _isExpiringSoon.asStateFlow()
+    val isExpiringSoon: StateFlow<Boolean> = _isExpiringSoon.asStateFlow()
 
     private val _tokenExpiryTime = MutableStateFlow(0L)
-    val tokenExpiryTime: Flow<Long> = _tokenExpiryTime.asStateFlow()
+    val tokenExpiryTime: StateFlow<Long> = _tokenExpiryTime.asStateFlow()
 
     // Validated current time from ClockValidator (for UI display)
     private val _validatedCurrentTime = MutableStateFlow(0L)
-    val validatedCurrentTime: Flow<Long> = _validatedCurrentTime.asStateFlow()
+    val validatedCurrentTime: StateFlow<Long> = _validatedCurrentTime.asStateFlow()
 
     // Server/device time difference in milliseconds (for warnings)
     private val _serverTimeDifferenceMs = MutableStateFlow(0L)
@@ -267,12 +269,17 @@ class AiimsAuthManager @Inject constructor(
                         }
 
                         if (serverReachable) {
-                            println("DEBUG_AUTH: Server reachable in grace period. Setting Soft Expiry.")
-                            // SOFT EXPIRY: Prompt user, but do not force logout yet
-                            // Check if clock manipulation detected - if so, don't show re-auth prompt
-                            if (!clockValidator.isManipulationDetected()) {
+                            println("DEBUG_AUTH: Server reachable in grace period. Checking dismiss status.")
+                            
+                            // Check for snooze (15 minutes = 900000 ms)
+                            val lastDismissal = prefs.getLong(KEY_LAST_DISMISSAL_TIME, 0L)
+                            val isSnoozed = System.currentTimeMillis() - lastDismissal < 900000L
+
+                            if (!isSnoozed && !clockValidator.isManipulationDetected()) {
+                                println("DEBUG_AUTH: Not snoozed. Setting Soft Expiry.")
                                 _isSoftExpiry.value = true
                             } else {
+                                println("DEBUG_AUTH: Dismissal active or clock manipulation. Suppressing Soft Expiry.")
                                 _isSoftExpiry.value = false
                             }
                         } else {
@@ -542,6 +549,8 @@ class AiimsAuthManager @Inject constructor(
         prefs.edit().apply {
             remove(keyUser(projectId))
             remove(keyApiUrl(projectId))
+            // Also clear dismissal time on explicit logout/clear to reset behavior
+            remove(KEY_LAST_DISMISSAL_TIME)
             apply()
         }
     }
@@ -747,20 +756,8 @@ class AiimsAuthManager @Inject constructor(
     }
 
     fun snoozeSoftExpiry() {
-        // User cancelled re-auth. Snooze check?
-        // For now, just keep the flag true? No, if we keep flag true, AppLock will loop.
-        // We probably want to suppress the flag until next refresh?
-        // Actually, if user hits BACK, they go to main menu. onActivityStarted triggers.
-        // Strategies:
-        // 1. Set flag false temporarily?
-        // 2. Add 'snoozed' state?
-        // Let's just set _isSoftExpiry = false for now until next refresh triggers it?
-        // But refresh triggers on every resume? No, refreshState is internal.
-        // We need a way to say "User knows, ignored it".
-        // Let's leave value as TRUE, but AppLock needs to know if it JUST launched it.
-        // Better: Use a "Snooze" method that sets it to false. The check runs in background anyway.
-        // Re-enabling logic: When does it turn back on?
-        // Only if refreshState is called again (e.g. app restart or manual refresh).
+        // Persist snooze time to prevent immediate re-prompt on restart
+        prefs.edit().putLong(KEY_LAST_DISMISSAL_TIME, System.currentTimeMillis()).apply()
         _isSoftExpiry.value = false
     }
 
