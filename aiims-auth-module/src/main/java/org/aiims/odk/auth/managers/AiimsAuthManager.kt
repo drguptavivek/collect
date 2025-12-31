@@ -176,6 +176,9 @@ class AiimsAuthManager @Inject constructor(
     private val GRACE_PERIOD_MS = 6L * 60 * 60 * 1000
 
     init {
+        // Initialize Analytics/Logging
+        AiimsAppAnalytics.init(context)
+
         // Restore last active project or default state
         activeProjectId = prefs.getString(KEY_ACTIVE_PROJECT_ID, null)
         refreshState()

@@ -56,6 +56,11 @@ open class AiimsAuthDependencyModule {
     }
 
     @Provides
+    open fun providesSettingsProvider(): org.odk.collect.settings.SettingsProvider {
+        throw UnsupportedOperationException("This should be overridden by dependent application")
+    }
+
+    @Provides
     @Singleton
     open fun providesAiimsSecureStorage(application: Application): AiimsSecureStorage {
         return AiimsSecureStorageImpl.getInstance(application)

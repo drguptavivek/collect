@@ -34,18 +34,30 @@ object AiimsAppAnalytics {
     private const val STORE_ERROR = "aiims_store_error"
 
     // --- Internal Logging Helper ---
+    // --- Internal Logging Helper ---
+    
+    fun init(context: android.content.Context) {
+        AiimsFileLogger.init(context)
+    }
+
     private fun logEvent(event: String, params: Map<String, String>? = null) {
+        val message = if (params != null) {
+            "Event: $event Params: $params"
+        } else {
+            "Event: $event"
+        }
+
+        // Always write to file
+        AiimsFileLogger.log("INFO", TAG, message)
+
         try {
-            if (params != null) {
-                Log.i(TAG, "Event: $event Params: $params")
-            } else {
-                Log.i(TAG, "Event: $event")
+            if (org.aiims.odk.auth.BuildConfig.DEBUG) {
+                 Log.i(TAG, message)
             }
         } catch (e: RuntimeException) {
-            // Safe fallback for tests where Log is not mocked
-            println("$TAG [TEST_FALLBACK]: Event: $event Params: $params")
+            // Safe fallback for tests or if BuildConfig fails
+             println("$TAG [TEST_FALLBACK]: $message")
         }
-        // TODO: Hook into a persistent analytics provider if needed later
     }
 
     // --- Auth Logging ---

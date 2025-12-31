@@ -137,6 +137,9 @@ dependencies {
     implementation libs.androidxRoomRuntime
     ksp libs.androidxRoomCompiler
     implementation libs.androidxRoomKtx
+
+    // Zip for Log Export
+    implementation 'net.lingala.zip4j:zip4j:2.11.5'
 }
 
 apply from: '../config/quality.gradle'

@@ -15,6 +15,9 @@ import javax.inject.Inject
  */
 class AuthSettingsActivity : AiimsBaseActivity() {
 
+    @Inject
+    lateinit var settingsProvider: org.odk.collect.settings.SettingsProvider
+
     override fun injectDependencies() {
         (application as AiimsAuthDependencyComponentProvider).aiimsAuthDependencyComponent.inject(this)
     }
@@ -31,6 +34,7 @@ class AuthSettingsActivity : AiimsBaseActivity() {
         val clockWarningText: TextView = findViewById(org.aiims.odk.auth.R.id.clock_warning_text) // New View
         val getProjectDetailsButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.get_project_details_button)
         val changePinButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.change_pin_button)
+        val exportLogsButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.export_logs_button)
         val refreshTokenButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.refresh_token_button)
         val logoutButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.logout_button)
 
@@ -41,6 +45,10 @@ class AuthSettingsActivity : AiimsBaseActivity() {
 
         changePinButton.setOnClickListener {
             changePin()
+        }
+        
+        exportLogsButton.setOnClickListener {
+            exportLogs()
         }
 
         refreshTokenButton.setOnClickListener {
@@ -66,6 +74,55 @@ class AuthSettingsActivity : AiimsBaseActivity() {
         setupClockObserver(clockWarningText)
     }
 
+    private fun exportLogs() {
+        val progressDialog = android.app.ProgressDialog.show(
+            this,
+            null,
+            getString(org.aiims.odk.auth.R.string.aiims_exporting_logs),
+            true
+        )
+
+        lifecycleScope.launch {
+            val zipFile = org.aiims.odk.auth.utils.LogExporter.exportLogs(this@AuthSettingsActivity, settingsProvider)
+            
+            progressDialog.dismiss()
+
+            if (zipFile != null) {
+                shareLogFile(zipFile)
+            } else {
+                 android.widget.Toast.makeText(
+                    this@AuthSettingsActivity,
+                    getString(org.aiims.odk.auth.R.string.aiims_no_logs_found),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    private fun shareLogFile(file: java.io.File) {
+        try {
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                this,
+                "$packageName.provider",
+                file
+            )
+
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/zip"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            startActivity(Intent.createChooser(intent, "Share Logs"))
+        } catch (e: Exception) {
+             android.widget.Toast.makeText(
+                this@AuthSettingsActivity,
+                getString(org.aiims.odk.auth.R.string.aiims_error_exporting_logs),
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+    
     private fun setupClockObserver(warningText: TextView) {
         lifecycleScope.launch {
             authManager.serverTimeDifferenceMs.collect { diffMs ->

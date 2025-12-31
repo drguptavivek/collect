@@ -143,6 +143,13 @@
     <string name="aiims_sync_pending">Data will sync when online</string>
     <string name="aiims_last_sync">Last sync: %s</string>
 
+    <!-- Log Export -->
+    <string name="aiims_export_logs_button">Export Diagnostic Logs</string>
+    <string name="aiims_exporting_logs">Exporting logs...</string>
+    <string name="aiims_error_exporting_logs">Error exporting logs</string>
+    <string name="aiims_logs_exported">Logs exported successfully</string>
+    <string name="aiims_no_logs_found">No logs found to export</string>
+
     <!-- QR Scanner -->
     <string name="aiims_scan_qr_code">Scan QR Code</string>
     <string name="aiims_qr_scanner_instruction">Position QR code within the frame to scan</string>

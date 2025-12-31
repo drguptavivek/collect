@@ -8,4 +8,8 @@ class CollectAiimsAuthDependencyModule(private val appDependencyComponent: AppDe
     override fun providesProjectCleaner(): ProjectCleaner {
         return appDependencyComponent.projectCleaner()
     }
+
+    override fun providesSettingsProvider(): org.odk.collect.settings.SettingsProvider {
+        return appDependencyComponent.settingsProvider()
+    }
 }
