@@ -25,6 +25,7 @@ class AiimsFileLoggerTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        AiimsFileLogger.resetForTest()
     }
 
     @Test

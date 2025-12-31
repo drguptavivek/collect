@@ -149,6 +149,9 @@
     <string name="aiims_error_exporting_logs">Error exporting logs</string>
     <string name="aiims_logs_exported">Logs exported successfully</string>
     <string name="aiims_no_logs_found">No logs found to export</string>
+    <string name="aiims_save_logs_button">Save Logs to Storage</string>
+    <string name="aiims_logs_saved_to_downloads">Logs saved to Downloads/AIIMS_Logs</string>
+    <string name="aiims_no_admin_pw">Admin password not set. Using default: "aiims"</string>
 
     <!-- QR Scanner -->
     <string name="aiims_scan_qr_code">Scan QR Code</string>

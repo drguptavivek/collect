@@ -35,6 +35,7 @@ class AuthSettingsActivity : AiimsBaseActivity() {
         val getProjectDetailsButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.get_project_details_button)
         val changePinButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.change_pin_button)
         val exportLogsButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.export_logs_button)
+        val saveLogsButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.save_logs_button)
         val refreshTokenButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.refresh_token_button)
         val logoutButton: com.google.android.material.button.MaterialButton = findViewById(org.aiims.odk.auth.R.id.logout_button)
 
@@ -49,6 +50,10 @@ class AuthSettingsActivity : AiimsBaseActivity() {
         
         exportLogsButton.setOnClickListener {
             exportLogs()
+        }
+
+        saveLogsButton.setOnClickListener {
+            saveLogs()
         }
 
         refreshTokenButton.setOnClickListener {
@@ -91,6 +96,45 @@ class AuthSettingsActivity : AiimsBaseActivity() {
                 shareLogFile(zipFile)
             } else {
                  android.widget.Toast.makeText(
+                    this@AuthSettingsActivity,
+                    getString(org.aiims.odk.auth.R.string.aiims_no_logs_found),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    private fun saveLogs() {
+        val progressDialog = android.app.ProgressDialog.show(
+            this,
+            null,
+            getString(org.aiims.odk.auth.R.string.aiims_exporting_logs),
+            true
+        )
+
+        lifecycleScope.launch {
+            val zipFile = org.aiims.odk.auth.utils.LogExporter.exportLogs(this@AuthSettingsActivity, settingsProvider)
+            
+            if (zipFile != null) {
+                val success = org.aiims.odk.auth.utils.LogExporter.saveToDownloads(this@AuthSettingsActivity, zipFile)
+                progressDialog.dismiss()
+
+                if (success) {
+                    android.widget.Toast.makeText(
+                        this@AuthSettingsActivity,
+                        getString(org.aiims.odk.auth.R.string.aiims_logs_saved_to_downloads),
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    android.widget.Toast.makeText(
+                        this@AuthSettingsActivity,
+                        getString(org.aiims.odk.auth.R.string.aiims_error_exporting_logs),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } else {
+                progressDialog.dismiss()
+                android.widget.Toast.makeText(
                     this@AuthSettingsActivity,
                     getString(org.aiims.odk.auth.R.string.aiims_no_logs_found),
                     android.widget.Toast.LENGTH_SHORT

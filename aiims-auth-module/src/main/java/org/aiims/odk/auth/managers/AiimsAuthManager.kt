@@ -194,8 +194,8 @@ class AiimsAuthManager @Inject constructor(
             prefs.edit().putString(KEY_ACTIVE_PROJECT_ID, projectId).apply()
             // Reset soft expiry on project switch
             _isSoftExpiry.value = false
-            refreshState()
         }
+        refreshState()
     }
 
     /**

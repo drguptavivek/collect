@@ -41,24 +41,36 @@ object AiimsFileLogger {
     private var currentDateStr: String = ""
 
     fun init(context: Context) {
-        scope.launch {
-            try {
-                logDir = File(context.filesDir, LOG_DIR_NAME)
-                if (logDir?.exists() == false) {
-                    logDir?.mkdirs()
-                }
-                
-                // Initialize date string
-                currentDateStr = dateFormat.format(Date())
+        try {
+            logDir = File(context.filesDir, LOG_DIR_NAME)
+            if (logDir?.exists() == false) {
+                logDir?.mkdirs()
+            }
+            
+            // Initialize date string
+            currentDateStr = dateFormat.format(Date())
 
+            scope.launch {
                 // Perform initial cleanup
                 cleanOldLogs()
 
                 // Start processing the channel
                 processLogQueue()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize logger", e)
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize logger", e)
+        }
+    }
+
+    /**
+     * Resets the logger state for testing purposes.
+     */
+    fun resetForTest() {
+        logDir = null
+        currentDateStr = ""
+        // Clear any pending logs in the channel
+        while (logChannel.tryReceive().isSuccess) {
+            // consume
         }
     }
 
