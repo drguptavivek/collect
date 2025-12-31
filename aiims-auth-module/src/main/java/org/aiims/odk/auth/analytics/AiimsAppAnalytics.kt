@@ -35,10 +35,15 @@ object AiimsAppAnalytics {
 
     // --- Internal Logging Helper ---
     private fun logEvent(event: String, params: Map<String, String>? = null) {
-        if (params != null) {
-            Log.i(TAG, "Event: $event Params: $params")
-        } else {
-            Log.i(TAG, "Event: $event")
+        try {
+            if (params != null) {
+                Log.i(TAG, "Event: $event Params: $params")
+            } else {
+                Log.i(TAG, "Event: $event")
+            }
+        } catch (e: RuntimeException) {
+            // Safe fallback for tests where Log is not mocked
+            println("$TAG [TEST_FALLBACK]: Event: $event Params: $params")
         }
         // TODO: Hook into a persistent analytics provider if needed later
     }
