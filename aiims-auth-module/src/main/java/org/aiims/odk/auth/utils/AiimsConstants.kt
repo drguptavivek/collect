@@ -63,6 +63,9 @@ object AiimsConstants {
         3L * MINUTE_IN_MS   // 3 minutes
     )
 
+    // Telemetry Configuration
+    const val TELEMETRY_SYNC_INTERVAL_MINUTES = 20L
+
     // Biometric Constants
     const val BIOMETRIC_PROMPT_TITLE = "AIIMS Authentication"
     const val BIOMETRIC_PROMPT_SUBTITLE = "Use your fingerprint to authenticate"

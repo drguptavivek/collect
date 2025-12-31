@@ -999,7 +999,10 @@ class AiimsAuthManager @Inject constructor(
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
-            val workRequest = PeriodicWorkRequestBuilder<TelemetryWorker>(20, TimeUnit.MINUTES)
+            val workRequest = PeriodicWorkRequestBuilder<TelemetryWorker>(
+                AiimsConstants.TELEMETRY_SYNC_INTERVAL_MINUTES,
+                TimeUnit.MINUTES
+            )
                 .setConstraints(constraints)
                 .build()
 
