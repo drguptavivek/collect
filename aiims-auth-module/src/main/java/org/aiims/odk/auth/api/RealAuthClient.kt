@@ -196,9 +196,21 @@ class RealAuthClient private constructor(
                     else -> AuthResult.Error("Login failed: HTTP ${response.code()}")
                 }
                 }
+            } catch (e: java.net.SocketTimeoutException) {
+                Log.e("AiimsAuthClient", "Login timeout: ${e.message}", e)
+                AuthResult.Error("Connection timed out. Please check your network and try again.")
+            } catch (e: java.net.UnknownHostException) {
+                Log.e("AiimsAuthClient", "Login DNS error: ${e.message}", e)
+                AuthResult.Error("Cannot reach server. Please check your internet connection.")
+            } catch (e: java.net.ConnectException) {
+                Log.e("AiimsAuthClient", "Login connection refused: ${e.message}", e)
+                AuthResult.Error("Cannot connect to server. Please try again later.")
+            } catch (e: java.io.IOException) {
+                Log.e("AiimsAuthClient", "Login IO error: ${e.message}", e)
+                AuthResult.Error("Network error. Please check your connection and try again.")
             } catch (e: Exception) {
                 Log.e("AiimsAuthClient", "Login exception: ${e.message}", e)
-                AuthResult.Error("Network error: ${e.message}")
+                AuthResult.Error("Unexpected error: ${e.message}")
             }
         }
     }
