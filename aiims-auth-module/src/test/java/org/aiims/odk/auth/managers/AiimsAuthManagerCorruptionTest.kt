@@ -49,7 +49,7 @@ class AiimsAuthManagerCorruptionTest {
         // Clean slate prefs
         context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE).edit().clear().commit()
 
-        authManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
+        authManager = AiimsAuthManager(context, { projectCleaner }, pinManager, authStorage, secureStorage, telemetryDao)
         authManager.setAuthClient(authClient)
         authManager.setIoDispatcher(StandardTestDispatcher())
     }

@@ -52,7 +52,7 @@ class AiimsAuthManagerWriteFailureTest {
         // Clean slate
         context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE).edit().clear().commit()
 
-        authManager = AiimsAuthManager(context, projectCleaner, pinManager, authStorage, secureStorage, telemetryDao)
+        authManager = AiimsAuthManager(context, { projectCleaner }, pinManager, authStorage, secureStorage, telemetryDao)
         authManager.setAuthClient(authClient)
         // Use StandardTestDispatcher for ioDispatcher too to control execution
         authManager.setIoDispatcher(StandardTestDispatcher())

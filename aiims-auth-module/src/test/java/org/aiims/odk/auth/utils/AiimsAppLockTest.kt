@@ -72,7 +72,7 @@ class AiimsAppLockTest {
         // Initialize Real AuthManager
         authManager = AiimsAuthManager(
             context = application,
-            projectCleaner = mockProjectCleaner,
+            projectCleaner = { mockProjectCleaner },
             pinManager = mockPinManager,
             authStorage = authStorage,
             secureStorage = secureStorage,

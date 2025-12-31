@@ -232,7 +232,7 @@ class AiimsAuthManager @Inject constructor(
                     // HARD LOGOUT: Exceeded 6-hour grace
                     println("DEBUG_AUTH: Hard deadline exceeded. Logging out.")
                     // We need to launch logout
-                    scope.launch { logoutProject(pid) }
+                    scope.launch(ioDispatcherForTesting ?: Dispatchers.Main) { logoutProject(pid) }
                     return
                 }
 
@@ -253,7 +253,7 @@ class AiimsAuthManager @Inject constructor(
                     _currentUser.value = user
 
                     // Background Reachability Check
-                    scope.launch {
+                    scope.launch(ioDispatcherForTesting ?: Dispatchers.Main) {
                         val apiUrl = getApiUrlForProject(pid)
                         var serverReachable = false
 
@@ -741,7 +741,7 @@ class AiimsAuthManager @Inject constructor(
     }
 
     fun logoutDueToFailedPin() {
-        scope.launch {
+        scope.launch(ioDispatcherForTesting ?: Dispatchers.Main) {
             logout()
         }
     }
