@@ -16,6 +16,7 @@ The AIIMS authentication system replaces ODK's standard Basic Auth with a custom
 - **Offline grace period**: 6 hours of continued work after token expiry
 - **Soft expiry**: User-friendly re-auth prompts when online
 - **Hard expiry**: Forced logout after grace period deadline
+- **Expiry reminders**: Multi-tier warnings at 8h, 3h, 1h, 30m, 15m, and 3m before expiry
 
 ---
 
@@ -240,7 +241,7 @@ data class User(
 |----------|-------|---------|
 | `DEFAULT_TOKEN_TTL_DAYS` | 3 | Server-side default token lifetime |
 | `GRACE_PERIOD_MS` | 6h | Offline grace after expiry |
-| `EXPIRATION_THRESHOLD_MS` | 24h | Threshold for "Expiring Soon" reactive flag |
+| `EXPIRY_REMINDER_TIERS_MS` | 8h, 3h, 1h, 30m, 15m, 3m | Multi-tier "Expiring Soon" warnings |
 | `REAUTH_PROMPT_DELAY_MS` | 0 | Immediate re-auth prompt after soft expiry |
 
 ---
