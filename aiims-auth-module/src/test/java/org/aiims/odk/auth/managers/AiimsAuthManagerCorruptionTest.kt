@@ -43,6 +43,7 @@ class AiimsAuthManagerCorruptionTest {
 
     @Before
     fun setUp() {
+        org.aiims.odk.auth.security.ClockValidator.resetInstance()
         Dispatchers.setMain(StandardTestDispatcher())
         context = ApplicationProvider.getApplicationContext()
 

@@ -57,6 +57,11 @@ class ClockValidator private constructor(
                 INSTANCE ?: ClockValidator(secureStorage).also { INSTANCE = it }
             }
         }
+
+        @androidx.annotation.VisibleForTesting
+        fun resetInstance() {
+            INSTANCE = null
+        }
     }
 
     /**

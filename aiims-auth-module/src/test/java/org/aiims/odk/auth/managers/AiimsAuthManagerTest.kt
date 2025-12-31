@@ -57,6 +57,7 @@ class AiimsAuthManagerTest {
 
     @Before
     fun setUp() {
+        org.aiims.odk.auth.security.ClockValidator.resetInstance()
         testDispatcher = kotlinx.coroutines.test.UnconfinedTestDispatcher()
         Dispatchers.setMain(testDispatcher)
         context = ApplicationProvider.getApplicationContext()

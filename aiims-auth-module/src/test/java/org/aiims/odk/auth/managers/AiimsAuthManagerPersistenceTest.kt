@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -45,7 +46,8 @@ class AiimsAuthManagerPersistenceTest {
 
     @Before
     fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
+        org.aiims.odk.auth.security.ClockValidator.resetInstance()
+        Dispatchers.setMain(StandardTestDispatcher())
         
         // Mock SharedPreferences
         whenever(context.getSharedPreferences(any(), any())).thenReturn(prefs)
@@ -69,7 +71,7 @@ class AiimsAuthManagerPersistenceTest {
             telemetryDao
         )
         authManager.setAuthClient(authClient)
-        authManager.setIoDispatcher(UnconfinedTestDispatcher())
+        authManager.setIoDispatcher(StandardTestDispatcher())
     }
 
     @Test

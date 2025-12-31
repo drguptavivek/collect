@@ -13,6 +13,10 @@ import org.aiims.odk.auth.managers.AuthState
 import org.aiims.odk.auth.managers.ProjectCleaner
 import org.aiims.odk.auth.storage.FakeAiimsAuthStorage
 import org.aiims.odk.auth.storage.FakeAiimsSecureStorage
+import org.aiims.odk.auth.security.ClockValidator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.setMain
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,8 +63,12 @@ class AiimsAppLockTest {
     private lateinit var appLock: AiimsAppLock
     private lateinit var spyApplication: Application
 
+    private val testDispatcher = UnconfinedTestDispatcher()
+
     @Before
     fun setUp() {
+        ClockValidator.resetInstance()
+        Dispatchers.setMain(testDispatcher)
         MockitoAnnotations.openMocks(this)
         application = ApplicationProvider.getApplicationContext()
         spyApplication = spy(application)
