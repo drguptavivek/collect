@@ -48,12 +48,15 @@ class AiimsAppLock(
         // This covers both: resume from background AND fresh app start
         if (authState == AuthState.LOGGED_IN) {
             if (authManager.getIsSoftExpiry()) {
-                shouldRequirePin = false
-                val intent = Intent(application, AiimsLoginActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra("is_reauth", true)
+                // Deduplicate: only launch if we haven't already checked in this transition
+                if (shouldRequirePin || startedActivities == 1) {
+                    shouldRequirePin = false
+                    val intent = Intent(application, AiimsLoginActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        putExtra("is_reauth", true)
+                    }
+                    application.startActivity(intent)
                 }
-                application.startActivity(intent)
                 return
             }
 

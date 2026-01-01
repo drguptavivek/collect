@@ -26,6 +26,7 @@ import org.mockito.Mockito.any
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.times
 import org.mockito.MockitoAnnotations
 import org.robolectric.annotation.Config
 
@@ -230,5 +231,23 @@ class AiimsAppLockTest {
 
         // Assert: No PIN required because app never went to background
         verify(spyApplication, never()).startActivity(any())
+    }
+
+    @Test
+    fun `onActivityStarted does not launch second LoginActivity if one is already being started`() {
+        // Arrange: Token in soft expiry
+        authManager.updateAuthState(AuthState.LOGGED_IN)
+        authManager.setIsSoftExpiry(true)
+        
+        // 1. First activity starts (Transition from 0 to 1 activity - App comes to foreground)
+        appLock.onActivityStarted(mockActivity)
+        verify(spyApplication, times(1)).startActivity(any()) // First launch
+
+        // 2. Second activity starts (e.g. if multiple activities are in the stack)
+        // startedActivities is now 2. shouldRequirePin is now false.
+        appLock.onActivityStarted(mockActivity)
+
+        // Assert: Verify startActivity was NOT called a second time
+        verify(spyApplication, times(1)).startActivity(any())
     }
 }
