@@ -257,9 +257,12 @@ class PinEntryActivity : AiimsBaseActivity() {
                         binding.expiryReminderCard.strokeColor = ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_error)
                         binding.expiryReminderText.text = "⚠️ Session Expired (Offline Grace)"
                         binding.expiryReminderText.setTextColor(ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_error))
-                        binding.expiryTimeText.text = "Final auto-logout in: $timeStr"
+                        val gracePeriodMsg = "Final auto-logout in: $timeStr"
+                        binding.expiryTimeText.text = gracePeriodMsg
                         binding.expiryTimeText.setTextColor(ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_error))
                         binding.refreshTokenButton.setTextColor(ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_error))
+                        // Announce for screen readers
+                        binding.expiryReminderCard.announceForAccessibility(getString(org.aiims.odk.auth.R.string.aiims_accessibility_grace_period, timeStr))
                     } else {
                         // NORMAL / EXPIRING SOON Styling
                         val colorAttr = if (expiringSoon) org.aiims.odk.auth.R.color.offline_text else org.aiims.odk.auth.R.color.aiims_on_surface_variant
@@ -371,7 +374,10 @@ class PinEntryActivity : AiimsBaseActivity() {
         // Validation
         when {
             pin.isEmpty() -> {
-                Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_pin_required), Toast.LENGTH_SHORT).show()
+                val errorMsg = getString(org.aiims.odk.auth.R.string.aiims_error_pin_required)
+                Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show()
+                // Announce for screen readers
+                binding.root.announceForAccessibility(errorMsg)
                 binding.pinField.requestFocus()
                 return
             }
@@ -404,25 +410,13 @@ class PinEntryActivity : AiimsBaseActivity() {
 
 
             if (pinManager.isMaxAttemptsReached()) {
-
-                Toast.makeText(
-
-                    this@PinEntryActivity,
-
-                    getString(org.aiims.odk.auth.R.string.aiims_error_too_many_attempts),
-
-                    Toast.LENGTH_LONG
-
-                ).show()
-
-
-
+                val errorMsg = getString(org.aiims.odk.auth.R.string.aiims_error_too_many_attempts)
+                Toast.makeText(this@PinEntryActivity, errorMsg, Toast.LENGTH_LONG).show()
+                // Announce for screen readers
+                binding.root.announceForAccessibility(errorMsg)
                 // Clear session AND PIN
-
                 authManager.logoutDueToFailedPin()
-
                 return@launch
-
             }
 
 
@@ -472,18 +466,11 @@ class PinEntryActivity : AiimsBaseActivity() {
                     authManager.logoutDueToFailedPin()
 
                 } else {
-
                     val attemptsLeft = 3 - pinManager.getFailedAttempts()
-
-                    Toast.makeText(
-
-                        this@PinEntryActivity,
-
-                        getString(org.aiims.odk.auth.R.string.aiims_error_incorrect_pin_attempts, attemptsLeft),
-
-                        Toast.LENGTH_SHORT
-
-                    ).show()
+                    val errorMsg = getString(org.aiims.odk.auth.R.string.aiims_error_incorrect_pin_attempts, attemptsLeft)
+                    Toast.makeText(this@PinEntryActivity, errorMsg, Toast.LENGTH_SHORT).show()
+                    // Announce for screen readers
+                    binding.root.announceForAccessibility(getString(org.aiims.odk.auth.R.string.aiims_accessibility_pin_error, attemptsLeft))
 
 
 
