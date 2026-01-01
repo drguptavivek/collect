@@ -1,6 +1,6 @@
 # AIIMS ODK Collect
 
-> **Version**: v2025.1.0-RC1 | **Release Date**: 2026-01-01 | **Status**: Release Candidate  
+> **Version**: v2025.3.3-AIIMS-RC1 | **Release Date**: 2026-01-01 | **Status**: Release Candidate  
 > **Based on**: ODK Collect v2025.3.3 (November 1, 2025)
 
 > [!IMPORTANT]

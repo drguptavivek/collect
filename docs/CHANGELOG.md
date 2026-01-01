@@ -2,7 +2,7 @@
 
 All notable changes to AIIMS ODK Collect will be documented in this file.
 
-## [v2025.1.0-RC1] - 2026-01-01
+## [v2025.3.3-AIIMS-RC1] - 2026-01-01
 
 ### Release Candidate 1
 
@@ -70,7 +70,7 @@ This is the first release candidate for AIIMS ODK Collect, marking a major miles
 ### Technical Details
 
 -   **Version Code**: 5113
--   **Version Name**: v2025.1.0-RC1-AIIMS
+-   **Version Name**: v2025.3.3-AIIMS-RC1-AIIMS
 -   **Min SDK**: 21 (Android 5.0)
 -   **Target SDK**: 34 (Android 14)
 -   **APK Sizes**: 
