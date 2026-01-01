@@ -169,6 +169,9 @@ class AiimsAuthManager @Inject constructor(
     private val _tokenExpiryTime = MutableStateFlow(0L)
     val tokenExpiryTime: StateFlow<Long> = _tokenExpiryTime.asStateFlow()
 
+    private val _hardDeadlineTime = MutableStateFlow(0L)
+    val hardDeadlineTime: StateFlow<Long> = _hardDeadlineTime.asStateFlow()
+
     // Validated current time from ClockValidator (for UI display)
     private val _validatedCurrentTime = MutableStateFlow(0L)
     val validatedCurrentTime: StateFlow<Long> = _validatedCurrentTime.asStateFlow()
@@ -179,9 +182,6 @@ class AiimsAuthManager @Inject constructor(
 
     // Current active project context
     private var activeProjectId: String? = null
-
-    // 6 Hours in Milliseconds
-    private val GRACE_PERIOD_MS = 6L * 60 * 60 * 1000
 
     init {
         // Initialize Analytics/Logging
@@ -239,7 +239,8 @@ class AiimsAuthManager @Inject constructor(
                 // Get validated time from ClockValidator
                 val currentTime = updateTimeState()
 
-                val hardDeadline = expiryTime + GRACE_PERIOD_MS
+                val hardDeadline = expiryTime + AiimsConstants.GRACE_PERIOD_MS
+                _hardDeadlineTime.value = hardDeadline
 
                 // Calculate time remaining and check if expiring soon (any tier crossed)
                 val timeRemaining = expiryTime - currentTime
@@ -263,10 +264,15 @@ class AiimsAuthManager @Inject constructor(
 
                     // Ensure Telemetry Worker is scheduled
                     startPeriodicTelemetry()
+                    // Cancel any active grace notifications
+                    cancelGracePeriodNotifications()
                 } else {
                     // GRACE PERIOD (Expired but within 6h)
                     println("DEBUG_AUTH: In Grace Period. Token expired $expiresAt")
                     AiimsAppAnalytics.logGracePeriodStarted()
+                    
+                    // Schedule grace notifications if not already scheduled
+                    scheduleGracePeriodNotifications(expiryTime)
 
                     // Optimistically allow login
                     _authState.value = AuthState.LOGGED_IN
@@ -455,6 +461,7 @@ class AiimsAuthManager @Inject constructor(
 
                     // Start Background Worker
                     startPeriodicTelemetry()
+                    cancelGracePeriodNotifications()
 
                     result
                 }
@@ -549,8 +556,9 @@ class AiimsAuthManager @Inject constructor(
             refreshState()
         }
 
-        // Stop telemetry worker
+        // Stop telemetry and grace workers
         stopPeriodicTelemetry()
+        cancelGracePeriodNotifications()
     }
 
     private suspend fun persistSession(projectId: String, user: User, token: String, expiresAt: String, apiUrl: String) {
@@ -1084,6 +1092,56 @@ class AiimsAuthManager @Inject constructor(
     private fun stopPeriodicTelemetry() {
         try {
             WorkManager.getInstance(context).cancelUniqueWork("AiimsTelemetryWorker")
+        } catch (e: Exception) {
+            // Ignore
+        }
+    }
+
+    fun showGracePeriodNotification(remainingText: String) {
+        showSessionExpiredNotification("Final auto-logout in $remainingText. Re-authenticate now to avoid data loss.")
+    }
+
+    private fun scheduleGracePeriodNotifications(expiryTime: Long) {
+        try {
+            val workManager = WorkManager.getInstance(context)
+            val currentTime = System.currentTimeMillis()
+
+            AiimsConstants.GRACE_NOTIFICATION_MARKS_MS.forEach { remainingMs ->
+                val triggerTime = expiryTime + AiimsConstants.GRACE_PERIOD_MS - remainingMs
+                val delayMs = triggerTime - currentTime
+
+                if (delayMs > 0) {
+                    val hours = remainingMs / AiimsConstants.HOUR_IN_MS
+                    val minutes = (remainingMs / AiimsConstants.MINUTE_IN_MS) % 60
+                    val remainingText = if (hours > 0) "${hours}h" else "${minutes}m"
+
+                    val data = androidx.work.Data.Builder()
+                        .putString(org.aiims.odk.auth.work.GracePeriodNotificationWorker.KEY_REMAINING_TIME, remainingText)
+                        .build()
+
+                    val workRequest = androidx.work.OneTimeWorkRequestBuilder<org.aiims.odk.auth.work.GracePeriodNotificationWorker>()
+                        .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)
+                        .setInputData(data)
+                        .addTag("GraceNotification")
+                        .build()
+
+                    workManager.enqueueUniqueWork(
+                        "GraceNotification_$remainingMs",
+                        androidx.work.ExistingWorkPolicy.KEEP,
+                        workRequest
+                    )
+                    Log.d("AiimsAuthManager", "Scheduled grace notification for $remainingText remaining (in ${delayMs/1000}s)")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("AiimsAuthManager", "Failed to schedule grace notifications", e)
+        }
+    }
+
+    private fun cancelGracePeriodNotifications() {
+        try {
+            WorkManager.getInstance(context).cancelAllWorkByTag("GraceNotification")
+            Log.d("AiimsAuthManager", "Cancelled all grace notifications")
         } catch (e: Exception) {
             // Ignore
         }

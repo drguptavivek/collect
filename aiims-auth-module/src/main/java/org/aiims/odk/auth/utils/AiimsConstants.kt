@@ -53,6 +53,7 @@ object AiimsConstants {
     const val DAY_IN_MS = 24 * 60 * 60 * 1000L
     const val HOUR_IN_MS = 60 * 60 * 1000L
     const val MINUTE_IN_MS = 60 * 1000L
+    const val GRACE_PERIOD_MS = 6L * HOUR_IN_MS
 
     // Expiry Reminder Tiers (in milliseconds before expiry)
     val EXPIRY_REMINDER_TIERS_MS = listOf(
@@ -62,6 +63,13 @@ object AiimsConstants {
         30L * MINUTE_IN_MS, // 30 minutes
         15L * MINUTE_IN_MS, // 15 minutes
         3L * MINUTE_IN_MS   // 3 minutes
+    )
+
+    // Grace Period Notification Thresholds (Remaining time)
+    val GRACE_NOTIFICATION_MARKS_MS = listOf(
+        4L * HOUR_IN_MS,   // 4 hours remaining
+        1L * HOUR_IN_MS,   // 1 hour remaining
+        15L * MINUTE_IN_MS  // 15 minutes remaining
     )
 
     // Telemetry Configuration

@@ -232,71 +232,50 @@ class PinEntryActivity : AiimsBaseActivity() {
     }
 
     private fun observeTokenExpiry() {
-        lifecycleScope.launch {
-            authManager.isExpiringSoon.collect { expiringSoon ->
-                // Update styling based on urgency
-                val color = if (expiringSoon) {
-                    binding.expiryReminderCard.setCardBackgroundColor(ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.offline_background))
-                    binding.expiryReminderCard.strokeColor = ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.offline_border)
-                    binding.expiryReminderText.text = getString(org.aiims.odk.auth.R.string.aiims_token_expiry_reminder)
-                    ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.offline_text)
-                } else {
-                    binding.expiryReminderCard.setCardBackgroundColor(ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_surface_variant))
-                    binding.expiryReminderCard.strokeColor = ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.gray_medium)
-                    binding.expiryReminderText.text = getString(org.aiims.odk.auth.R.string.aiims_token_status_title)
-                    ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_on_surface_variant)
-                }
-                
-                binding.expiryReminderText.setTextColor(color)
-                binding.expiryTimeText.setTextColor(color)
-                binding.refreshTokenButton.setTextColor(color)
-            }
-        }
-
-        // Collect both token expiry time AND validated current time
-        lifecycleScope.launch {
-            authManager.tokenExpiryTime.collect { expiryTime ->
-                if (expiryTime > 0) {
-                    binding.expiryReminderCard.visibility = View.VISIBLE
-                    // Get validated current time to calculate remaining time
-                    val currentTime = System.currentTimeMillis() // Will be replaced by validated time
-                    // Note: We'll use the validatedCurrentTime flow below for actual calculation
-                }
-            }
-        }
-
-        lifecycleScope.launch {
-            authManager.validatedCurrentTime.collect { currentTime ->
-                // Only show expiry if we have both expiry time and current time
-                if (currentTime > 0) {
-                    // Get current expiry time value - we need to collect it separately
-                    // For now, store the current time for use when expiry updates
-                }
-            }
-        }
-
-        // Combine both flows to calculate and display remaining time using validated time
+        // Combine flows to calculate and display remaining time
         lifecycleScope.launch {
             kotlinx.coroutines.flow.combine(
                 authManager.tokenExpiryTime,
-                authManager.validatedCurrentTime
-            ) { expiryTime, currentTime ->
-                if (expiryTime > 0 && currentTime > 0) {
-                    binding.expiryReminderCard.visibility = View.VISIBLE
-                    val remainingMs = expiryTime - currentTime
-                    if (remainingMs > 0) {
-                        val hours = java.util.concurrent.TimeUnit.MILLISECONDS.toHours(remainingMs)
-                        val minutes = java.util.concurrent.TimeUnit.MILLISECONDS.toMinutes(remainingMs) % 60
+                authManager.hardDeadlineTime,
+                authManager.validatedCurrentTime,
+                authManager.isExpiringSoon
+            ) { expiryTime, hardDeadline, currentTime, expiringSoon ->
+                if (currentTime <= 0) return@combine
 
-                        val timeStr = if (hours > 0) {
-                            "${hours}h ${minutes}m"
-                        } else {
-                            "${minutes}m"
-                        }
-                        binding.expiryTimeText.text = getString(org.aiims.odk.auth.R.string.aiims_token_expires_in, timeStr)
+                val isExpired = expiryTime > 0 && currentTime > expiryTime
+                val isInGrace = isExpired && currentTime <= hardDeadline
+
+                if (expiryTime > 0 || isInGrace) {
+                    binding.expiryReminderCard.visibility = View.VISIBLE
+                    
+                    val remainingMs = if (isExpired) hardDeadline - currentTime else expiryTime - currentTime
+                    val timeStr = formatRemainingTime(remainingMs)
+
+                    if (isExpired) {
+                        // GRACE PERIOD Styling
+                        binding.expiryReminderCard.setCardBackgroundColor(ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_error_container))
+                        binding.expiryReminderCard.strokeColor = ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_error)
+                        binding.expiryReminderText.text = "⚠️ Session Expired (Offline Grace)"
+                        binding.expiryReminderText.setTextColor(ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_error))
+                        binding.expiryTimeText.text = "Final auto-logout in: $timeStr"
+                        binding.expiryTimeText.setTextColor(ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_error))
+                        binding.refreshTokenButton.setTextColor(ContextCompat.getColor(this@PinEntryActivity, org.aiims.odk.auth.R.color.aiims_error))
                     } else {
-                        binding.expiryTimeText.text = "Token expired"
+                        // NORMAL / EXPIRING SOON Styling
+                        val colorAttr = if (expiringSoon) org.aiims.odk.auth.R.color.offline_text else org.aiims.odk.auth.R.color.aiims_on_surface_variant
+                        val bgColorAttr = if (expiringSoon) org.aiims.odk.auth.R.color.offline_background else org.aiims.odk.auth.R.color.aiims_surface_variant
+                        val strokeColorAttr = if (expiringSoon) org.aiims.odk.auth.R.color.offline_border else org.aiims.odk.auth.R.color.gray_medium
+
+                        binding.expiryReminderCard.setCardBackgroundColor(ContextCompat.getColor(this@PinEntryActivity, bgColorAttr))
+                        binding.expiryReminderCard.strokeColor = ContextCompat.getColor(this@PinEntryActivity, strokeColorAttr)
+                        binding.expiryReminderText.text = if (expiringSoon) getString(org.aiims.odk.auth.R.string.aiims_token_expiry_reminder) else getString(org.aiims.odk.auth.R.string.aiims_token_status_title)
+                        binding.expiryReminderText.setTextColor(ContextCompat.getColor(this@PinEntryActivity, colorAttr))
+                        binding.expiryTimeText.text = getString(org.aiims.odk.auth.R.string.aiims_token_expires_in, timeStr)
+                        binding.expiryTimeText.setTextColor(ContextCompat.getColor(this@PinEntryActivity, colorAttr))
+                        binding.refreshTokenButton.setTextColor(ContextCompat.getColor(this@PinEntryActivity, colorAttr))
                     }
+                } else {
+                    binding.expiryReminderCard.visibility = View.GONE
                 }
             }.collect {}
         }
@@ -357,6 +336,13 @@ class PinEntryActivity : AiimsBaseActivity() {
                 finish()
             }
         }
+    }
+
+    private fun formatRemainingTime(remainingMs: Long): String {
+        if (remainingMs <= 0) return "0m"
+        val hours = java.util.concurrent.TimeUnit.MILLISECONDS.toHours(remainingMs)
+        val minutes = (java.util.concurrent.TimeUnit.MILLISECONDS.toMinutes(remainingMs) % 60)
+        return if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m"
     }
 
     private fun loadUserData() {

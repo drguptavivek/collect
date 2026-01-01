@@ -610,4 +610,23 @@ class AiimsAuthManagerTest {
             context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE).getBoolean("is_soft_expiry", false), 
             equalTo(false))
     }
+
+    @Test
+    fun `#hardDeadlineTime is updated when token enters grace period (Scenario 68)`() = runTest {
+        val projectId = "1"
+        val expiryTime = System.currentTimeMillis() - 1000L // Just expired
+        val expiresAt = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(expiryTime))
+        val user = User("100", "testuser", projectId, expiresAt)
+        
+        // Setup state
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", expiresAt))
+        authManager.login(projectId, "user", "pass", "url")
+        authManager.setActiveProject(projectId)
+        advanceUntilIdle()
+        
+        val expectedHardDeadline = expiryTime + (6 * 60 * 60 * 1000L) // 6 hours grace
+        
+        assertThat("hardDeadlineTime should be expiry + 6h", 
+            authManager.hardDeadlineTime.first(), equalTo(expectedHardDeadline))
+    }
 }

@@ -24,6 +24,8 @@
     <color name="aiims_success">#2E7D32</color>
     <color name="aiims_warning">#ED6C02</color>
     <color name="aiims_error">#D32F2F</color>
+    <color name="aiims_error_container">#F9DEDC</color>
+    <color name="aiims_on_error_container">#410E0B</color>
     <color name="aiims_info">#0288D1</color>
 
     <!-- Common Colors -->
