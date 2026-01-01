@@ -151,8 +151,13 @@ class AiimsAuthManager @Inject constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    private val _isSoftExpiry = MutableStateFlow(false)
+    private val _isSoftExpiry = MutableStateFlow(prefs.getBoolean(AiimsConstants.KEY_IS_SOFT_EXPIRY, false))
     val isSoftExpiry: StateFlow<Boolean> = _isSoftExpiry.asStateFlow()
+
+    private fun updateSoftExpiry(value: Boolean) {
+        _isSoftExpiry.value = value
+        prefs.edit().putBoolean(AiimsConstants.KEY_IS_SOFT_EXPIRY, value).apply()
+    }
 
     private val _isExpiringSoon = MutableStateFlow(false)
     val isExpiringSoon: StateFlow<Boolean> = _isExpiringSoon.asStateFlow()
@@ -196,7 +201,7 @@ class AiimsAuthManager @Inject constructor(
             activeProjectId = projectId
             prefs.edit().putString(KEY_ACTIVE_PROJECT_ID, projectId).apply()
             // Reset soft expiry on project switch
-            _isSoftExpiry.value = false
+            updateSoftExpiry(false)
         }
         refreshState()
     }
@@ -209,7 +214,7 @@ class AiimsAuthManager @Inject constructor(
             if (activeProjectId == null) {
                 _authState.value = AuthState.LOGGED_OUT // Or INITIAL
                 _currentUser.value = null
-                _isSoftExpiry.value = false
+                updateSoftExpiry(false)
                 return
             }
             val pid = activeProjectId!!
@@ -254,7 +259,7 @@ class AiimsAuthManager @Inject constructor(
                     // VALID
                     _authState.value = AuthState.LOGGED_IN
                     _currentUser.value = user
-                    _isSoftExpiry.value = false
+                    updateSoftExpiry(false)
 
                     // Ensure Telemetry Worker is scheduled
                     startPeriodicTelemetry()
@@ -298,22 +303,22 @@ class AiimsAuthManager @Inject constructor(
 
                             if (!isSnoozed && !clockValidator.isManipulationDetected()) {
                                 println("DEBUG_AUTH: Not snoozed. Setting Soft Expiry.")
-                                _isSoftExpiry.value = true
+                                updateSoftExpiry(true)
                             } else {
                                 println("DEBUG_AUTH: Dismissal active or clock manipulation. Suppressing Soft Expiry.")
-                                _isSoftExpiry.value = false
+                                updateSoftExpiry(false)
                             }
                         } else {
                             println("DEBUG_AUTH: Server unreachable. Maintaining Offline Grace.")
                             // OFFLINE GRACE: Keep logged in, silent
-                            _isSoftExpiry.value = false
+                            updateSoftExpiry(false)
                         }
                     }
                 }
             } else {
                 _authState.value = AuthState.LOGGED_OUT
                 _currentUser.value = null
-                _isSoftExpiry.value = false
+                updateSoftExpiry(false)
                 _isExpiringSoon.value = false
                 _tokenExpiryTime.value = 0L
                 _validatedCurrentTime.value = System.currentTimeMillis()
@@ -324,7 +329,7 @@ class AiimsAuthManager @Inject constructor(
             // Fallback to safe state
             _authState.value = AuthState.LOGGED_OUT
             _currentUser.value = null
-            _isSoftExpiry.value = false
+            updateSoftExpiry(false)
             _isExpiringSoon.value = false
             _tokenExpiryTime.value = 0L
 
@@ -361,7 +366,7 @@ class AiimsAuthManager @Inject constructor(
             is org.aiims.odk.auth.security.ClockValidator.TimeResult.ManipulationDetected -> {
                 // Clock manipulation detected - allow grace but prevent re-auth
                 _errorMessage.value = "Clock manipulation detected: ${timeResult.reason}. Please correct your device time to re-authenticate."
-                _isSoftExpiry.value = false // Don't show re-auth prompt
+                updateSoftExpiry(false) // Don't show re-auth prompt
                 AiimsAppAnalytics.logClockManipulationDetected()
                 // Calculate server/device difference (expected time is what we should use)
                 val deviceTime = System.currentTimeMillis()
@@ -421,7 +426,7 @@ class AiimsAuthManager @Inject constructor(
                     }
 
                     // Reset soft expiry and clock manipulation flag
-                    _isSoftExpiry.value = false
+                    updateSoftExpiry(false)
                     clockValidator.resetManipulationFlag()
 
                     // If this matches the active project, update state immediately
@@ -481,7 +486,7 @@ class AiimsAuthManager @Inject constructor(
     suspend fun logout() {
         val pid = activeProjectId ?: return
         logoutProject(pid)
-        _isSoftExpiry.value = false
+        updateSoftExpiry(false)
     }
 
     /**
@@ -531,7 +536,7 @@ class AiimsAuthManager @Inject constructor(
         android.util.Log.d("AiimsAuth", "Logout: Preserving project data for: $projectId (Option B - shared device)")
 
         // Final fallback: even if disk failure occurred, we must clear memory state
-        _isSoftExpiry.value = false
+        updateSoftExpiry(false)
         _authState.value = AuthState.LOGGED_OUT
 
         // Clear local PIN
@@ -592,6 +597,7 @@ class AiimsAuthManager @Inject constructor(
                     remove(keyApiUrl(projectId))
                     // Also clear dismissal time on explicit logout/clear to reset behavior
                     remove(KEY_LAST_DISMISSAL_TIME)
+                    remove(AiimsConstants.KEY_IS_SOFT_EXPIRY)
                 }.commit()
 
                 success = authCleared && prefsCleared
@@ -745,7 +751,7 @@ class AiimsAuthManager @Inject constructor(
 
     @androidx.annotation.VisibleForTesting
     fun setIsSoftExpiry(value: Boolean) {
-        _isSoftExpiry.value = value
+        updateSoftExpiry(value)
     }
 
     /**
@@ -825,7 +831,7 @@ class AiimsAuthManager @Inject constructor(
     fun snoozeSoftExpiry() {
         // Persist snooze time to prevent immediate re-prompt on restart
         prefs.edit().putLong(KEY_LAST_DISMISSAL_TIME, System.currentTimeMillis()).apply()
-        _isSoftExpiry.value = false
+        updateSoftExpiry(false)
     }
 
     /**

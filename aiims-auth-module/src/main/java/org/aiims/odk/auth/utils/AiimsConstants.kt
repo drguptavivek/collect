@@ -12,6 +12,7 @@ object AiimsConstants {
     const val KEY_TOKEN_EXPIRY = "token_expiry"
     const val KEY_LAST_AUTH_TIMESTAMP = "last_auth_timestamp"
     const val KEY_PROJECT_ID = "project_id"  // Project ID for token validation
+    const val KEY_IS_SOFT_EXPIRY = "is_soft_expiry" // Persisted grace period state
 
     // User Information
     const val KEY_USER_ID = "user_id"

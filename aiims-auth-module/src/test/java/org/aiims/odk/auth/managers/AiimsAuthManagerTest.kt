@@ -571,4 +571,43 @@ class AiimsAuthManagerTest {
         assertThat("Must transition to LOGGED_OUT in memory despite storage failure", 
             failingAuthManager.authState.first(), equalTo(AuthState.LOGGED_OUT))
     }
+
+    @Test
+    fun `#isSoftExpiry is persisted across manager restarts (Scenario 73)`() = runTest {
+        val projectId = "1"
+        // Token expired 10 minutes ago
+        val expiryTime = System.currentTimeMillis() - 600000L
+        val expiresAt = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(expiryTime))
+        val user = User("100", "testuser", projectId, expiresAt)
+        
+        // Setup initial state in storage
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", expiresAt))
+        authManager.login(projectId, "user", "pass", "url")
+        authManager.setActiveProject(projectId)
+        advanceUntilIdle()
+        
+        // Manual override for TDD: Simulate being in grace period with isSoftExpiry already set
+        context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean("is_soft_expiry", true)
+            .putString("active_project_id", projectId)
+            .commit()
+            
+        // Setup authStorage to return the expired token info
+        // (Assuming authStorage/secureStorage persistence is already working from login call)
+            
+        // Recreate manager
+        val restartManager = AiimsAuthManager(context, { projectCleaner }, pinManager, authStorage, secureStorage, telemetryDao)
+        
+        assertThat("isSoftExpiry should be true after restart if persisted", 
+            restartManager.getIsSoftExpiry(), equalTo(true))
+            
+        // Verify it's cleared on logout
+        restartManager.logout()
+        advanceUntilIdle()
+        
+        assertThat("isSoftExpiry should be cleared after logout", 
+            context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE).getBoolean("is_soft_expiry", false), 
+            equalTo(false))
+    }
 }
