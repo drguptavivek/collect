@@ -1,11 +1,11 @@
-# ODK Collect (AIIMS Auth Customization)
-> Last Updated: 2025-12-28
+# AIIMS ODK Collect
+
+> **Version**: v2025.1.0-RC1 | **Release Date**: 2026-01-01 | **Status**: Release Candidate  
+> **Based on**: ODK Collect v2025.3.3 (November 1, 2025)
 
 > [!IMPORTANT]
-> **This is a customized fork of ODK Collect.**
-> It diverges from the official "master" branch to support **Custom Authentication** (Bearer Tokens), **Local Networking** (Emulator DNS), and **Strict Data Isolation** (Project Cleanup).
-
-Based off - v2025.3.3 [NOv 1, 2025]
+> **This is a customized fork of ODK Collect.**  
+> It diverges from the official ODK Collect to support **AIIMS-specific authentication** (Bearer Tokens + PIN), **offline telemetry**, **accessibility compliance** (WCAG 2.1 AA), and **strict data isolation**.
 
 ### Key Divergences & Rationale
 
