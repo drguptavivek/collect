@@ -493,4 +493,45 @@ class AiimsAuthManagerTest {
         // Verify NOT logged out
         assertThat("Should NOT log out on 401 from telemetry", authManager.authState.first(), equalTo(AuthState.LOGGED_IN))
     }
+
+    @Test
+    fun `#logout cancels reachability check to prevent race condition (Scenario 63)`() = runTest {
+        val projectId = "1"
+        val now = System.currentTimeMillis()
+        val oneHourAgo = now - (1 * 60 * 60 * 1000)
+        val expiredDate = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(oneHourAgo))
+        val user = User("100", "testuser", projectId, expiredDate)
+
+        // Mock login
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        authManager.login(projectId, "user", "pass", "url")
+        
+        // Use StandardTestDispatcher for ALL manager operations to control order
+        val standardDispatcher = kotlinx.coroutines.test.StandardTestDispatcher(testScheduler)
+        
+        val testManager = AiimsAuthManager(context, { projectCleaner }, pinManager, authStorage, secureStorage, telemetryDao)
+        testManager.setAuthClient(authClient)
+        testManager.setIoDispatcher(standardDispatcher)
+
+        // Mock reachability to return true but we will control WHEN it runs
+        whenever(authClient.checkReachability()).thenReturn(true)
+
+        // 1. Trigger refreshState (launches background job)
+        testManager.setActiveProject(projectId)
+        
+        // 2. Advance to start the job but pause it if possible? 
+        // With StandardTestDispatcher, the job is just sitting in the queue.
+        
+        // 3. Trigger Logout (also a suspend function, runs on test thread)
+        testManager.logout()
+        
+        // 4. Now advance everything. 
+        // Job A (Reachability) and Job B (Logout's internal parts) will run.
+        // Even if Reachability runs and finishes, it should see that we are logged out.
+        advanceUntilIdle()
+
+        // Assert: isSoftExpiry should remain false
+        assertThat("isSoftExpiry must NOT become true after logout", testManager.getIsSoftExpiry(), equalTo(false))
+        assertThat("Should be in LOGGED_OUT state", testManager.authState.value, equalTo(AuthState.LOGGED_OUT))
+    }
 }

@@ -13,6 +13,7 @@ import androidx.work.WorkManager
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -138,6 +139,8 @@ class AiimsAuthManager @Inject constructor(
 
     private val _authState = MutableStateFlow(AuthState.INITIAL)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
+
+    private var reachabilityJob: Job? = null
 
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
@@ -265,7 +268,8 @@ class AiimsAuthManager @Inject constructor(
                     _currentUser.value = user
 
                     // Background Reachability Check
-                    scope.launch(ioDispatcherForTesting ?: Dispatchers.Main) {
+                    reachabilityJob?.cancel()
+                    reachabilityJob = scope.launch(ioDispatcherForTesting ?: Dispatchers.Main) {
                         val apiUrl = getApiUrlForProject(pid)
                         var serverReachable = false
 
@@ -279,6 +283,13 @@ class AiimsAuthManager @Inject constructor(
                         }
 
                         if (serverReachable) {
+                            // RACE CONDITION CHECK (Scenario 63):
+                            // Ensure the user is still logged in and the project hasn't changed.
+                            if (activeProjectId != pid || _authState.value != AuthState.LOGGED_IN) {
+                                println("DEBUG_AUTH: Race condition detected. Ignoring reachability result.")
+                                return@launch
+                            }
+
                             println("DEBUG_AUTH: Server reachable in grace period. Checking dismiss status.")
                             
                             // Check for snooze (15 minutes = 900000 ms)
@@ -477,6 +488,7 @@ class AiimsAuthManager @Inject constructor(
      * Logout logic for a specific project.
      */
     private suspend fun logoutProject(projectId: String) {
+        reachabilityJob?.cancel()
         val token = getPersistedToken(projectId)
         val user = getPersistedUser(projectId)
         val apiUrl = getApiUrlForProject(projectId) // We might need to store API URL per project too
