@@ -23,7 +23,7 @@
     <!-- Status Colors -->
     <color name="aiims_success">#2E7D32</color>
     <color name="aiims_warning">#ED6C02</color>
-    <color name="aiims_error">#D32F2F</color>
+    <color name="aiims_error">#B71C1C</color> <!-- Darkened from #D32F2F for 4.5:1 contrast on error_container -->
     <color name="aiims_error_container">#F9DEDC</color>
     <color name="aiims_on_error_container">#410E0B</color>
     <color name="aiims_info">#0288D1</color>
@@ -32,7 +32,7 @@
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
     <color name="gray_light">#F5F5F5</color>
-    <color name="gray_medium">#9E9E9E</color>
+    <color name="gray_medium">#6E6E6E</color> <!-- Darkened from #9E9E9E for 4.5:1 contrast -->
     <color name="gray_dark">#424242</color>
 
     <!-- PIN Input Colors -->
@@ -47,7 +47,7 @@
 
     <!-- Offline Indicator -->
     <color name="offline_background">#FFF3E0</color>
-    <color name="offline_text">#E65100</color>
+    <color name="offline_text">#BF360C</color> <!-- Darkened from #E65100 for 4.5:1 contrast on offline_background -->
     <color name="offline_border">#FFB74D</color>
 
     <!-- Barcode Scanner Colors -->
