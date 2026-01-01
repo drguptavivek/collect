@@ -59,7 +59,8 @@ class AiimsAuthManager @Inject constructor(
     private val pinManager: org.aiims.odk.auth.utils.PinManager,
     private val authStorage: AiimsAuthStorage,
     secureStorage: AiimsSecureStorage,
-    private val telemetryDao: org.aiims.odk.auth.storage.db.TelemetryDao
+    private val telemetryDao: org.aiims.odk.auth.storage.db.TelemetryDao,
+    private val networkStateMonitor: org.aiims.odk.auth.utils.AiimsNetworkStateMonitor? = null // Optional for now
 ) {
 
     companion object {
@@ -150,6 +151,31 @@ class AiimsAuthManager @Inject constructor(
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    private var lastNetworkCheckTime = 0L
+
+    init {
+        // Observe network state changes to trigger re-checks
+        networkStateMonitor?.let { monitor ->
+            scope.launch {
+                monitor.isNetworkAvailable.collect { available ->
+                    if (available) {
+                        val currentTime = System.currentTimeMillis()
+                        if (currentTime - lastNetworkCheckTime > 30000L) { // 30s cooldown
+                            lastNetworkCheckTime = currentTime
+                            
+                            // Only trigger if we are in grace period or expired
+                            val expiry = _tokenExpiryTime.value
+                            if (expiry > 0 && currentTime > expiry) {
+                                println("DEBUG_AUTH: Network restored during grace. Triggering refreshState.")
+                                refreshState()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     private val _isSoftExpiry = MutableStateFlow(prefs.getBoolean(AiimsConstants.KEY_IS_SOFT_EXPIRY, false))
     val isSoftExpiry: StateFlow<Boolean> = _isSoftExpiry.asStateFlow()

@@ -89,17 +89,24 @@ open class AiimsAuthDependencyModule {
 
     @Provides
     @Singleton
+    open fun providesAiimsNetworkStateMonitor(application: Application): org.aiims.odk.auth.utils.AiimsNetworkStateMonitor {
+        return org.aiims.odk.auth.utils.AiimsNetworkStateMonitorImpl(application)
+    }
+
+    @Provides
+    @Singleton
     open fun providesAiimsAuthManager(
         application: Application,
         projectCleaner: ProjectCleaner,
         pinManager: PinManager,
         authStorage: AiimsAuthStorage,
         secureStorage: AiimsSecureStorage,
-        telemetryDao: org.aiims.odk.auth.storage.db.TelemetryDao
+        telemetryDao: org.aiims.odk.auth.storage.db.TelemetryDao,
+        networkStateMonitor: org.aiims.odk.auth.utils.AiimsNetworkStateMonitor
     ): AiimsAuthManager {
         // IMPORTANT: Must remain wrapped in Lazy { ... } to prevent Dagger circular dependency (StackOverflowError).
         // This pattern MUST NOT be disturbed when writing tests or making code changes.
-        return AiimsAuthManager(application, { projectCleaner }, pinManager, authStorage, secureStorage, telemetryDao)
+        return AiimsAuthManager(application, { projectCleaner }, pinManager, authStorage, secureStorage, telemetryDao, networkStateMonitor)
     }
 
     @Provides

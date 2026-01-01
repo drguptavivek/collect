@@ -52,6 +52,8 @@ class AiimsAuthManagerTest {
     private lateinit var authStorage: FakeAiimsAuthStorage
     private lateinit var secureStorage: FakeAiimsSecureStorage
     private lateinit var telemetryDao: FakeTelemetryDao
+    private val networkStateMonitor: org.aiims.odk.auth.utils.AiimsNetworkStateMonitor = mock()
+    private val networkAvailableFlow = kotlinx.coroutines.flow.MutableStateFlow(false)
 
     private lateinit var testDispatcher: kotlinx.coroutines.test.TestDispatcher
 
@@ -66,13 +68,14 @@ class AiimsAuthManagerTest {
         authStorage = FakeAiimsAuthStorage()
         secureStorage = FakeAiimsSecureStorage()
         telemetryDao = FakeTelemetryDao()
+        whenever(networkStateMonitor.isNetworkAvailable).thenReturn(networkAvailableFlow)
 
         // Ensure clean state (Though fakes are new instances)
         context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE).edit().clear().commit()
 
         // Initialize Managers
         pinManager = PinManager(context)
-        authManager = AiimsAuthManager(context, { projectCleaner }, pinManager, authStorage, secureStorage, telemetryDao)
+        authManager = AiimsAuthManager(context, { projectCleaner }, pinManager, authStorage, secureStorage, telemetryDao, networkStateMonitor)
         authManager.setAuthClient(authClient)
         authManager.setIoDispatcher(testDispatcher)
 
@@ -628,5 +631,32 @@ class AiimsAuthManagerTest {
         
         assertThat("hardDeadlineTime should be expiry + 6h", 
             authManager.hardDeadlineTime.first(), equalTo(expectedHardDeadline))
+    }
+
+    @Test
+    fun `grace period is re-evaluated when network restores (Scenario 59)`() = runTest {
+        val projectId = "1"
+        val expiryTime = System.currentTimeMillis() - 1000L // Expired
+        val expiresAt = org.aiims.odk.auth.utils.ApiDateFormat.format(java.util.Date(expiryTime))
+        val user = User("100", "testuser", projectId, expiresAt)
+        
+        // 1. Initial State: Expired, Offline Grace (Server Unreachable)
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", expiresAt))
+        whenever(authClient.checkReachability()).thenReturn(false) // Unreachable initially
+        
+        authManager.login(projectId, "user", "pass", "url")
+        authManager.setActiveProject(projectId)
+        advanceUntilIdle()
+        
+        assertThat("Should NOT be soft expiry yet (silent grace)", authManager.getIsSoftExpiry(), equalTo(false))
+        
+        // 2. Simulate Network Restoration
+        whenever(authClient.checkReachability()).thenReturn(true) // Now reachable
+        networkAvailableFlow.value = true
+        advanceUntilIdle()
+        
+        // 3. Verify: Reachability check triggered and isSoftExpiry updated
+        assertThat("Should be soft expiry now that network is restored", authManager.getIsSoftExpiry(), equalTo(true))
+        verify(authClient, org.mockito.kotlin.times(2)).checkReachability()
     }
 }
