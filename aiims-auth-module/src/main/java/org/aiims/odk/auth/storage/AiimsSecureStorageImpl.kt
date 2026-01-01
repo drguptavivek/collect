@@ -191,25 +191,27 @@ class AiimsSecureStorageImpl private constructor(
     /**
      * Clear all authentication data.
      */
-    override fun clearAllAuthData() {
-        // Clear encrypted data
-        encryptedPrefs.edit().clear().apply()
+    override fun clearAllAuthData(): Boolean {
+        // Clear encrypted data synchronously
+        val encryptedCleared = encryptedPrefs.edit().clear().commit()
 
-        // Clear regular auth data
-        regularPrefs.edit()
+        // Clear regular auth data synchronously
+        val regularCleared = regularPrefs.edit()
             .remove(AiimsConstants.KEY_IS_AUTHENTICATED)
             .remove(AiimsConstants.KEY_USER_ID)
             .remove(AiimsConstants.KEY_USER_EMAIL)
             .remove(AiimsConstants.KEY_USER_NAME)
             .remove(AiimsConstants.KEY_LAST_AUTH_TIMESTAMP)
-            .apply()
+            .commit()
+
+        return encryptedCleared && regularCleared
     }
 
     /**
      * Clear only sensitive data (tokens, PIN, clock validation).
      */
-    override fun clearSensitiveData() {
-        encryptedPrefs.edit()
+    override fun clearSensitiveData(): Boolean {
+        return encryptedPrefs.edit()
             .remove(AiimsConstants.KEY_AUTH_TOKEN)
             .remove(AiimsConstants.KEY_TOKEN_EXPIRY)
             .remove(AiimsConstants.KEY_PROJECT_ID)
@@ -220,7 +222,7 @@ class AiimsSecureStorageImpl private constructor(
             .remove(AiimsConstants.KEY_LAST_ELAPSED_REALTIME)
             .remove(AiimsConstants.KEY_SERVER_TIME_OFFSET_MS)
             .remove(AiimsConstants.KEY_CLOCK_MANIPULATION_DETECTED)
-            .apply()
+            .commit()
     }
 
     /**

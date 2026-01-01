@@ -154,9 +154,9 @@ class AiimsAuthStorageImpl private constructor(
     /**
      * Clear all authentication data (logout).
      */
-    override fun clearAuthData() {
+    override fun clearAuthData(): Boolean {
         isAuthenticated = false
-        secureStorage.clearAllAuthData()
+        return secureStorage.clearAllAuthData()
     }
 
     /**
@@ -187,9 +187,9 @@ class AiimsAuthStorageImpl private constructor(
     /**
      * Clear all sensitive authentication data
      */
-    override fun clearSensitiveData() {
+    override fun clearSensitiveData(): Boolean {
         // Clear secure storage (tokens, PINs, etc.)
-        secureStorage.clearSensitiveData()
+        val secureCleared = secureStorage.clearSensitiveData()
 
         // Clear authentication state
         isAuthenticated = false
@@ -203,5 +203,7 @@ class AiimsAuthStorageImpl private constructor(
         biometricEnabled = false
         biometricKeyAlias = null
         lastAuthTimestamp = 0
+
+        return secureCleared
     }
 }

@@ -518,13 +518,21 @@ class AiimsAuthManager @Inject constructor(
         }
 
         // Clear persistence
-        clearSession(projectId)
+        val cleared = clearSession(projectId)
+        if (!cleared) {
+            Log.e("AiimsAuth", "CRITICAL: Logout incomplete for project $projectId due to storage failure.")
+            AiimsAppAnalytics.logStorageError("logout_failure")
+        }
 
         // OPTION B: Do NOT clear project data on logout
         // Forms, instances, and cache persist across user sessions for shared device scenarios.
         // This allows User B to see forms/drafts from User A when logging into the same project.
         // See docs/vg-user-behaviour.md for rationale.
         android.util.Log.d("AiimsAuth", "Logout: Preserving project data for: $projectId (Option B - shared device)")
+
+        // Final fallback: even if disk failure occurred, we must clear memory state
+        _isSoftExpiry.value = false
+        _authState.value = AuthState.LOGGED_OUT
 
         // Clear local PIN
         pinManager.clearPin()
@@ -564,18 +572,54 @@ class AiimsAuthManager @Inject constructor(
         }
     }
 
-    private fun clearSession(projectId: String) {
-        // Clear sensitive data from encrypted storage
-        authStorage.clearAuthData()
+    private fun clearSession(projectId: String): Boolean {
+        var success = false
+        var attempts = 0
+        val maxRetries = 2
 
-        // Clear project-specific non-sensitive data from SharedPreferences
-        prefs.edit().apply {
-            remove(keyUser(projectId))
-            remove(keyApiUrl(projectId))
-            // Also clear dismissal time on explicit logout/clear to reset behavior
-            remove(KEY_LAST_DISMISSAL_TIME)
-            apply()
+        while (!success && attempts <= maxRetries) {
+            try {
+                if (attempts > 0) {
+                    Log.w("AiimsAuth", "Retrying session clearance for project $projectId (attempt ${attempts + 1})")
+                }
+
+                // Clear sensitive data from encrypted storage
+                val authCleared = authStorage.clearAuthData()
+
+                // Clear project-specific non-sensitive data from SharedPreferences
+                val prefsCleared = prefs.edit().apply {
+                    remove(keyUser(projectId))
+                    remove(keyApiUrl(projectId))
+                    // Also clear dismissal time on explicit logout/clear to reset behavior
+                    remove(KEY_LAST_DISMISSAL_TIME)
+                }.commit()
+
+                success = authCleared && prefsCleared
+            } catch (e: Exception) {
+                Log.e("AiimsAuth", "Exception during session clearance: ${e.message}", e)
+                success = false
+            }
+
+            if (!success) {
+                attempts++
+                if (attempts <= maxRetries) {
+                    // Small delay before retry
+                    Thread.sleep(100)
+                }
+            }
         }
+
+        if (!success) {
+            // Last resort: try to clear SharedPreferences directly if all else fails
+            try {
+                Log.e("AiimsAuth", "Session clearance failed consistently. Attempting emergency direct clear.")
+                prefs.edit().clear().commit()
+            } catch (e: Exception) {
+                Log.e("AiimsAuth", "Emergency direct clear failed: ${e.message}")
+            }
+        }
+
+        return success
     }
 
     // --- Helpers for Persistence keys ---

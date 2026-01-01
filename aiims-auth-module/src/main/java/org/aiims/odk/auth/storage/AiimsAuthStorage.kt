@@ -37,8 +37,8 @@ interface AiimsAuthStorage {
     fun saveUser(user: User)
     fun getCurrentUser(): User?
     fun saveAuthSession(token: String, expiresAt: String, user: User, apiUrl: String)
-    fun clearAuthData()
+    fun clearAuthData(): Boolean
     fun updateLastAuthTimestamp()
     fun getAuthSummary(): Map<String, Any>
-    fun clearSensitiveData()
+    fun clearSensitiveData(): Boolean
 }

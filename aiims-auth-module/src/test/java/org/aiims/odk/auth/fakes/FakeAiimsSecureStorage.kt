@@ -84,14 +84,16 @@ class FakeAiimsSecureStorage : AiimsSecureStorage {
         get() = data["userName"] as? String
         set(value) { data["userName"] = value }
 
-    override fun clearAllAuthData() {
+    override fun clearAllAuthData(): Boolean {
         data.clear()
+        return true
     }
 
-    override fun clearSensitiveData() {
+    override fun clearSensitiveData(): Boolean {
         data.remove("authToken")
         data.remove("tokenExpiry")
         // Remove other sensitive keys
+        return true
     }
 
     override fun resetPinAttempts() {

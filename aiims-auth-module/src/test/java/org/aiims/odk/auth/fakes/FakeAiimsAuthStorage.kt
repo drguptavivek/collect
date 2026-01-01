@@ -91,9 +91,9 @@ class FakeAiimsAuthStorage : AiimsAuthStorage {
         lastAuthTimestamp = System.currentTimeMillis()
     }
 
-    override fun clearAuthData() {
+    override fun clearAuthData(): Boolean {
         isAuthenticated = false
-        clearSensitiveData()
+        return clearSensitiveData()
     }
 
     override fun updateLastAuthTimestamp() {
@@ -107,7 +107,7 @@ class FakeAiimsAuthStorage : AiimsAuthStorage {
         )
     }
 
-    override fun clearSensitiveData() {
+    override fun clearSensitiveData(): Boolean {
         deviceToken = ""
         tokenExpiry = null
         projectId = null
@@ -115,5 +115,6 @@ class FakeAiimsAuthStorage : AiimsAuthStorage {
         pinSalt = null
         biometricKeyAlias = null
         // And other sensitive fields
+        return true
     }
 }

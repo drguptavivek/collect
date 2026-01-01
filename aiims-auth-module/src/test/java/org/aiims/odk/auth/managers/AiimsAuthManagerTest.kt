@@ -534,4 +534,41 @@ class AiimsAuthManagerTest {
         assertThat("isSoftExpiry must NOT become true after logout", testManager.getIsSoftExpiry(), equalTo(false))
         assertThat("Should be in LOGGED_OUT state", testManager.authState.value, equalTo(AuthState.LOGGED_OUT))
     }
+
+    @Test
+    fun `#logout handles storage failure with retries and force-logout (Scenario 67)`() = runTest {
+        val projectId = "1"
+        val user = User("100", "testuser", projectId, "2099-01-01T00:00:00.000Z")
+        
+        // Setup initial logged-in state
+        whenever(authClient.login(any(), any(), any(), any(), any())).thenReturn(AuthResult.Success(user, "token", user.expiresAt!!))
+        authManager.login(projectId, "user", "pass", "url")
+        authManager.setActiveProject(projectId)
+        advanceUntilIdle()
+        
+        assertThat(authManager.authState.first(), equalTo(AuthState.LOGGED_IN))
+
+        // Mock AiimsAuthStorage to FAIL during clearAuthData
+        val mockStorage = mock<org.aiims.odk.auth.storage.AiimsAuthStorage>()
+        whenever(mockStorage.clearAuthData()).thenReturn(false)
+        
+        // Recreate manager with failing mock storage
+        val failingAuthManager = AiimsAuthManager(context, { projectCleaner }, pinManager, mockStorage, secureStorage, telemetryDao)
+        failingAuthManager.setAuthClient(authClient)
+        failingAuthManager.setIoDispatcher(testDispatcher)
+        
+        // Mock active project ID in prefs for logout to work
+        context.getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE)
+            .edit().putString("active_project_id", projectId).commit()
+
+        failingAuthManager.logout()
+        advanceUntilIdle()
+
+        // Verify it retried (3 attempts total: 1 initial + 2 retries)
+        verify(mockStorage, org.mockito.kotlin.times(3)).clearAuthData()
+        
+        // Verify state is LOGGED_OUT in memory even if storage failed
+        assertThat("Must transition to LOGGED_OUT in memory despite storage failure", 
+            failingAuthManager.authState.first(), equalTo(AuthState.LOGGED_OUT))
+    }
 }

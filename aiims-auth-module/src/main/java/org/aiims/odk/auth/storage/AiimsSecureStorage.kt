@@ -36,8 +36,8 @@ interface AiimsSecureStorage {
     var userName: String?
 
     // ===== Utility Methods =====
-    fun clearAllAuthData()
-    fun clearSensitiveData()
+    fun clearAllAuthData(): Boolean
+    fun clearSensitiveData(): Boolean
     fun resetPinAttempts()
     fun incrementPinAttempts(): Int
     fun isPinLocked(): Boolean
