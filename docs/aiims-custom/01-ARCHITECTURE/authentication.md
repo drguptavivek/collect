@@ -14,6 +14,7 @@ The AIIMS authentication system replaces ODK's standard Basic Auth with a custom
 - **Short-lived tokens**: Default 3-day validity (configurable via server settings)
 - **Bearer authentication**: JWT tokens injected via OkHttp interceptors
 - **Offline grace period**: 6 hours of continued work after token expiry
+- **Network Monitoring**: Smart re-checks for immediate re-auth (see [Network & Reachability](network_and_reachability.md))
 - **Soft expiry**: User-friendly re-auth prompts when online
 - **Hard expiry**: Forced logout after grace period deadline
 - **Expiry reminders**: Multi-tier warnings at 8h, 3h, 1h, 30m, 15m, and 3m before expiry

@@ -373,6 +373,7 @@ graph TD
 
 - [Authentication Flows](authentication.md) - Detailed auth state machine
 - [AIIMS vs. Standard Boundary](aiims_vs_standard_boundary.md) - Clean separation rules
+- [Network & Reachability](network_and_reachability.md) - Network monitoring & stability
 - [Collect Telemetry](Collect_telemetry.md) - Telemetry system design
 - [Logging & Events](logging_and_events.md) - Logging strategy and event details
 - [Activities Reference](activities.md) - All AIIMS activities
