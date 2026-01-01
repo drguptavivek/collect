@@ -9,8 +9,18 @@ emulator -list-avds
 # Start emulator in background
 emulator -avd Medium_Phone_API_36.0 -netdelay none -netspeed full &
 
+# Clean start (wipes data/factory reset)
+emulator -avd Medium_Phone_API_36.0 -netdelay none -netspeed full -wipe-data &
+
 # Check connected devices
 adb devices
+
+# Stop specific emulator
+adb -s emulator-5554 emu kill
+
+# Kill all emulators
+adb devices | grep emulator | cut -f1 | xargs -I {} adb -s {} emu kill
+
 ```
 
 ## Build & Install (AIIMS ODK Collect)
@@ -71,4 +81,10 @@ adb shell pm clear org.aiims.odk.collect
 
 # Full clean rebuild
 ./gradlew clean assembleAiimsDebug
+```
+
+## Emulator Management
+
+```bash
+
 ```
