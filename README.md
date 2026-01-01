@@ -1,403 +1,244 @@
 # AIIMS ODK Collect
+<p align="center">
+<img src="docs/aiims-custom/assets/AIIMS_collect_logo_cropped.png" width="200">
+</p>
 
-> **Version**: v2025.3.3-AIIMS-RC1 | **Release Date**: 2026-01-01 | **Status**: Release Candidate  
-> **Based on**: ODK Collect v2025.3.3 (November 1, 2025)
+> **Version**: v2025.3.3-AIIMS-RC2-DEV | **Status**: Development Candidate
+> **Upstream**: ODK Collect v2025.3.3 (November 1, 2025)
 
-> [!IMPORTANT]
-> **This is a customized fork of ODK Collect.**  
-> It diverges from the official ODK Collect to support **AIIMS-specific authentication** (Bearer Tokens + PIN), **offline telemetry**, **accessibility compliance** (WCAG 2.1 AA), and **strict data isolation**.
 
-### Key Divergences & Rationale
+## Overview
 
-1.  **AIIMS Authentication Module**: 
-    *   **Rationale**: The official app uses Basic Auth. Our backend requires short-lived **Bearer Tokens** (JWT) and a custom login flow (`/projects/{id}/app-users/login`).
-    *   **Change**: Added `aiims_auth_module` to intercept the startup flow, handle login, and inject tokens into the ODK Core via `TokenProvider`.
-    *   **Offline Resilience**: Implements an "Offline Grace Period" (~6 hours) where expired sessions active if the central server is unreachable. Includes a **Soft Expiry** prompt to handle intermittent connectivity without stranding users.
-    
-    ```mermaid
-    stateDiagram-v2
-        [*] --> LOGGED_OUT
-        LOGGED_OUT --> LOGGED_IN : "User logs in (Credentials)"
-        state LOGGED_IN {
-            [*] --> Active : "Token Valid"
-            Active --> GracePeriod : "Token Expired (Time > ExpiresAt)"
-            state GracePeriod {
-                [*] --> CheckReachability
-                CheckReachability --> OfflineGrace : "Server Unreachable"
-                CheckReachability --> SoftExpiry : "Server Reachable"
-                OfflineGrace --> CheckReachability : "Periodic Refresh"
-                SoftExpiry --> ReAuthenticated : "User Logs In"
-                SoftExpiry --> OfflineGrace : "User Cancels (Work Offline)"
-            }
-        }
-        GracePeriod --> LOGGED_OUT : "Hard Deadline (> 6 Hours)"
-        LOGGED_IN --> LOGGED_OUT : "User Manually Logs Out"
-        LOGGED_IN --> LOGGED_OUT : "3 Failed PIN Attempts (Wipe)"
-    ```
+AIIMS ODK Collect is a specialized fork of ODK Collect transformed into a secure, institutional-grade data collection tool. It introduces a modular authentication system, security PINs, and intelligent data isolation for shared-device environments.
 
-2.  **Network Interception**:
-    *   **Rationale**: To support standard ODK OpenRosa calls (`/formList`, `/submission`) against our custom backend.
-    *   **Change**: Injected an OkHttp Interceptor in `OkHttpOpenRosaServerClientProvider` that adds `Authorization: Bearer <token>` to all requests.
+## Core Features
 
-3.  **Local Development Support**:
-    *   **Rationale**: The Android Emulator cannot reach `central.local` by default.
-    *   **Change**: Added DNS mapping (`central.local -> 10.0.2.2`) and SSL bypass for Debug builds.
+### Advanced Authentication
+The application replaces the ultra long lived token  with a short validity token based system. This includes a user initiated re-authentication flow with notifications and reminders as well as a grace period concept to ensure work in field does not suffer. The token valdiity is configurable on a per project basis from the similary forked ODK central server.
 
-4.  **PIN Security & Session Lock**:
-    *   **Rationale**: Improved physical security for shared devices.
-    *   **Change**: Implemented a `PinManager` and lifecycle callbacks to lock the app immediately when it goes to the background.
-    *   **Behavior**:
-        *   **Local PIN**: Setup required after login.
-        *   **Re-Login**: Same user keeps PIN; **Different user** forces PIN reset.
-        *   **Max Attempts**: **3 failed attempts** immediately clears the Session AND the PIN (Logout).
 
-5.  **Data Isolation**:
-    *   **Rationale**: Prevent users from seeing each other's blank forms on shared devices.
-    *   **Change**: Implemented `ProjectCleaner` to wipe blank forms (but keep instances) on logout.
+### User Experience and Security
+The application leverages the specialized UI for authentication and security workflows.
 
-### Documentation (AIIMS)
-For deep-dives into the custom components, refer to these internal docs:
-1.  **[Architecture & Flows](docs/AIIMS_ARCHITECTURE.md)**: The unified technical documentation containing:
-    *   System Changes & Rationale
-    *   Authentication & Security Flows (Diagrams)
-    *   Data Architecture
-2.  **[API Specification](docs/AIIMS_API.md)**: Details of the backend endpoints Customized ODK Central API. https://hithub.com/drguptavivek/central.
-3.  **[Maintenance Guide](docs/AIIMS_MAINTENANCE.md)**: Instructions for merging upstream changes and maintaining these customizations.
-4.  **[Preferences & Persistence](docs/aiims-custom/AIIMS_PREFERENCES.md)**: Details on how settings, PINs, and tokens are stored.
+### Security and Privacy
+*   **Session Lock**: Immediate app lock on backgrounding.
+*   **Encrypted Storage**: Credentials and tokens are stored in secure, encrypted preferences.
+*   **Brute Force Protection**: Automatic session wipe after three failed PIN attempts.
+
+### Offline Resilience
+Designed for low-connectivity environments, the app includes an offline grace period and intelligent server reachability checks to ensure field workers can continue their tasks uninterrupted.
+
+## Behavioral Flows
+
+### 1. User Journey (Auth & PIN Setup)
+The high-level journey for a mobile user from first launch to active use.
 
 ```mermaid
-  graph TD
-      Start((App Start)) --> AuthCheck
-      
-      AuthCheck{Session Found?} -- No / Fresh Login --> Login
-      AuthCheck -- Yes --> PinCheck
-      
-      Login[AiimsLoginActivity] -- Login Success --> SetupPin
-      
-      PinCheck{PIN Set?} -- No / Initial Setup --> SetupPin
-      PinCheck -- Yes / Secure Resume --> PinEntry
-      
-      SetupPin[SetupPinActivity] -- Success --> Main
-      
-      PinEntry[PinEntryActivity] -- Success --> Main
-      PinEntry -- Forgot / Wipe --> Login
-      PinEntry -- Refresh Session --> Login
-      
-      Main[ODK Main Menu] --> Settings
-      Settings[AuthSettingsActivity] --> ChangePin
-      Settings -- Logout --> Login
-      Settings -- Refresh Session --> Login
-      
-      ChangePin[ChangePinActivity] -- Back --> Settings
-      
-      subgraph "Persistence Context"
-      Main -- App Minimized --> BG[Background]
-      BG -- App Resumed --> PinEntry
-      end
+flowchart TD
+    Start([Start App]) --> Access{Authenticated?}
+    
+    Access -- No --> Login[Login with Credentials]
+    Login --> PINSetup{PIN Set?}
+    
+    PINSetup -- No --> CreatePIN[Create 4-Digit PIN]
+    CreatePIN --> Active[Active Session]
+    
+    PINSetup -- Yes --> Active
+    Access -- Yes --> Active
+    
+    Active --> Background[App in Background]
+    Background --> Foreground[App Foregrounded]
+    Foreground --> PINEntry[Enter 4-Digit PIN]
+    
+    PINEntry -- Success --> Active
+    PINEntry -- 3 Failures --> Wipe[Session Wipe]
+    Wipe -->|Clears PIN & Token ONLY| Login
+```
 
-      %% Styling
-      classDef activity fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-      classDef decision fill:#fff3e0,stroke:#e65100,stroke-width:2px;
-      classDef infra fill:#f5f5f5,stroke:#616161,stroke-width:1px;
+### 2. Security & Session Lifecycle
+The background logic managing token longevity, proactive reminders, and hardware integrity.
 
-      class Login,SetupPin,PinEntry,Main,Settings,ChangePin activity
-      class AuthCheck,PinCheck decision
-      class Start,BG infra
-  ```
+```mermaid
+flowchart TD
+    Active[Active Session] --> Telemetry[Periodic Telemetry Sync]
+    Telemetry --> ExpiryCheck{Token Expired?}
+    
+    ExpiryCheck -- No --> Reminders[Tiered Reminders: 6h, 3h, 1h, 15m]
+    Reminders --> Active
 
+    ExpiryCheck -- Yes --> GraceCheck{< 6h Grace?}
+    
+    GraceCheck -- No --> Wipe[Session Wipe]
+    Wipe -->|Clears Token ONLY| Login[Return to Login]
+    
+    GraceCheck -- Yes --> Reachable{Server Reachable?}
+    Reachable -- No --> Active
+    Reachable -- Yes --> ClockCheck{Clock Valid?}
+    
+    ClockCheck -- No --> Locked[Lock Re-Auth: Correct Clock]
+    ClockCheck -- Yes --> SoftExpiry[Soft Expiry: Re-Auth Prompt]
+    
+    SoftExpiry -- Success --> Active
+    SoftExpiry -- Cancel --> Active
+```
+
+### High-Level Features
+- **Advanced Authentication**: Short-validity tokens, QR based configuration, and manual/auto re-authentication flows.
+- **Offline Telemetry**: Reliable capture of security and health events with [Room DB queuing and background sync](docs/aiims-custom/05-FEATURES/telemetry-system.md).
+- **Grace-Period Security**: 6-hour offline tolerance with [Clock Drift Detection](docs/aiims-custom/05-FEATURES/security-scenarios.md).
+- **Lifecycle Protection**: Instant [PIN/Login App-Lock](docs/aiims-custom/05-FEATURES/app-lifecycle-security.md) when backgrounded.
+- **Shared-Device continuity**: [Preserves all form drafts](docs/aiims-custom/05-FEATURES/shared-device-continuity.md) while strictly isolating user tokens and PINs.
+- **Diagnostics**: Secure, [encrypted log export](docs/aiims-custom/05-FEATURES/logging-diagnostics.md) for remote field support.
+- **Accessibility**: Full [WCAG 2.1 Level AA compliance](docs/aiims-custom/05-FEATURES/accessibility.md) for re-auth and security screens.
+
+### Security Resilience
+The application is hardened against common exploit vectors:
+- **PIN Bypass Protection**: Mandatory re-auth on cold starts or background resume.
+- **Shared-Device Isolation**: Automatic PIN clearance on user change.
+- **System Resilience**: Fail-safe logout fallbacks for storage corruption or network races.
+- **API Guard**: Mutex-based sync for concurrent operations and rate limiting for auth calls.
+
+For a full catalog of protected scenarios, see [Security Scenarios & Resilience](docs/aiims-custom/05-FEATURES/security-scenarios.md).
+
+
+## Technical Architecture
+
+The architecture is built on a clean separation between the AIIMS Auth Module and the ODK Core.
+
+| Component | Responsibility |
+|-----------|---------------|
+| AIIMS Auth Module | Handles login, token management, and security lifecycle. |
+| ODK Core | Manages form rendering, logic, and data storage. |
+
+```mermaid
+graph TB
+    subgraph "AIIMS Auth Layer"
+        AuthUI[AiimsLoginActivity]
+        AuthMgr[AiimsAuthManager]
+        AppLock[AiimsAppLock]
+        PinMgr[PinManager]
+        Cleaner[ProjectCleaner]
+    end
+
+    subgraph "ODK Core & Integration"
+        TokenProvider[Token Provider]
+        ODKCore[ODK Collect Core]
+        Projects[Project Repository]
+    end
+
+    subgraph "Storage & Backend"
+        SecureStorage[(Secure Auth Storage)]
+        ODKStorage[(ODK Preference Files)]
+        Central[ODK Central API]
+    end
+
+    AuthUI --> AuthMgr
+    AuthMgr --> SecureStorage
+    AuthMgr --> Projects
+    AuthMgr --> Central
+    
+    AppLock --> PinMgr
+    PinMgr --> SecureStorage
+    
+    Cleaner --> ODKCore
+    
+    ODKCore -- Requests Token --> TokenProvider
+    TokenProvider -- Reads --> SecureStorage
+    
+    AuthMgr -- "Materializes Config" --> ODKStorage
+```
+
+
+
+## Documentation
+
+For detailed technical specifications and maintenance guides, refer to the following:
+
+1.  **[Quickstart Guide](docs/aiims-custom/01-QUICKSTART.md)**: Getting started with the AIIMS flavor.
+2.  **[Architecture Overview](docs/aiims-custom/01-ARCHITECTURE/overview.md)**: Unified technical documentation and system flows.
+3.  **[API Specification](docs/aiims-custom/03-API/reference.md)**: Backend endpoint definitions for the Customized ODK Central API.
+4.  **[Maintenance Guide](docs/aiims-custom/04-OPERATIONS/maintenance.md)**: Instructions for merging upstream changes.
+5.  **[Versioning Strategy](docs/aiims-custom/04-OPERATIONS/versioning.md)**: Release candidate workflow and versioning rules.
+
+
+
+## Credits
+Based on the official [ODK Collect](https://github.com/getodk/collect) project.
+
+## Screenshots & Workflows
+
+A visual walk-through of the AIIMS ODK Collect authentication and security experience.
+
+### 00. Login Screen
+Central authentication portal for AIIMS users requiring project-specific credentials.
+<p align="center"><img src="docs/aiims-custom/screenshots/00_login-screen.png" width="200" alt="Login Screen"></p>
+
+### 01. & 02. Project Configuration
+Support for both manual URL entry and rapid, standardized QR code configuration.
+<p align="center">
+  <img src="docs/aiims-custom/screenshots/01_manual_config.png" width="200" alt="Manual Config">
+  <img src="docs/aiims-custom/screenshots/02_QR_Config.png" width="200" alt="QR Config">
+</p>
+
+### 03. PIN Setup
+Initial creation of the mandatory 4-digit security PIN for local session locking.
+<p align="center"><img src="docs/aiims-custom/screenshots/03_set_pin.png" width="200" alt="Set PIN"></p>
+
+### 04. & 05. Authenticated Home & Settings
+Updated home screen and accessible security settings following a successful login.
+<p align="center">
+  <img src="docs/aiims-custom/screenshots/04_post_login_with_new_settings_icon.png" width="200" alt="Post Login Icon">
+  <img src="docs/aiims-custom/screenshots/05_post_login_settings.png" width="200" alt="Post Login Settings">
+</p>
+
+### 05b. Project Isolation
+Project switching is restricted to maintain strict data boundaries and security.
+<p align="center"><img src="docs/aiims-custom/screenshots/05_cannt_switch_projects.png" width="200" alt="Cannot Switch Projects"></p>
+
+### 06. Session Lock
+The app automatically locks and requires PIN re-entry when resumed from the background.
+<p align="center"><img src="docs/aiims-custom/screenshots/06_Reenter_pin.png" width="200" alt="Re-enter PIN"></p>
+
+### 07. Token Management
+Options for seamless background re-authentication or manual token renewal.
+<p align="center"><img src="docs/aiims-custom/screenshots/07_Refresh_token.png" width="200" alt="Refresh Token"></p>
+
+### 08. Clock Drift Validation
+Advanced security check validating device time against the server to prevent grace-period exploits.
+<p align="center"><img src="docs/aiims-custom/screenshots/08_date_drift_detection.png" width="200" alt="Date Drift Detection"></p>
+
+### 09. & 10. Logging & Diagnostics
+Built-in utilities for exporting and securely saving encrypted logs for remote troubleshooting.
+<p align="center">
+  <img src="docs/aiims-custom/screenshots/09_logs_export.png" width="200" alt="Logs Export">
+  <img src="docs/aiims-custom/screenshots/10_save_logs.png" width="200" alt="Save Logs">
+</p>
+
+### 11. Permissions Audit
+Automated system providing a clear overview of mandatory permissions needed for operation.
+<p align="center"><img src="docs/aiims-custom/screenshots/11_permissions_check.png" width="200" alt="Permissions Check"></p>
 
 ---
 
-# ODK Collect (Official)
+## Backend (ODK Central) Customizations
+The AIIMS fork includes a heavily modified ODK Central backend to support advanced authentication, telemetry mapping, and per-project security policies.
 
+### B1. App User Management
+Automated password generation and centralized project-access control for field workers.
 
-![Platform](https://img.shields.io/badge/platform-Android-blue.svg)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Build status](https://circleci.com/gh/getodk/collect.svg?style=shield&circle-token=:circle-token)](https://circleci.com/gh/getodk/collect)
-[![Slack](https://img.shields.io/badge/chat-on%20slack-brightgreen)](https://slack.getodk.org)
+  <img src="docs/aiims-custom/ODK_Central_docs/screenshots/01_app_users_list.png" width="600" alt="App Users List">
+  <img src="docs/aiims-custom/ODK_Central_docs/screenshots/01_app_user_auto_gen_password.png" width="600" alt="Auto-gen Password">
 
-ODK Collect is an Android app for filling out forms. It is designed to be used in resource-constrained environments with challenges such as unreliable connectivity or power infrastructure. ODK Collect is part the ODK project, a free and open-source set of tools which help organizations author, field, and manage mobile data collection solutions. Learn more about ODK and its history [here](https://getodk.org/) and read about example ODK deployments [here](https://forum.getodk.org/c/showcase).
 
-ODK Collect renders forms that are compliant with the [ODK XForms standard](https://getodk.github.io/xforms-spec/), a subset of the [XForms 1.1 standard](https://www.w3.org/TR/xforms/) with some extensions. The form parsing is done by the [JavaRosa library](https://github.com/getodk/javarosa) which Collect includes as a dependency.
+### B2. Security Policies
+Project-specific security constraints, including mandatory PIN rotation and session timeout rules.
+<img src="docs/aiims-custom/ODK_Central_docs/screenshots/02_project_specific_app_user_settings.png" width="600" alt="Project Settings">
 
-Please note that the `master` branch reflects ongoing development and is not production-ready.
+### B3. Telemetry & Live Mapping
+Real-time geographic visualization of field worker health, battery status, and security events.
+<img src="docs/aiims-custom/ODK_Central_docs/screenshots/03_telemetry_table.png" width="600" alt="Telemetry Table">
+<img src="docs/aiims-custom/ODK_Central_docs/screenshots/04_telemetry_map.png" width="600" alt="Telemetry Map">
 
-## Table of Contents
-* [Learn more about ODK Collect](#learn-more-about-odk-collect)
-* [Release cycle](#release-cycle)
-* [Downloading builds](#downloading-builds)
-* [Suggesting new features](#suggesting-new-features)
-* Contributing
-  * [Contributing code](#contributing-code)
-  * [Contributing translations](#contributing-translations)
-* Developing
-  * [Setting up your development environment](#setting-up-your-development-environment)
-  * [Testing a form without a server](#testing-a-form-without-a-server)
-  * [Using APIs for local development](#using-apis-for-local-development)
-  * [Debugging JavaRosa](#debugging-javarosa)
-  * [Troubleshooting](#troubleshooting)
-  * [Test devices](#test-devices)
-* [Creating signed releases for Google Play Store](#creating-signed-releases-for-google-play-store)
-
-## Learn more about ODK Collect
-* ODK website: [https://getodk.org](https://getodk.org)
-* ODK Collect usage documentation: [https://docs.getodk.org/collect-intro/](https://docs.getodk.org/collect-intro/)
-* ODK forum: [https://forum.getodk.org](https://forum.getodk.org)
-* ODK developer Slack chat: [https://slack.getodk.org](https://slack.getodk.org)
-
-## Release cycle
-
-Releases are planned to happen every 2-3 months (resulting in ~4 releases a year). Soon before (or just after) the end of one release cycle, the core team will plan a new set of work for the next release. This involves:
-
-1. Moving issues not finished in the last release and new items from the [ODK Roadmap](https://getodk.org/roadmap) to the [planning board](https://github.com/orgs/getodk/projects/9/views/25)
-2. Giving the core team a few days to review and reflect on the planning board
-3. The core team will then meet to trim work that will not be included in the next release and pitch alternative things to work on
-4. The milestone for the new release is added to [the backlog](https://github.com/orgs/getodk/projects/9) and is prioritized
-
-Sometimes issues will be assigned to core team members before they are actually started (moved to "in progress") to make it clear who's going to be working on what.
-
-Once the majority of high risk or visible work is done for a release, a new beta will then be released to the Play Store by [@lognaturel](https://github.com/lognaturel) and that will be used for regression testing by [@getodk/testers](https://github.com/orgs/getodk/teams/testers). If any problems are found, the release is blocked until we can merge fixes. Regression testing should continue on the original beta build (rather than a new one with fixes) unless problems block the rest of testing. Once the process is complete, [@lognaturel](https://github.com/lognaturel) pushes the releases to the Play Store following [these instructions](#creating-signed-releases-for-google-play-store).
-
-Fixes to a previous release should be merged to a "release" branch (`v2023.2.x` for example) so as to leave `master` available for the current release's work. If hotfix changes are needed in the current release as well then these can be merged in as a PR after hotfix releases (generally easiest as a single PR for the whole hotfix release). This approach can also be used if work for the next release starts before the current one is out - the next release continues on `master` while the release is on a release branch.
-
-At the beginning of each release cycle, [@grzesiek2010](https://github.com/grzesiek2010) updates all dependencies that have compatible upgrades available and ensures that the build targets the latest SDK.
-
-## Downloading builds
-Per-commit debug builds can be found on [CircleCI](https://circleci.com/gh/getodk/collect). Login with your GitHub account, click the build you'd like, then find the APK in the Artifacts tab.
-
-If you are looking to use ODK Collect, we strongly recommend using the [Play Store build](https://play.google.com/store/apps/details?id=org.odk.collect.android). Current and previous production builds can be found in [Releases](https://github.com/getodk/collect/releases).
-
-## Suggesting new features
-We try to make sure that all issues in the issue tracker are as close to fully specified as possible so that they can be closed by a pull request. Feature suggestions should be described [in the forum Features category](https://forum.getodk.org/c/features) and discussed by the broader user community. Once there is a clear way forward, issues should be filed on the relevant repositories. More controversial features will be discussed as part of the Technical Steering Committee's [roadmapping process](https://github.com/getodk/governance/blob/master/TSC-1/STANDARD-OPERATING-PROCEDURES.md#roadmap).
-
-## Contributing code
-Any and all contributions to the project are welcome. ODK Collect is used across the world primarily by organizations with a social purpose so you can have real impact!
-
-Issues tagged as [good first issue](https://github.com/getodk/collect/labels/good%20first%20issue) should be a good place to start. There are also currently many issues tagged as [needs reproduction](https://github.com/getodk/collect/labels/needs%20reproduction) which need someone to try to reproduce them with the current version of ODK Collect and comment on the issue with their findings.
-
-If you're ready to contribute code, see [the contribution guide](docs/CONTRIBUTING.md).
-
-## Contributing translations
-If you know a language other than English, consider contributing translations through [Transifex](https://www.transifex.com/getodk/collect/).
-
-Translations are updated right before the first beta for a release and before the release itself. To update translations, download the zip from https://www.transifex.com/getodk/collect/strings/. The contents of each folder then need to be moved to the Android project folders. A quick script like [the one in this gist](https://gist.github.com/lognaturel/9974fab4e7579fac034511cd4944176b) can help. We currently copy everything from Transifex to minimize manual intervention. Sometimes translation files will only get comment changes. When new languages are updated in Transifex, they need to be added to the script above. Additionally, `ApplicationConstants.TRANSLATIONS_AVAILABLE` needs to be updated. This array provides the choices for the language preference in settings. Ideally the list could be dynamically generated.
-
-## Setting up your development environment
-
-1. Download and install [Git](https://git-scm.com/downloads) and add it to your PATH
-
-1. Download and install [Android Studio](https://developer.android.com/studio/index.html) 
-
-1. Fork the collect project ([why and how to fork](https://help.github.com/articles/fork-a-repo/))
-
-1. Clone your fork of the project locally. At the command line:
-
-        git clone https://github.com/YOUR-GITHUB-USERNAME/collect
-
-    If you prefer not to use the command line, you can use Android Studio to create a new project from version control using `https://github.com/YOUR-GITHUB-USERNAME/collect`.
-
-1. Use Android Studio to import the project from its Gradle settings. To run the project, click on the green arrow at the top of the screen.
-
-1. Windows developers: continue configuring Android Studio with the steps in this document: [Developing ODK Collect on Windows](docs/WINDOWS-DEV-SETUP.md).
-
-1. Make sure you can run unit tests by running everything under `collect_app/src/test/java` in Android Studio or on the command line:
-
-    ```
-    ./gradlew testDebug
-    ```
-
-1. Make sure you can run instrumented tests by running everything under `collect_app/src/androidTest/java` in Android Studio or on the command line:
-
-    ```
-    ./gradlew connectedAndroidTest
-    ```
-    **Note:** You can see the emulator setup used on CI in  `.circleci/config.yml`.
-
-## Customizing the development environment
-
-### Changing JVM heap size
-
-You can customize the heap size that is used for compiling and running tests. Increasing these will most likely speed up compilation and tests on your local machine. The default values are specified in the project's `gradle.properties` and this can be overriden by your user level `gradle.properties` (found in your `GRADLE_USER_HOME` directory). An example `gradle.properties` that would give you a heap size of 4GB (rather than the default 1GB) would look like:
-
-```
-org.gradle.jvmargs=-Xmx4096m
-```
-
-## Testing a form without a server
-When you first run Collect, it is set to download forms from [https://demo.getodk.org/](https://demo.getodk.org/), the demo server. You can sometimes verify your changes with those forms but it can also be helpful to put a specific test form on your device. Here are some options for that:
-
-1. The `All question types` form from the default server is [here](https://docs.google.com/spreadsheets/d/1af_Sl8A_L8_EULbhRLHVl8OclCfco09Hq2tqb9CslwQ/edit#gid=0). You can also try [example forms](https://github.com/XLSForm/example-forms) and [test forms](https://github.com/XLSForm/test-forms) or [make your own](https://xlsform.org).
-
-1. Convert the XLSForm (xlsx) to XForm (xml). Use the [ODK website](http://getodk.org/xlsform/) or [XLSForm Offline](https://gumroad.com/l/xlsform-offline) or [pyxform](https://github.com/XLSForm/pyxform).
-
-1. Once you have the XForm, use [adb](https://developer.android.com/studio/command-line/adb.html) to push the form to your device (after [enabling USB debugging](https://www.kingoapp.com/root-tutorials/how-to-enable-usb-debugging-mode-on-android.htm)) or emulator.
-	```
-	adb push my_form.xml /sdcard/Android/data/org.odk.collect.android/files/projects/{project-id}/forms
-	```
-
-If you are using the demo project, kindly replace `{project_id}` with `DEMO`
-
-4. Launch ODK Collect and tap `+ Start new form`. The new form will be there.
-
-More information about using Android Debug Bridge with Collect can be found [here](https://docs.getodk.org/collect-adb/).
-
-## Using APIs for local development
-
-Certain functions in ODK Collect depend on cloud services that require API keys or authorization steps to work.  Here are the steps you need to take in order to use these functions in your development builds.
-
-**Google Maps API**: When the "Google Maps SDK" option is selected in the "User interface" settings, ODK Collect uses the Google Maps API for displaying maps in the geospatial question types (GeoPoint, GeoTrace, and GeoShape).  To enable this API:
-  1. [Get a Google Maps API key](https://developers.google.com/maps/documentation/android-api/signup).  Note that this requires a credit card number, though the card will not be charged immediately; some free API usage is permitted.  You should carefully read the terms before providing a credit card number.
-  1. Edit or create `secrets.properties` and set the `GOOGLE_MAPS_API_KEY` property to your API key.  You should end up with a line that looks like this:
-    ```
-    GOOGLE_MAPS_API_KEY=AIbzvW8e0ub...
-    ```
-
-**Mapbox Maps SDK for Android**: When the "Mapbox SDK" option is selected in the "User interface" settings, ODK Collect uses the Mapbox SDK for displaying maps in the geospatial question types (GeoPoint, GeoTrace, and GeoShape).  To enable this API:
-  1. [Create a Mapbox account](https://www.mapbox.com/signup/).  Note that signing up with the "Pay-As-You-Go" plan does not require a credit card.  Mapbox provides free API usage up to the monthly thresholds documented at [https://www.mapbox.com/pricing](https://www.mapbox.com/pricing).  If your usage exceeds these thresholds, you will receive e-mail with instructions on how to add a credit card for payment; services will remain live until the end of the 30-day billing term, after which the account will be deactivated and will require a credit card to reactivate.
-  2. Find your access token on your [account page](https://account.mapbox.com/) - it should be in "Tokens" as "Default public token".
-  3. Edit or create `secrets.properties` and set the `MAPBOX_ACCESS_TOKEN` property to your access token.  You should end up with a line that looks like this:
-    ```
-    MAPBOX_ACCESS_TOKEN=pk.eyJk3bumVp4i...
-    ```
-  4. Create a new secret token with the "DOWNLOADS:READ" secret scope and then add it to `secrets.properties` as `MAPBOX_DOWNLOADS_TOKEN`.
-
-*Note: Mapbox will not be available as an option in compiled versions of Collect unless you follow the steps above. Mapbox will also not be available on x86 devices as the native libraries are excluded to reduce the APK size. If you need to use an x86 device, you can force the build to include x86 libs by include the `x86Libs` Gradle parameter. For example, to build a debug APK with x86 libs: `./gradlew assembleDebug -Px86Libs`.*
-
-## Debugging JavaRosa
-
-JavaRosa is the form engine that powers Collect. If you want to debug or change that code while running Collect you can deploy it locally with Maven (you'll need `mvn` and `sed` installed):
-
-1. Build and install your changes of JavaRosa (into your local Maven repo):
-
-```bash
-./gradlew publishToMavenLocal
-```
-
-1. Change `const val javarosa = javarosa_online` in `Dependencies.kt` to `const val javarosa = javarosa_local`
-
-## Troubleshooting
-
-#### Error when running Robolectric tests from Android Studio on macOS: `build/intermediates/bundles/debug/AndroidManifest.xml (No such file or directory)`
-> Configure the default JUnit test runner configuration in order to work around a bug where IntelliJ / Android Studio does not set the working directory to the module being tested. This can be accomplished by editing the run configurations, Defaults -> JUnit and changing the working directory value to $MODULE_DIR$.
-
-> Source: [Robolectric Wiki](https://github.com/robolectric/robolectric/wiki/Running-tests-in-Android-Studio#notes-for-mac).
-
-#### Android Studio Error: `SDK location not found. Define location with sdk.dir in the local.properties file or with an ANDROID_HOME environment variable.`
-When cloning the project from Android Studio, click "No" when prompted to open the `build.gradle` file and then open project.
-
-#### Execution failed for task ':collect_app:transformClassesWithInstantRunForDebug'.
-
-We have seen this problem happen in both IntelliJ IDEA and Android Studio, and believe it to be due to a bug in the IDE, which we can't fix.  As a workaround, turning off [Instant Run](https://developer.android.com/studio/run/#set-up-ir) will usually avoid this problem. The problem is fixed in Android Studio 3.5 with the new [Apply Changes](https://medium.com/androiddevelopers/android-studio-project-marble-apply-changes-e3048662e8cd) feature.
-
-#### Moving to the main view if user minimizes the app
-If you build the app on your own using Android Studio `(Build -> Build APK)` and then install it (from an `.apk` file), you might notice this strange behaviour thoroughly described: [#1280](https://github.com/getodk/collect/issues/1280) and [#1142](https://github.com/getodk/collect/issues/1142).
-
-This problem occurs building other apps as well.
-
-#### gradlew Failure: `FAILURE: Build failed with an exception.`
-
-If you encounter an error similar to this when running `gradlew`:
-
-```
-FAILURE: Build failed with an exception
-
-What went wrong:
-A problem occurred configuring project ':collect_app'.
-> Failed to notify project evaluation listener.
-   > Could not initialize class com.android.sdklib.repository.AndroidSdkHandler
-```
-
-You may have a mismatch between the embedded Android SDK Java and the JDK installed on your machine. You may wish to set your **JAVA_HOME** environment variable to that SDK. For example, on macOS:
-
-`export JAVA_HOME="/Applications/Android\ Studio.app/Contents/jre/Contents/Home/"
-`
-
-Note that this change might cause problems with other Java-based applications (e.g., if you uninstall Android Studio).
-
-#### gradlew Failure: `java.lang.NullPointerException (no error message).`
-If you encounter the `java.lang.NullPointerException (no error message).` when running `gradlew`, please make sure your Java version for this project is Java 17.
-
-This can be configured under **File > Project Structure** in Android Studio, or by editing `$USER_HOME/.gradle/gradle.properties` to set `org.gradle.java.home=(path to JDK home)` for command-line use.
-
-#### `Unable to resolve artifact: Missing` while running tests
-
-This is encountered when Robolectric has problems downloading the jars it needs for different Android SDK levels. If you keep running into this you can download the JARs locally and point Robolectric to them by doing:
-
-```
-./download-robolectric-deps.sh
-```
-
-## Test devices
-
-Devices that @getodk/testers have available for testing are as follows:
-
-* Xiaomi Redmi 9T 4GB - Android 10
-* Pixel 7a 8GB - Android 14
-* LG Nexus 5X 2GB - Android 8.1
-* Samsung Galaxy M12 4GB - Android 11
-* Samsung Galaxy M23 4GB - Android 14
-* Xiaomi Redmi 7 3GB - Android 10
-* Pixel 6a 6GB - Android 13
-* Pixel 3a 4GB - Android 12
-* Huawei Y560-L01 1GB - Android 5.1
-
-## Creating signed releases for Google Play Store
-Maintainers keep a folder with a clean checkout of the code and use [jenv.be](https://www.jenv.be) in that folder to ensure compilation with Java 17.
-
-### Release prerequisites:
-
-- a`local.properties` file in the root folder with the following:
-  ```
-  sdk.dir=/path/to/android/sdk
-  ```
-
-- the keystore file and passwords
-
-- a `secrets.properties` file in the root project folder folder with the following:
-  ```
-  // secrets.properties
-  RELEASE_STORE_FILE=/path/to/collect.keystore
-  RELEASE_STORE_PASSWORD=secure-store-password
-  RELEASE_KEY_ALIAS=key-alias
-  RELEASE_KEY_PASSWORD=secure-alias-password
-  ```
-
-- a `google-services.json` file in the `collect_app/src/odkCollectRelease` folder. The contents of the file are similar to the contents of `collect_app/src/google-services.json`.
-
-### Release checklist:
-
-- update translations
-- make sure CI is green for the chosen commit
-- run `./gradlew releaseCheck`. If successful, a signed release will be at `collect_app/build/outputs/apk` (with an old version name)
-- verify a basic "happy path": scan a QR code to configure a new project, get a blank form, fill it, open the form map (confirms that the Google Maps key is correct), send form
-- run `./benchmark.sh` with a real device connected to verify performance
-  - To run benchmarks a project will need to be set up in Central with the benchmark forms and app users. The forms and entities needed for that are available [here](https://drive.google.com/drive/folders/1dPLvDY0LhVX-5qTUEs6EDoraDnLpUS0g?usp=drive_link).
-- verify new APK can be installed as update to previous version and that above "happy path" works in that case also
-- create and publish scheduled forum post with release description
-- write Play Store release notes, include link to forum post
-- when creating a major release:
-  - Tag the commit for the release (`vX.X.0`)
-  - Run `./create-release.sh <last release version code> <release tag>`
-- when creating a patch release:
-  - Tag the commit for the patch release (`vX.X.X`)
-  - (If beta has started for next release) Tag the commit for the beta release (`vX.X.X-beta.X`)
-  - Run `./create-release.sh <last release version code> <patch release tag> <beta release tag>`
-- when creating a beta release:
-  - Tag the commit for the beta release (`vX.X.X-beta.X`)
-  - Run `./create-release.sh <last release version code> <beta release tag>`
-- add a release to Github [here](https://github.com/getodk/collect/releases), generate release notes and attach the APK
-- upload APK(s) to Play Store
-  - When creating a hotfix, the beta APK should be uploaded second as it will have a higher version code
-- backup dependencies for the release by downloading the `vX.X.X.tar` artifact from the `create_dependency_backup` job on Circle CI (for the release commit) and then uploading it to [this folder](https://drive.google.com/drive/folders/1_tMKBFLdhzFZF9GKNeob4FbARjdfbtJu?usp=share_link)
-- backup a self signed release APK by downloading the `selfSignedRelease.apk` from the `build_release` job on Circle CI (for the release commit) and then upload to [this folder](https://drive.google.com/drive/folders/1pbbeNaMTziFhtZmedOs0If3BeYu3Ex5x?usp=share_link)
-
-## Compiling a previous release using backed-up dependencies
-
-1. Download the `.tar` for relevant release tag
-2. Extract `.local-m2` into the project directory:
-    ```bash
-    tar -xf maven.tar -C <collect project directory>
-    ```
-   
-The project will now be able to fetch dependencies that are no longer available (but were used to compile the release) from the `.local-m2` Maven repo.
-
+### B4. Audit Logs
+Detailed login history and security audit trails synchronized from mobile devices.
+<img src="docs/aiims-custom/ODK_Central_docs/screenshots/05_logiin_history.png" width="600" alt="Login History">

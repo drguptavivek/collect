@@ -2,6 +2,12 @@
 
 All notable changes to AIIMS ODK Collect will be documented in this file.
 
+## [v2025.3.3-AIIMS-RC2] - TBD
+
+### Development
+
+- Initializing RC2 development cycle.
+
 ## [v2025.3.3-AIIMS-RC1] - 2026-01-01
 
 ### Release Candidate 1

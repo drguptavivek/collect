@@ -13,8 +13,8 @@ This document explains the versioning strategy for AIIMS ODK Collect.
 
 ```gradle
 defaultConfig {
-    versionCode 5113           // Integer for Play Store
-    versionName "v2025.1.0-RC1" // Human-readable version
+    versionCode 5114               // Integer for Play Store
+    versionName "v2025.3.3-AIIMS-RC2-DEV" // Human-readable version
     // ...
 }
 ```
@@ -24,12 +24,12 @@ defaultConfig {
 ### versionCode (Integer)
 - **Purpose:** Unique identifier used by Android/Play Store for updates
 - **Rule:** Must be **strictly increasing** for each release
-- **Current:** `5113`
+- **Current:** `5114`
 
 ### versionName (String)
 - **Purpose:** Human-readable version displayed to users
 - **Format:** `v{YEAR}.{MAJOR}.{PATCH}[-SUFFIX]`
-- **Current:** `v2025.1.0-RC1`
+- **Current:** `v2025.3.3-AIIMS-RC2-DEV`
 
 ### Automatic Suffixes
 
@@ -54,9 +54,17 @@ The build system automatically appends suffixes:
 
 | Suffix | Purpose | Example |
 |--------|---------|---------|
-| `-RC{N}` | Release Candidate | `v2025.1.0-RC2` |
+| `-RC{N}` | Release Candidate | `v2025.3.3-AIIMS-RC1` |
+| `-RC{N}-DEV` | Development between RCs | `v2025.3.3-AIIMS-RC2-DEV` |
 | `-beta` | Beta release | `v2025.2.0-beta` |
 | `-alpha` | Alpha/experimental | `v2025.3.0-alpha` |
+
+### Iterative RC Workflow
+
+1. **RC Build**: Cut a release candidate (e.g., `RC1`) and distribute APKs.
+2. **Development**: Immediately bump to the next `RC-DEV` version (e.g., `RC2-DEV`).
+3. **Bug Fixing**: Apply fixes on the `vg-work` branch.
+4. **Promotion**: When ready for the next RC, drop the `-DEV` suffix, tag, and release.
 
 ## Syncing with Upstream ODK Version
 

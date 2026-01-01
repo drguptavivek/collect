@@ -16,6 +16,69 @@ in `getodk/central-backend`. Use it to keep rebases manageable.
 
 ## Entries
 
+- Date: 2026-01-01
+  File: lib/resources/sessions.js
+  Change summary: Log failed web login attempts with normalized identifiers and metadata.
+  Reason: Add audit visibility for /v1/sessions failures.
+  Risk/notes: Low; audit-only change.
+  Related commits/PRs: vg-work history
+
+- Date: 2026-01-01
+  File: lib/model/query/audits.js
+  Change summary: Include failed web login and lockout audits in the user action filter.
+  Reason: Ensure audit filtering includes login failure/lockout events.
+  Risk/notes: Low; filter expansion.
+  Related commits/PRs: vg-work history
+
+- Date: 2026-01-01
+  File: lib/resources/sessions.js
+  Change summary: Enforce web login lockout based on recent failures with audit-backed tracking.
+  Reason: Add rate limiting/lockout to /v1/sessions.
+  Risk/notes: Medium; auth flow change.
+  Related commits/PRs: vg-work history
+
+- Date: 2026-01-01
+  File: lib/model/query/audits.js
+  Change summary: Add queries for recent web login failures and lockouts.
+  Reason: Support web login lockout checks using audit data.
+  Risk/notes: Low; query-only change.
+  Related commits/PRs: vg-work history
+
+- Date: 2026-01-01
+  File: lib/model/query/users.js
+  Change summary: Add helper to fetch any user password hash for timing normalization.
+  Reason: Support dummy password verification for missing emails.
+  Risk/notes: Low; query-only change.
+  Related commits/PRs: vg-work history
+
+- Date: 2026-01-01
+  File: lib/resources/sessions.js
+  Change summary: Make web login lockout duration configurable via vg_settings.
+  Reason: Allow system-level control of web user lockout duration.
+  Risk/notes: Low; configuration read.
+  Related commits/PRs: vg-work history
+
+- Date: 2026-01-01
+  File: lib/http/endpoint.js
+  Change summary: Add Retry-After header support for lockout responses.
+  Reason: Communicate remaining lockout time to clients.
+  Risk/notes: Low; header-only change.
+  Related commits/PRs: vg-work history
+
+- Date: 2026-01-01
+  File: lib/http/endpoint.js
+  Change summary: Add X-Login-Attempts-Remaining header support for web login failures.
+  Reason: Communicate remaining login attempts to clients.
+  Risk/notes: Low; header-only change.
+  Related commits/PRs: vg-work history
+
+- Date: 2026-01-01
+  File: lib/model/query/audits.js
+  Change summary: Add latest web login lockout timestamp query.
+  Reason: Compute Retry-After for web login lockouts.
+  Risk/notes: Low; query-only change.
+  Related commits/PRs: vg-work history
+
 - Date: 2025-12-21
   File: docs/database.md
   Change summary: Documented VG auth tables and settings.

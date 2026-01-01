@@ -109,7 +109,7 @@
 
     <!-- PIN and Permissions -->
     <string name="aiims_pin_create_title">Create PIN</string>
-    <string name="aiims_pin_create_message">Create a 4-6 digit PIN for quick access</string>
+    <string name="aiims_pin_create_message">Create a 4-digit PIN for quick access</string>
     <string name="aiims_pin_confirm_title">Confirm PIN</string>
     <string name="aiims_pin_confirm_message">Re-enter your PIN to confirm</string>
     <string name="aiims_pin_mismatch">PINs do not match</string>

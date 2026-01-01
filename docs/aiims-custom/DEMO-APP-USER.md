@@ -1,6 +1,8 @@
 # Demo App Users - Testing Credentials
 
-> **WARNING**: These are demo credentials for testing purposes only. Do not use in production.
+> **WARNING**: These are demo credentials for testing purposes only in my dev setup. 
+**You will need to recreate your own**
+**Do not use in production.**
 
 ---
 
