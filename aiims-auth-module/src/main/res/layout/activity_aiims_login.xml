@@ -66,7 +66,8 @@
                 android:layout_height="wrap_content"
                 android:inputType="textNoSuggestions"
                 android:textColor="@color/aiims_on_surface"
-                android:maxLines="1" />
+                android:maxLines="1"
+                android:imeOptions="actionNext" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Password Field -->
@@ -89,7 +90,8 @@
                 android:layout_height="wrap_content"
                 android:inputType="textPassword"
                 android:textColor="@color/aiims_on_surface"
-                android:maxLines="1" />
+                android:maxLines="1"
+                android:imeOptions="actionDone" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <ProgressBar
@@ -98,6 +100,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/margin_medium"
             android:visibility="gone"
+            android:contentDescription="@string/aiims_accessibility_logging_in"
+            android:importantForAccessibility="yes"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/password_layout"
@@ -153,6 +157,8 @@
             android:text="@string/aiims_initializing"
             android:textAlignment="center"
             android:textColor="@color/aiims_on_surface_variant"
+            android:importantForAccessibility="yes"
+            android:accessibilityLiveRegion="polite"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/offline_button" />

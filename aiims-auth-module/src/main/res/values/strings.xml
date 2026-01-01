@@ -164,4 +164,11 @@
     <string name="aiims_camera_permission_required">Camera Permission Required</string>
     <string name="aiims_camera_permission_message">Camera permission is required to scan QR codes. Please grant camera permission to use this feature.</string>
     <string name="aiims_ok">OK</string>
+    
+    <!-- Accessibility Content Descriptions -->
+    <string name="aiims_accessibility_logging_in">Logging in, please wait</string>
+    <string name="aiims_accessibility_login_error">Login failed. %s</string>
+    <string name="aiims_accessibility_pin_error">Incorrect PIN. %d attempts remaining</string>
+    <string name="aiims_accessibility_grace_period">Token expired. Working offline. Time remaining: %s</string>
+    <string name="aiims_accessibility_token_expiring">Your session will expire in %s. Tap refresh to renew</string>
 </resources>

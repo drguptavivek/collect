@@ -88,7 +88,10 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         if (isReauthMode) {
             val username = intent.getStringExtra("EXTRA_REAUTH_USERNAME")
             binding.appTitle.text = "Re-authenticate"
-            binding.statusText.text = "Please enter your password to refresh your session"
+            val reauthMessage = "Please enter your password to refresh your session"
+            binding.statusText.text = reauthMessage
+            // Announce for screen readers
+            binding.statusText.announceForAccessibility("Re-authentication required. $reauthMessage")
             
             // Pre-fill username and make it read-only
             if (username != null) {
@@ -240,7 +243,10 @@ class AiimsLoginActivity : AiimsBaseActivity() {
         val password = binding.passwordField.text.toString()
 
         if (username.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, getString(org.aiims.odk.auth.R.string.aiims_error_invalid_credentials), Toast.LENGTH_SHORT).show()
+            val errorMsg = getString(org.aiims.odk.auth.R.string.aiims_error_invalid_credentials)
+            Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show()
+            // Announce for screen readers
+            binding.root.announceForAccessibility(getString(org.aiims.odk.auth.R.string.aiims_accessibility_login_error, errorMsg))
             return
         }
 
@@ -257,7 +263,10 @@ class AiimsLoginActivity : AiimsBaseActivity() {
 
             when (result) {
                 is AuthResult.Success -> {
-                    Toast.makeText(this@AiimsLoginActivity, getString(org.aiims.odk.auth.R.string.aiims_welcome_user, result.user.username), Toast.LENGTH_SHORT).show()
+                    val welcomeMsg = getString(org.aiims.odk.auth.R.string.aiims_welcome_user, result.user.username)
+                    Toast.makeText(this@AiimsLoginActivity, welcomeMsg, Toast.LENGTH_SHORT).show()
+                    // Announce for screen readers
+                    binding.root.announceForAccessibility("Login successful. $welcomeMsg")
 
                     // POST-LOGIN: CREATE/UPDATE ODK PROJECT
                     try {
