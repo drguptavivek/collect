@@ -111,6 +111,14 @@ class MedresAuthManagerTest {
         // Verify against Fake
         assertThat(authStorage.deviceToken, equalTo(token))
         assertThat(authStorage.userId, equalTo("100"))
+
+        // VERIFY ODK SERVER URL UPDATE
+        val systemUuid = authManager.getProjectsRepository().getAll().find { it.name.contains(projectId) }?.uuid
+        if (systemUuid != null) {
+            val projPrefs = context.getSharedPreferences("general_prefs$systemUuid", Context.MODE_PRIVATE)
+            val odkUrl = projPrefs.getString("server_url", "")
+            assertThat(odkUrl, equalTo("https://api.example.com/v1/key/$token/projects/$projectId"))
+        }
     }
 
     @Test

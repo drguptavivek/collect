@@ -62,14 +62,27 @@ object MedresProjectUtils {
             url = "https://$url"
         }
 
-        // Add /v1 if missing
-        return if (!url.contains("/v1")) {
-            "$url/v1"
-        } else {
-            // If it already has /v1, ensure it's not buried in a longer path if we want a clean API base
-            // But for ODK compatibility, we often store the full /v1/projects/X URL.
-            // If the user entered something with /v1, we keep it as is.
-            url
+        return try {
+            val uri = Uri.parse(url)
+            val scheme = uri.scheme
+            val authority = uri.authority // host:port
+            var path = uri.path ?: ""
+            
+            // If path contains /v1, we're good. Otherwise, we need to add it.
+            // If path is empty or just /, we append /v1.
+            // If path has other stuff (like /projects/1), we prepend /v1.
+            if (!path.contains("/v1")) {
+                path = if (path.isEmpty() || path == "/") "/v1" else "/v1$path"
+            }
+            
+            "$scheme://$authority$path"
+        } catch (e: Exception) {
+            // Fallback for malformed
+            if (!url.contains("/v1")) {
+                // Remove existing projects path if we're falling back and it's there
+                val base = if (url.contains("/projects/")) url.substringBefore("/projects/") else url
+                "$base/v1"
+            } else url
         }
     }
 }

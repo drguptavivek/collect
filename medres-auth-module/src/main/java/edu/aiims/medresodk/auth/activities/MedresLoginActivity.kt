@@ -295,7 +295,7 @@ class MedresLoginActivity : MedresBaseActivity() {
                             for (proj in allProjects) {
                                 val projPrefs = getSharedPreferences("general_prefs${proj.uuid}", Context.MODE_PRIVATE)
                                 val serverUrl = projPrefs.getString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, "") ?: ""
-                                if (MedresProjectUtils.getProjectIdFromUrl(serverUrl) == pid) {
+                                if (edu.aiims.medresodk.auth.utils.MedresProjectUtils.getProjectIdFromUrl(serverUrl) == pid) {
                                     targetUuid = proj.uuid
                                     break
                                 }
@@ -314,18 +314,12 @@ class MedresLoginActivity : MedresBaseActivity() {
                                 targetUuid = projectsRepo.save(newProject).uuid
                              }
                              
-                             // CONSTRUCT TOKENIZED URL
-                             // Format: <BaseURL>/key/<TOKEN>/projects/<PID>
-                             // stagedAuthUrl now includes version (e.g. .../v1)
-                             val tokenizedUrl = "$stagedAuthUrl/key/${result.token}/projects/$pid"
-                             
-                             // APPLY SETTINGS
+                             // APPLY SETTINGS (Common settings, URL is already handled by authManager.persistSession)
                              val generalJsonStr = authPrefs.getString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_QR_GENERAL_SETTINGS, "{}")
                              val generalJson = org.json.JSONObject(generalJsonStr)
                              
                              val projPrefs = getSharedPreferences("general_prefs$targetUuid", Context.MODE_PRIVATE)
                              projPrefs.edit().apply {
-                                 putString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, tokenizedUrl)
                                  putString(org.odk.collect.settings.keys.ProjectKeys.KEY_PROTOCOL, org.odk.collect.settings.keys.ProjectKeys.PROTOCOL_SERVER)
                                  putString(org.odk.collect.settings.keys.ProjectKeys.KEY_USERNAME, username)
                                  putString(org.odk.collect.settings.keys.ProjectKeys.KEY_PASSWORD, password)
@@ -337,10 +331,16 @@ class MedresLoginActivity : MedresBaseActivity() {
                              // Set Active
                              metaSettings.save(org.odk.collect.settings.keys.MetaKeys.CURRENT_PROJECT_ID, targetUuid)
                              currentSystemProjectId = targetUuid
-                             serverUrl = tokenizedUrl
                              
                              // Update Mappings
                              authManager.setProjectMapping(pid, targetUuid!!)
+
+                             // RE-SYNC URL: Since targetUuid might have just been created/found, 
+                             // and authManager.login might have run before targetUuid was known/mapped.
+                             authManager.updateCollectProjectUrl(pid, result.token)
+                             
+                             // Update local activity state for UI
+                             serverUrl = projPrefs.getString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, null)
                         }
                     } catch (e: Exception) {
                         android.util.Log.e("MedresLogin", "Failed to setup ODK project after login", e)

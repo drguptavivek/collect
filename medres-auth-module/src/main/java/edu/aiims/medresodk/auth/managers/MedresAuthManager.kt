@@ -94,7 +94,8 @@ class MedresAuthManager @Inject constructor(
         ioDispatcherForTesting = dispatcher
     }
 
-    private fun getProjectsRepository(): SharedPreferencesProjectsRepository {
+    @androidx.annotation.VisibleForTesting
+    internal fun getProjectsRepository(): SharedPreferencesProjectsRepository {
         val metaPrefs = context.getSharedPreferences("meta", Context.MODE_PRIVATE)
         val metaSettings = object : org.odk.collect.shared.settings.Settings {
             override fun save(key: String, value: Any?) {
@@ -608,6 +609,9 @@ class MedresAuthManager @Inject constructor(
                 putString(keyApiUrl(projectId), apiUrl)
                 apply()
             }
+
+            // SYNC TO ODK SETTINGS: Ensure server_url is tokenized
+            updateCollectProjectUrl(projectId, token)
         }
     }
 
@@ -701,14 +705,60 @@ class MedresAuthManager @Inject constructor(
                 return
             }
 
-            val existingProject = repository.get(systemUuid)
-            if (existingProject != null && existingProject.name != newName) {
-                val updatedProject = existingProject.copy(name = newName)
-                repository.save(updatedProject)
-                Log.d("MedresAuthManager", "Updated ODK project $systemUuid name to: $newName")
+            if (newName.isNotEmpty()) {
+                val existingProject = repository.get(systemUuid)
+                if (existingProject != null && existingProject.name != newName) {
+                    val updatedProject = existingProject.copy(name = newName)
+                    repository.save(updatedProject)
+                    Log.d("MedresAuthManager", "Updated ODK project $systemUuid name to: $newName")
+                }
             }
         } catch (e: Exception) {
             Log.e("MedresAuthManager", "Error updating ODK project name", e)
+        }
+    }
+
+    /**
+     * Updates the ODK Project's server_url with the tokenized version.
+     * Format: <BaseURL>/v1/key/<TOKEN>/projects/<PID>
+     */
+    fun updateCollectProjectUrl(centralPid: String, token: String) {
+        var systemUuid = prefs.getString("central_to_odk_$centralPid", null)
+        
+        try {
+            if (systemUuid == null) {
+                // Try backfilling mapping if missing
+                updateCollectProjectName(centralPid, "") 
+                systemUuid = prefs.getString("central_to_odk_$centralPid", null)
+            }
+
+            if (systemUuid == null) {
+                Log.w("MedresAuthManager", "Could not find ODK project for Central ID $centralPid to update URL")
+                return
+            }
+
+            val apiUrl = getApiUrlForProject(centralPid)
+            if (apiUrl != null) {
+                val apiBase = edu.aiims.medresodk.auth.utils.MedresProjectUtils.formatUrlForApi(apiUrl)
+                // Ensure apiBase is just the /v1 part
+                val cleanBase = if (apiBase!!.contains("/projects/")) {
+                    apiBase.substringBefore("/projects/")
+                } else {
+                    apiBase
+                }
+                
+                val tokenizedUrl = "$cleanBase/key/$token/projects/$centralPid"
+                
+                val projPrefs = context.getSharedPreferences("general_prefs$systemUuid", Context.MODE_PRIVATE)
+                val currentUrl = projPrefs.getString("server_url", null)
+                
+                if (currentUrl != tokenizedUrl) {
+                    projPrefs.edit().putString("server_url", tokenizedUrl).apply()
+                    Log.i("MedresAuthManager", "[MedresAuth] Updated ODK project $systemUuid server_url to tokenized: $tokenizedUrl")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("MedresAuthManager", "Error updating ODK project URL", e)
         }
     }
 

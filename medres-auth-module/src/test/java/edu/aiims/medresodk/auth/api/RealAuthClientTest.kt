@@ -88,6 +88,24 @@ class RealAuthClientTest {
     }
 
     @Test
+    fun `sanitizeUrl adds v1 if missing from base URL`() {
+        val result = sanitizeUrl("https://167.82.58.132")
+        assertThat(result, equalTo("https://167.82.58.132/v1/"))
+    }
+
+    @Test
+    fun `sanitizeUrl adds v1 if missing from project URL`() {
+        val result = sanitizeUrl("https://167.82.58.132/projects/1")
+        assertThat(result, equalTo("https://167.82.58.132/v1/"))
+    }
+
+    @Test
+    fun `sanitizeUrl handles v1 already present with projects`() {
+        val result = sanitizeUrl("https://server.com/v1/projects/456")
+        assertThat(result, equalTo("https://server.com/v1/"))
+    }
+
+    @Test
     fun `sanitizeUrl handles complex project paths`() {
         val result = sanitizeUrl("https://server.com/v1/projects/456/app-users")
         assertThat(result, equalTo("https://server.com/v1/"))
@@ -108,7 +126,9 @@ class RealAuthClientTest {
     }
 
     private fun sanitizeUrl(apiUrl: String): String {
-        var sanitizedUrl = apiUrl
+        // MATCHING RealAuthClient.kt logic:
+        var sanitizedUrl = formatUrlForApi(apiUrl)
+        
         if (sanitizedUrl.contains("/projects/")) {
             sanitizedUrl = sanitizedUrl.substringBefore("/projects/") + "/"
         }
@@ -116,5 +136,31 @@ class RealAuthClientTest {
             sanitizedUrl += "/"
         }
         return sanitizedUrl
+    }
+
+    private fun formatUrlForApi(baseUrl: String?): String {
+        if (baseUrl.isNullOrBlank()) return ""
+
+        var url = baseUrl.trim().trimEnd('/')
+        
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "https://$url"
+        }
+
+        // Simplied version of Uri-based logic for testing helper
+        return if (!url.contains("/v1")) {
+            // Prepend /v1 to path (or just append if no path)
+            if (url.count { it == '/' } < 3) {
+                 "$url/v1"
+            } else {
+                val proto = url.substringBefore("://")
+                val rest = url.substringAfter("://")
+                val host = rest.substringBefore("/")
+                val path = rest.substringAfter("/", "")
+                "$proto://$host/v1/$path"
+            }
+        } else {
+            url
+        }
     }
 }

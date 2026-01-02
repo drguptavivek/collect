@@ -144,4 +144,23 @@ class MedresProjectUtilsTest {
         val url = "https://central.example.com/"
         assertThat(MedresProjectUtils.formatUrlForApi(url), equalTo("https://central.example.com/v1"))
     }
+
+    @Test
+    fun `#getProjectIdFromUrl returns project ID from tokenized URL`() {
+        // [v1, key, TOKEN, projects, PID]
+        val url = "https://central.example.com/v1/key/ABCDEF12345/projects/10"
+        assertThat(MedresProjectUtils.getProjectIdFromUrl(url), equalTo("10"))
+    }
+
+    @Test
+    fun `#formatUrlForDisplay strips path segments including token`() {
+        val url = "https://central.example.com/v1/key/ABCDEF12345/projects/1"
+        assertThat(MedresProjectUtils.formatUrlForDisplay(url), equalTo("https://central.example.com"))
+    }
+
+    @Test
+    fun `#formatUrlForApi ensures v1 is present even if longer path provided`() {
+        val url = "https://central.example.com/projects/1"
+        assertThat(MedresProjectUtils.formatUrlForApi(url), equalTo("https://central.example.com/v1/projects/1"))
+    }
 }

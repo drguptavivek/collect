@@ -49,7 +49,9 @@ class RealAuthClient internal constructor(
 
             // Sanitize URL: Remove project path if present, as ApiService adds it
             // e.g. https://server/v1/projects/1 -> https://server/v1/
-            var sanitizedUrl = apiUrl
+            // Use MedresProjectUtils.formatUrlForApi to ensure /v1 is present
+            var sanitizedUrl = edu.aiims.medresodk.auth.utils.MedresProjectUtils.formatUrlForApi(apiUrl) ?: apiUrl
+            
             // Ensure we strip off the specific project path but keep the base (usually v1/)
             if (sanitizedUrl.contains("/projects/")) {
                 sanitizedUrl = sanitizedUrl.substringBefore("/projects/") + "/"

@@ -50,11 +50,18 @@ class AuthInterceptor(
                 
                 if (newToken != null) {
                     // Build new request with updated token
-                    val newRequest = originalRequest.newBuilder()
+                    val requestBuilder = originalRequest.newBuilder()
                         .header("Authorization", "Bearer $newToken")
-                        .build()
+
+                    // Also update URL if it's tokenized: /key/<token>/
+                    val originalUrl = originalRequest.url.toString()
+                    if (originalUrl.contains("/key/")) {
+                        val newUrl = replaceTokenInUrl(originalUrl, newToken)
+                        requestBuilder.url(newUrl)
+                        android.util.Log.i("AuthInterceptor", "[MedresAuth] Updated tokenized URL for retry: $newUrl")
+                    }
                     
-                    return chain.proceed(newRequest)
+                    return chain.proceed(requestBuilder.build())
                 } else {
                      android.util.Log.e("AuthInterceptor", "[MedresAuth] Re-auth succeeded but token is NULL. Cannot retry.")
                 }
@@ -64,5 +71,29 @@ class AuthInterceptor(
         }
 
         return response
+    }
+
+    /**
+     * Replaces the token in a Central URL like .../key/<TOKEN>/projects/...
+     */
+    private fun replaceTokenInUrl(url: String, newToken: String): String {
+        return try {
+            if (url.contains("/key/")) {
+                val beforeKey = url.substringBefore("/key/")
+                val afterKey = url.substringAfter("/key/")
+                // afterKey is: OLD_TOKEN/projects/1/formList
+                val afterToken = afterKey.substringAfter("/", "")
+                if (afterToken.isNotEmpty()) {
+                    "$beforeKey/key/$newToken/$afterToken"
+                } else {
+                    // Just ends with /key/TOKEN
+                    "$beforeKey/key/$newToken"
+                }
+            } else {
+                url
+            }
+        } catch (e: Exception) {
+            url
+        }
     }
 }
