@@ -1,0 +1,296 @@
+package edu.aiims.medresodk.auth.managers
+
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import edu.aiims.medresodk.auth.api.MedresApiClient
+import edu.aiims.medresodk.auth.storage.MedresAuthStorage
+import edu.aiims.medresodk.auth.utils.MedresConstants
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Manages JWT token lifecycle including refresh and validation.
+ *
+ * Handles automatic token refresh, expiry tracking,
+ * and provides token state for other components.
+ */
+@Singleton
+class MedresTokenManager @Inject constructor(
+    private val apiClient: MedresApiClient,
+    private val authStorage: MedresAuthStorage,
+    private val scope: CoroutineScope
+) {
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: Flow<kotlin.Boolean> = _isRefreshing.asStateFlow()
+
+    private val _tokenState = MutableStateFlow(TokenState.VALID)
+    val tokenState: Flow<TokenState> = _tokenState.asStateFlow()
+
+    private val refreshInProgress = AtomicBoolean(false)
+    private var refreshJob: Job? = null
+
+    init {
+        // Start token monitoring
+        startTokenMonitoring()
+    }
+
+    /**
+     * Start monitoring token state.
+     */
+    private fun startTokenMonitoring() {
+        refreshJob?.cancel()
+
+        refreshJob = scope.launch {
+            while (isActive) {
+                checkTokenState()
+                delay(MedresConstants.HOUR_IN_MS) // Check every hour
+            }
+        }
+    }
+
+    /**
+     * Check and update token state.
+     */
+    private suspend fun checkTokenState() {
+        if (!authStorage.isAuthenticated) {
+            _tokenState.value = TokenState.INVALID
+            return
+        }
+
+        val token = authStorage.deviceToken
+        if (token.isEmpty()) {
+            _tokenState.value = TokenState.MISSING
+            return
+        }
+
+        if (authStorage.isTokenExpired()) {
+            _tokenState.value = TokenState.EXPIRED
+            // Attempt refresh
+            refreshTokenIfNeeded()
+        } else {
+            _tokenState.value = TokenState.VALID
+        }
+    }
+
+    /**
+     * Refresh token if needed.
+     */
+    suspend fun refreshTokenIfNeeded(): Boolean {
+        if (refreshInProgress.getAndSet(true)) {
+            // Refresh already in progress
+            return false
+        }
+
+        return try {
+            _isRefreshing.value = true
+
+            val refreshToken = authStorage.refreshToken
+            if (refreshToken.isEmpty()) {
+                _tokenState.value = TokenState.REFRESH_FAILED
+                return false
+            }
+
+            val response = apiClient.apiService.refreshToken(
+                apiUrl = "${authStorage.apiUrl}${MedresConstants.ApiEndpoints.AUTH_REFRESH}",
+                request = edu.aiims.medresodk.auth.api.RefreshTokenRequest(refreshToken)
+            )
+
+            if (response.isSuccessful) {
+                val apiResponse = response.body()
+                if (apiResponse?.success == true) {
+                    val tokenData = apiResponse.data!!
+
+                    // Update stored tokens
+                    authStorage.deviceToken = tokenData.deviceToken
+                    authStorage.refreshToken = tokenData.refreshToken
+                    authStorage.tokenExpiry = parseTimestamp(tokenData.expiresAt)
+
+                    _tokenState.value = TokenState.VALID
+                    true
+                } else {
+                    _tokenState.value = TokenState.REFRESH_FAILED
+                    false
+                }
+            } else {
+                _tokenState.value = TokenState.REFRESH_FAILED
+                false
+            }
+        } catch (e: Exception) {
+            _tokenState.value = TokenState.REFRESH_FAILED
+            false
+        } finally {
+            _isRefreshing.value = false
+            refreshInProgress.set(false)
+        }
+    }
+
+    /**
+     * Force refresh token regardless of expiry.
+     */
+    suspend fun forceRefreshToken(): Boolean {
+        return try {
+            // Temporarily set token as expired to force refresh
+            val originalExpiry = authStorage.tokenExpiry
+            authStorage.tokenExpiry = 0L
+
+            val result = refreshTokenIfNeeded()
+
+            // Restore original expiry if refresh failed
+            if (!result && originalExpiry != null) {
+                authStorage.tokenExpiry = originalExpiry
+            }
+
+            result
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Validate current token with server.
+     */
+    suspend fun validateToken(): Boolean {
+        val token = authStorage.deviceToken
+        if (token.isEmpty()) {
+            _tokenState.value = TokenState.MISSING
+            return false
+        }
+
+        return try {
+            val response = apiClient.apiService.verifyToken(
+                apiUrl = "${authStorage.apiUrl}${MedresConstants.ApiEndpoints.AUTH_VERIFY}",
+                request = edu.aiims.medresodk.auth.api.VerifyTokenRequest(token)
+            )
+
+            if (response.isSuccessful) {
+                val apiResponse = response.body()
+                apiResponse?.success == true && apiResponse.data?.valid == true
+            } else {
+                _tokenState.value = TokenState.INVALID
+                false
+            }
+        } catch (e: Exception) {
+            _tokenState.value = TokenState.INVALID
+            false
+        }
+    }
+
+    /**
+     * Get token expiry information.
+     */
+    fun getTokenExpiryInfo(): TokenExpiryInfo {
+        val expiry = authStorage.tokenExpiry
+        val currentTime = System.currentTimeMillis()
+
+        return if (expiry != null) {
+            val timeRemaining = expiry - currentTime
+            val daysRemaining = timeRemaining / MedresConstants.DAY_IN_MS
+            val hoursRemaining = (timeRemaining % MedresConstants.DAY_IN_MS) / MedresConstants.HOUR_IN_MS
+
+            TokenExpiryInfo(
+                expiryTimestamp = expiry,
+                expiryDate = formatTimestamp(expiry),
+                timeRemainingMs = timeRemaining,
+                daysRemaining = daysRemaining,
+                hoursRemaining = hoursRemaining,
+                isExpiringSoon = timeRemaining < MedresConstants.DAY_IN_MS,
+                isExpired = timeRemaining <= 0
+            )
+        } else {
+            TokenExpiryInfo(
+                expiryTimestamp = null,
+                expiryDate = null,
+                timeRemainingMs = 0,
+                daysRemaining = 0,
+                hoursRemaining = 0,
+                isExpiringSoon = false,
+                isExpired = true
+            )
+        }
+    }
+
+    /**
+     * Get current token state summary.
+     */
+    fun getTokenSummary(): Map<String, Any> {
+        val expiryInfo = getTokenExpiryInfo()
+
+        return mapOf(
+            "tokenState" to _tokenState.value.name,
+            "isRefreshing" to _isRefreshing.value,
+            "hasToken" to authStorage.deviceToken.isNotEmpty(),
+            "hasRefreshToken" to authStorage.refreshToken.isNotEmpty(),
+            "expiryTimestamp" to (expiryInfo.expiryTimestamp ?: 0),
+            "expiryDate" to (expiryInfo.expiryDate ?: ""),
+            "timeRemainingMs" to expiryInfo.timeRemainingMs,
+            "daysRemaining" to expiryInfo.daysRemaining,
+            "hoursRemaining" to expiryInfo.hoursRemaining,
+            "isExpiringSoon" to expiryInfo.isExpiringSoon,
+            "isExpired" to expiryInfo.isExpired
+        )
+    }
+
+    /**
+     * Parse ISO 8601 timestamp.
+     */
+    private fun parseTimestamp(timestamp: String): Long {
+        return try {
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                .parse(timestamp)?.time ?: 0L
+        } catch (e: Exception) {
+            0L
+        }
+    }
+
+    /**
+     * Format timestamp to readable string.
+     */
+    private fun formatTimestamp(timestamp: Long): String {
+        return try {
+            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                .format(Date(timestamp))
+        } catch (e: Exception) {
+            "Invalid date"
+        }
+    }
+
+    /**
+     * Clear token manager state.
+     */
+    fun clear() {
+        refreshJob?.cancel()
+        _tokenState.value = TokenState.INVALID
+        _isRefreshing.value = false
+        refreshInProgress.set(false)
+    }
+}
+
+/**
+ * Token states.
+ */
+enum class TokenState {
+    VALID,
+    EXPIRED,
+    REFRESHING,
+    REFRESH_FAILED,
+    INVALID,
+    MISSING
+}
+
+/**
+ * Token expiry information.
+ */
+data class TokenExpiryInfo(
+    val expiryTimestamp: Long?,
+    val expiryDate: String?,
+    val timeRemainingMs: Long,
+    val daysRemaining: Long,
+    val hoursRemaining: Long,
+    val isExpiringSoon: Boolean,
+    val isExpired: Boolean
+)

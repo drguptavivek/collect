@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Sync script to update GitHub Wiki from docs/aiims-custom
+# Sync script to update GitHub Wiki from docs/medres-custom
 # Usage: ./sync-wiki.sh
 
 WIKI_DIR=".wiki"
-DOCS_DIR="docs/aiims-custom"
+DOCS_DIR="docs/medres-custom"
 BRANCH="vg-work"
 REPO_URL="https://github.com/drguptavivek/collect"
 
@@ -25,10 +25,10 @@ mkdir -p "$WIKI_DIR/assets"
 cp -r "$DOCS_DIR/assets/"* "$WIKI_DIR/assets/"
 
 echo "Transforming relative code links to absolute GitHub URLs..."
-# Update links to aiims-auth-module, collect_app, and open-rosa
+# Update links to medres-auth-module, collect_app, and open-rosa
 # Handles both ../.. and ../ patterns
-sed -i '' "s|(\.\./\.\./aiims-auth-module|($REPO_URL/blob/$BRANCH/aiims-auth-module|g" "$WIKI_DIR"/*.md
-sed -i '' "s|(\.\./aiims-auth-module|($REPO_URL/blob/$BRANCH/aiims-auth-module|g" "$WIKI_DIR"/*.md
+sed -i '' "s|(\.\./\.\./medres-auth-module|($REPO_URL/blob/$BRANCH/medres-auth-module|g" "$WIKI_DIR"/*.md
+sed -i '' "s|(\.\./medres-auth-module|($REPO_URL/blob/$BRANCH/medres-auth-module|g" "$WIKI_DIR"/*.md
 sed -i '' "s|(\.\./\.\./collect_app|($REPO_URL/blob/$BRANCH/collect_app|g" "$WIKI_DIR"/*.md
 sed -i '' "s|(\.\./collect_app|($REPO_URL/blob/$BRANCH/collect_app|g" "$WIKI_DIR"/*.md
 sed -i '' "s|(\.\./\.\./open-rosa|($REPO_URL/blob/$BRANCH/open-rosa|g" "$WIKI_DIR"/*.md
@@ -39,7 +39,7 @@ echo "Sync complete. Check '.wiki' directory for changes."
 echo "Committing and pushing to GitHub Wiki..."
 cd "$WIKI_DIR"
 git add .
-git commit -m "Sync documentation from docs/aiims-custom"
+git commit -m "Sync documentation from docs/medres-custom"
 git push origin master
 cd ..
 

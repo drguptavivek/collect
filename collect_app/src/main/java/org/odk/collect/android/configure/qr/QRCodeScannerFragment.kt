@@ -42,7 +42,7 @@ class QRCodeScannerFragment : BarCodeScannerFragment() {
     override fun handleScanningResult(result: String) {
         val oldProjectName = projectsDataService.requireCurrentProject().name
         
-        // Capture old settings for AIIMS logout-on-change detection
+        // Capture old settings for MEDRES logout-on-change detection
         val oldServerUrl = settingsProvider.getUnprotectedSettings().getString(ProjectKeys.KEY_SERVER_URL)
         val oldUsername = settingsProvider.getUnprotectedSettings().getString(ProjectKeys.KEY_USERNAME)
 
@@ -66,19 +66,19 @@ class QRCodeScannerFragment : BarCodeScannerFragment() {
                         getString(R.string.successfully_imported_settings)
                     )
                     
-                    // Check if AIIMS auth is enabled
-                    if (isAiimsAuthEnabled()) {
+                    // Check if MEDRES auth is enabled
+                    if (isMedresAuthEnabled()) {
                         // Check if critical settings changed - trigger logout if so
                         val newServerUrl = settingsProvider.getUnprotectedSettings().getString(ProjectKeys.KEY_SERVER_URL)
                         val newUsername = settingsProvider.getUnprotectedSettings().getString(ProjectKeys.KEY_USERNAME)
                         
                         if (oldServerUrl != newServerUrl || oldUsername != newUsername) {
-                            // Clear AIIMS auth tokens on server/username change
-                            clearAiimsAuthTokens()
+                            // Clear MEDRES auth tokens on server/username change
+                            clearMedresAuthTokens()
                             showLongToast("Configuration changed. Please login again.")
                         }
                         
-                        // Just finish to return to AIIMS login
+                        // Just finish to return to MEDRES login
                         requireActivity().finish()
                     } else {
                         ActivityUtils.startActivityAndCloseAllOthers(
@@ -110,18 +110,18 @@ class QRCodeScannerFragment : BarCodeScannerFragment() {
         }
     }
 
-    private fun isAiimsAuthEnabled(): Boolean {
+    private fun isMedresAuthEnabled(): Boolean {
         return try {
-            val resId = resources.getIdentifier("aiims_auth_enabled", "bool", requireContext().packageName)
+            val resId = resources.getIdentifier("medres_auth_enabled", "bool", requireContext().packageName)
             if (resId != 0) resources.getBoolean(resId) else false
         } catch (e: Exception) {
             false
         }
     }
 
-    private fun clearAiimsAuthTokens() {
+    private fun clearMedresAuthTokens() {
         try {
-            val prefs = requireContext().getSharedPreferences("aiims_auth_prefs", Context.MODE_PRIVATE)
+            val prefs = requireContext().getSharedPreferences("medres_auth_prefs", Context.MODE_PRIVATE)
             prefs.edit().clear().apply()
         } catch (e: Exception) {
             // Ignore - tokens may not exist

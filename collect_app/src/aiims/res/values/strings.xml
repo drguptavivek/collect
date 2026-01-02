@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- AIIMS-specific resources -->
-    <!-- App name is already overridden in build.gradle resValue -->
-</resources>

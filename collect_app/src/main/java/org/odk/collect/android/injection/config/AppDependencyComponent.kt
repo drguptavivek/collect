@@ -303,5 +303,5 @@ interface AppDependencyComponent {
 
     fun uniqueIdGenerator(): UniqueIdGenerator
 
-    fun projectCleaner(): org.aiims.odk.auth.managers.ProjectCleaner
+    fun projectCleaner(): edu.aiims.medresodk.auth.managers.ProjectCleaner
 }

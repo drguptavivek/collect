@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Feature flags for MEDRES authentication -->
+    <bool name="medres_auth_enabled">true</bool>
+    <bool name="odk_launcher_enabled">false</bool>
+
+    <!-- Default configuration values -->
+    <string name="medres_default_api_url">http://localhost:5174/api</string>
+    <integer name="medres_default_offline_period">7</integer>
+    <integer name="medres_default_auto_logout">30</integer>
+</resources>

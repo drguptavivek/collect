@@ -50,11 +50,11 @@ class ProjectSettingsDialog(private val viewModelFactory: ViewModelProvider.Fact
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         binding = ProjectSettingsDialogLayoutBinding.inflate(layoutInflater)
 
-        val isAiimsFlavor = BuildConfig.FLAVOR == "aiims"
-        val aiimsAuthEnabled = requireContext().resources.getBoolean(org.odk.collect.android.R.bool.aiims_auth_enabled)
-        val shouldRestrict = isAiimsFlavor || aiimsAuthEnabled
+        val isMedresFlavor = BuildConfig.FLAVOR == "medres"
+        val medresAuthEnabled = requireContext().resources.getBoolean(org.odk.collect.android.R.bool.medres_auth_enabled)
+        val shouldRestrict = isMedresFlavor || medresAuthEnabled
 
-        android.util.Log.e("AiimsRestrict", "onCreateDialog: flavor=${BuildConfig.FLAVOR}, shouldRestrict=$shouldRestrict")
+        android.util.Log.e("MedresRestrict", "onCreateDialog: flavor=${BuildConfig.FLAVOR}, shouldRestrict=$shouldRestrict")
         // ToastUtils.showShortToast(requireContext(), "Flavor: ${BuildConfig.FLAVOR}")
 
         if (shouldRestrict) {
@@ -106,9 +106,9 @@ class ProjectSettingsDialog(private val viewModelFactory: ViewModelProvider.Fact
     private fun inflateListOfInActiveProjects(context: Context, currentProject: Project.Saved) {
         binding.projectList.removeAllViews()
 
-        val aiimsAuthEnabled = context.resources.getBoolean(org.odk.collect.android.R.bool.aiims_auth_enabled)
-        val isAiimsPackage = context.packageName.contains("aiims")
-        val shouldRestrict = aiimsAuthEnabled || isAiimsPackage
+        val medresAuthEnabled = context.resources.getBoolean(org.odk.collect.android.R.bool.medres_auth_enabled)
+        val isMedresPackage = context.packageName.contains("medres")
+        val shouldRestrict = medresAuthEnabled || isMedresPackage
 
         if (shouldRestrict) {
             binding.topDivider.visibility = android.view.View.GONE

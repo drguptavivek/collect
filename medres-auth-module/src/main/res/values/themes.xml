@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base MEDRES theme -->
+    <style name="Theme.Medres.Auth" parent="Theme.Material3.DayNight">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/medres_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/medres_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/medres_on_primary_container</item>
+
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/medres_secondary</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">@color/medres_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/medres_on_secondary_container</item>
+
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/medres_primary_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Navigation bar -->
+        <item name="android:navigationBarColor">@color/medres_primary</item>
+
+        <!-- Typography -->
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.Medres.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.Medres.HeadlineMedium</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Medres.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Medres.BodyMedium</item>
+
+        <!-- Buttons -->
+        <item name="materialButtonStyle">@style/Widget.Medres.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.Medres.Button.OutlinedButton</item>
+
+        <!-- Text fields -->
+        <item name="textInputStyle">@style/Widget.Medres.TextInputLayout.OutlinedBox</item>
+    </style>
+
+    <!-- Theme for activities without action bar -->
+    <style name="Theme.Medres.Auth.NoActionBar" parent="Theme.Medres.Auth">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <!-- Theme for settings screen -->
+    <style name="Theme.Medres.Auth.Settings" parent="Theme.Medres.Auth">
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.v14.Material</item>
+    </style>
+</resources>

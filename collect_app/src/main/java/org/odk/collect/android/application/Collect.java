@@ -23,15 +23,15 @@ import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.aiims.odk.auth.injection.AiimsAuthDependencyComponent;
-import org.aiims.odk.auth.injection.AiimsAuthDependencyComponentProvider;
-import org.aiims.odk.auth.injection.DaggerAiimsAuthDependencyComponent;
-import org.aiims.odk.auth.utils.AiimsAppLock;
+import edu.aiims.medresodk.auth.injection.MedresAuthDependencyComponent;
+import edu.aiims.medresodk.auth.injection.MedresAuthDependencyComponentProvider;
+import edu.aiims.medresodk.auth.injection.DaggerMedresAuthDependencyComponent;
+import edu.aiims.medresodk.auth.utils.MedresAppLock;
 import org.jetbrains.annotations.NotNull;
 import org.odk.collect.android.dynamicpreload.ExternalDataManager;
 import org.odk.collect.android.injection.DaggerUtils;
 import org.odk.collect.android.injection.config.AppDependencyComponent;
-import org.odk.collect.android.injection.config.CollectAiimsAuthDependencyModule;
+import org.odk.collect.android.injection.config.CollectMedresAuthDependencyModule;
 import org.odk.collect.android.injection.config.CollectDrawDependencyModule;
 import org.odk.collect.android.injection.config.CollectGeoDependencyModule;
 import org.odk.collect.android.injection.config.CollectGoogleMapsDependencyModule;
@@ -111,7 +111,7 @@ public class Collect extends Application implements
         GoogleMapsDependencyComponentProvider,
         DrawDependencyComponentProvider,
         LocationDependencyComponentProvider,
-        AiimsAuthDependencyComponentProvider {
+        MedresAuthDependencyComponentProvider {
 
     public static String defaultSysLanguage;
     private static Collect singleton;
@@ -130,7 +130,7 @@ public class Collect extends Application implements
     private SelfieCameraDependencyComponent selfieCameraDependencyComponent;
     private GoogleMapsDependencyComponent googleMapsDependencyComponent;
     private DrawDependencyComponent drawDependencyComponent;
-    private AiimsAuthDependencyComponent aiimsAuthDependencyComponent;
+    private MedresAuthDependencyComponent medresAuthDependencyComponent;
 
     /**
      * @deprecated we shouldn't have to reference a static singleton of the
@@ -168,12 +168,12 @@ public class Collect extends Application implements
                     CollectStrictMode.enable();
                     MlKitBarcodeScannerViewFactory.init(this);
 
-                    if (getResources().getBoolean(R.bool.aiims_auth_enabled)) {
-                        AiimsAuthDependencyComponent aiimsAuthComponent = getAiimsAuthDependencyComponent();
-                        registerActivityLifecycleCallbacks(new AiimsAppLock(
+                    if (getResources().getBoolean(R.bool.medres_auth_enabled)) {
+                        MedresAuthDependencyComponent medresAuthComponent = getMedresAuthDependencyComponent();
+                        registerActivityLifecycleCallbacks(new MedresAppLock(
                                 this,
-                                aiimsAuthComponent.getAuthManager(),
-                                aiimsAuthComponent.getPinManager()
+                                medresAuthComponent.getAuthManager(),
+                                medresAuthComponent.getPinManager()
                         ));
                     }
                 });
@@ -379,15 +379,15 @@ public class Collect extends Application implements
 
     @NonNull
     @Override
-    public AiimsAuthDependencyComponent getAiimsAuthDependencyComponent() {
-        if (aiimsAuthDependencyComponent == null) {
-            aiimsAuthDependencyComponent = DaggerAiimsAuthDependencyComponent.builder()
+    public MedresAuthDependencyComponent getMedresAuthDependencyComponent() {
+        if (medresAuthDependencyComponent == null) {
+            medresAuthDependencyComponent = DaggerMedresAuthDependencyComponent.builder()
                     .application(this)
-                    .aiimsAuthDependencyModule(new CollectAiimsAuthDependencyModule(applicationComponent))
+                    .medresAuthDependencyModule(new CollectMedresAuthDependencyModule(applicationComponent))
                     .build();
         }
 
-        return aiimsAuthDependencyComponent;
+        return medresAuthDependencyComponent;
     }
 
     @Override

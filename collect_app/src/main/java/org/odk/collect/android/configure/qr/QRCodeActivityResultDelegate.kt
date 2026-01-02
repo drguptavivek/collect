@@ -38,8 +38,8 @@ class QRCodeActivityResultDelegate(
                             log(AnalyticsEvents.RECONFIGURE_PROJECT)
                             showToast(org.odk.collect.strings.R.string.successfully_imported_settings)
                             
-                            // Check if AIIMS auth is enabled - if so, just finish to return to login
-                            if (isAiimsAuthEnabled()) {
+                            // Check if MEDRES auth is enabled - if so, just finish to return to login
+                            if (isMedresAuthEnabled()) {
                                 activity.finish()
                             } else {
                                 ActivityUtils.startActivityAndCloseAllOthers(
@@ -60,9 +60,9 @@ class QRCodeActivityResultDelegate(
         }
     }
 
-    private fun isAiimsAuthEnabled(): Boolean {
+    private fun isMedresAuthEnabled(): Boolean {
         return try {
-            val resId = activity.resources.getIdentifier("aiims_auth_enabled", "bool", activity.packageName)
+            val resId = activity.resources.getIdentifier("medres_auth_enabled", "bool", activity.packageName)
             if (resId != 0) activity.resources.getBoolean(resId) else false
         } catch (e: Exception) {
             false

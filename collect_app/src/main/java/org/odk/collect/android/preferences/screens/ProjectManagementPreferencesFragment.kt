@@ -29,16 +29,16 @@ class ProjectManagementPreferencesFragment :
         findPreference<Preference>(IMPORT_SETTINGS_KEY)!!.onPreferenceClickListener = this
         findPreference<Preference>(DELETE_PROJECT_KEY)!!.onPreferenceClickListener = this
         
-        // Hide QR import and delete project options for AIIMS auth
-        if (isAiimsAuthEnabled()) {
+        // Hide QR import and delete project options for MEDRES auth
+        if (isMedresAuthEnabled()) {
             findPreference<Preference>(IMPORT_SETTINGS_KEY)?.isVisible = false
             findPreference<Preference>(DELETE_PROJECT_KEY)?.isVisible = false
         }
     }
 
-    private fun isAiimsAuthEnabled(): Boolean {
+    private fun isMedresAuthEnabled(): Boolean {
         return try {
-            val resId = resources.getIdentifier("aiims_auth_enabled", "bool", requireContext().packageName)
+            val resId = resources.getIdentifier("medres_auth_enabled", "bool", requireContext().packageName)
             if (resId != 0) resources.getBoolean(resId) else false
         } catch (e: Exception) {
             false

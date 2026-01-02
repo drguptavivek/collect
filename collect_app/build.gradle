@@ -79,7 +79,7 @@ android {
         minSdk libs.versions.minSdk.get().toInteger()
         targetSdkVersion libs.versions.targetSdk.get().toInteger()
         versionCode 5114
-        versionName "v2025.3.3-AIIMS-RC2-DEV"
+        versionName "v2025.3.3-MEDRES-RC2-DEV"
         testInstrumentationRunner('androidx.test.runner.AndroidJUnitRunner')
         vectorDrawables.useSupportLibrary = true
     }
@@ -87,26 +87,26 @@ android {
     flavorDimensions "version"
 
     productFlavors {
-        // Only AIIMS flavor - this fork is specifically for AIIMS ODK Collect
-        // For vanilla ODK Collect, checkout 'main' branch and build without flavors
-        aiims {
+        // Only medres flavor - this fork is specifically for Medical Research ODK Collect
+        // For vanilla ODK Collect, checkout 'master' branch and build without flavors
+        medres {
             dimension "version"
-            applicationId "org.aiims.odk.collect"
+            applicationId "edu.aiims.medresodk"
 
-            // AIIMS-specific versioning
-            versionNameSuffix "-AIIMS"
+            // MEDRES-specific versioning
+            versionNameSuffix "-MEDRES"
 
-            // Override app name for AIIMS flavor
-            resValue("string", "collect_app_name", "AIIMS ODK Collect")
+            // Override app name for medres flavor
+            resValue("string", "collect_app_name", "MEDRES ODK Collect")
 
-            // Set feature flags for AIIMS
-            resValue("bool", "aiims_auth_enabled", "true")
+            // Set feature flags for medres
+            resValue("bool", "medres_auth_enabled", "true")
             resValue("bool", "odk_launcher_enabled", "false")
 
-            // AIIMS-specific config
-            resValue("string", "aiims_default_api_url", "\"http://localhost:5174/api\"")
-            resValue("integer", "aiims_default_offline_period", "7")
-            resValue("integer", "aiims_default_auto_logout", "30")
+            // MEDRES-specific config
+            resValue("string", "medres_default_api_url", "\"http://localhost:5174/api\"")
+            resValue("integer", "medres_default_offline_period", "7")
+            resValue("integer", "medres_default_auto_logout", "30")
         }
     }
 
@@ -182,8 +182,8 @@ android {
     }
 
     applicationVariants.configureEach { variant ->
-        // Only AIIMS flavor exists in this fork
-        def baseName = "AIIMS-ODK-Collect"
+        // Only medres flavor exists in this fork
+        def baseName = "MEDRES-ODK-Collect"
 
         // Determine build type suffix
         def buildTypeSuffix
@@ -311,7 +311,7 @@ dependencies {
     implementation project(':db')
     implementation project(':open-rosa')
     implementation project(':mobile-device-management')
-    implementation project(':aiims-auth-module')
+    implementation project(':medres-auth-module')
 
     if (getSecrets().getProperty('MAPBOX_DOWNLOADS_TOKEN', '') != '') {
         implementation project(':mapbox')

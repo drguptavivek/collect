@@ -39,7 +39,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:640412404956:android:730483f389563845cb7819",
         "android_client_info": {
-          "package_name": "org.aiims.odk.collect"
+          "package_name": "edu.aiims.medresodk"
         }
       },
       "oauth_client": [

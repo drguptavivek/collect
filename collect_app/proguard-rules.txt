@@ -30,10 +30,10 @@
 # Keep line numbers for Crashlytics https://stackoverflow.com/questions/38529304/android-crashlytics-sending-incorrect-line-number
 -keepattributes SourceFile,LineNumberTable
 
-# AIIMS Auth Module Rules (Fix for Release Build Crash)
--keep class org.aiims.odk.auth.api.** { *; }
--keepclassmembers class org.aiims.odk.auth.api.** { *; }
--keep interface org.aiims.odk.auth.api.** { *; }
+# MEDRES Auth Module Rules (Fix for Release Build Crash)
+-keep class edu.aiims.medresodk.auth.api.** { *; }
+-keepclassmembers class edu.aiims.medresodk.auth.api.** { *; }
+-keep interface edu.aiims.medresodk.auth.api.** { *; }
 
 # Attributes essential for Retrofit and Gson reflection
 -keepattributes Signature, InnerClasses, EnclosingMethod, *Annotation*, Exceptions

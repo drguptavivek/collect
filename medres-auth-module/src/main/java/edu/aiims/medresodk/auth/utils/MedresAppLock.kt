@@ -1,0 +1,104 @@
+package edu.aiims.medresodk.auth.utils
+
+import android.app.Activity
+import android.app.Application
+import android.content.Intent
+import edu.aiims.medresodk.auth.activities.MedresLoginActivity
+import edu.aiims.medresodk.auth.activities.AuthSettingsActivity
+import edu.aiims.medresodk.auth.activities.ChangePinActivity
+import edu.aiims.medresodk.auth.activities.PinEntryActivity
+import edu.aiims.medresodk.auth.activities.SetupPinActivity
+import edu.aiims.medresodk.auth.managers.MedresAuthManager
+import edu.aiims.medresodk.auth.managers.AuthState
+
+/**
+ * Watches app foreground/background transitions and forces PIN entry when returning to the app.
+ */
+class MedresAppLock(
+    private val application: Application,
+    private val authManager: MedresAuthManager,
+    private val pinManager: PinManager
+) : Application.ActivityLifecycleCallbacks {
+
+    private var startedActivities = 0
+    private var shouldRequirePin = false
+
+    override fun onActivityStarted(activity: Activity) {
+        startedActivities++
+
+        // Skip PIN check if already on an auth screen
+        if (activity.isAuthFlowActivity()) {
+            shouldRequirePin = false
+            return
+        }
+
+        val authState = authManager.getCurrentAuthState()
+
+        // Handle LOGGED_IN_REQUIRES_PIN - User must set up PIN before accessing app
+        if (authState == AuthState.LOGGED_IN_REQUIRES_PIN) {
+            shouldRequirePin = false
+            val intent = Intent(application, SetupPinActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            application.startActivity(intent)
+            return
+        }
+
+        // Require PIN on every start if logged in and PIN is set
+        // This covers both: resume from background AND fresh app start
+        if (authState == AuthState.LOGGED_IN) {
+            if (authManager.getIsSoftExpiry()) {
+                // Deduplicate: only launch if we haven't already checked in this transition
+                if (shouldRequirePin || startedActivities == 1) {
+                    shouldRequirePin = false
+                    val intent = Intent(application, MedresLoginActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        putExtra("is_reauth", true)
+                    }
+                    application.startActivity(intent)
+                }
+                return
+            }
+
+            if (pinManager.isPinSet()) {
+                // Only require PIN if we haven't already checked it in this session
+                // (i.e., if shouldRequirePin is true OR this is the first activity start)
+                if (shouldRequirePin || startedActivities == 1) {
+                    shouldRequirePin = false
+                    val intent = Intent(application, PinEntryActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }
+                    application.startActivity(intent)
+                }
+            } else {
+                shouldRequirePin = false
+            }
+        } else {
+            shouldRequirePin = false
+        }
+    }
+
+    override fun onActivityStopped(activity: Activity) {
+        startedActivities--
+        if (startedActivities <= 0) {
+            // App moved to background
+            shouldRequirePin = true
+            startedActivities = 0
+        }
+    }
+
+    // Unused lifecycle callbacks
+    override fun onActivityCreated(activity: Activity, savedInstanceState: android.os.Bundle?) {}
+    override fun onActivityResumed(activity: Activity) {}
+    override fun onActivityPaused(activity: Activity) {}
+    override fun onActivitySaveInstanceState(activity: Activity, outState: android.os.Bundle) {}
+    override fun onActivityDestroyed(activity: Activity) {}
+
+    private fun Activity.isAuthFlowActivity(): Boolean {
+        return this is MedresLoginActivity ||
+            this is PinEntryActivity ||
+            this is SetupPinActivity ||
+            this is ChangePinActivity ||
+            this is AuthSettingsActivity
+    }
+}

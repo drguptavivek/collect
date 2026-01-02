@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark mode styles override for better visibility -->
+    
+    <style name="TextAppearance.Medres.HeadlineLarge" parent="">
+        <item name="android:textSize">32sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="TextAppearance.Medres.HeadlineMedium" parent="">
+        <item name="android:textSize">28sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="TextAppearance.Medres.BodyLarge" parent="">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/medres_on_surface</item>
+    </style>
+
+    <style name="TextAppearance.Medres.BodyMedium" parent="">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/medres_on_surface</item>
+    </style>
+
+    <style name="Widget.Medres.Button" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/medres_primary</item>
+    </style>
+
+    <style name="Widget.Medres.Button.TextButton" parent="Widget.AppCompat.Button.Borderless">
+        <item name="android:textColor">@color/medres_primary</item>
+    </style>
+
+    <style name="Widget.Medres.Button.OutlinedButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">@color/medres_primary</item>
+        <item name="android:textColor">@color/medres_primary</item>
+    </style>
+
+    <!-- TextInputLayout with FilledBox style for better visibility in dark mode -->
+    <style name="Widget.Medres.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.FilledBox">
+        <item name="boxStrokeColor">@color/medres_primary_light</item>
+        <item name="boxStrokeWidth">2dp</item>
+        <item name="boxStrokeWidthFocused">3dp</item>
+        <item name="hintTextColor">@color/medres_primary_light</item>
+        <item name="boxBackgroundColor">@color/medres_surface_variant</item>
+        <item name="android:textColorHint">@color/medres_on_surface_variant</item>
+        <item name="startIconTint">@color/medres_on_surface</item>
+        <item name="endIconTint">@color/medres_on_surface</item>
+    </style>
+
+    <!-- OutlinedBox variant with HIGH VISIBILITY border for dark mode -->
+    <style name="Widget.Medres.TextInputLayout.OutlinedBox" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/medres_primary_light</item>
+        <item name="boxStrokeWidth">2dp</item>
+        <item name="boxStrokeWidthFocused">3dp</item>
+        <item name="hintTextColor">@color/medres_primary_light</item>
+        <item name="boxBackgroundColor">#2A2A2A</item>
+        <item name="android:textColorHint">@color/medres_on_surface_variant</item>
+        <item name="startIconTint">@color/medres_on_surface</item>
+        <item name="endIconTint">@color/medres_on_surface</item>
+    </style>
+</resources>

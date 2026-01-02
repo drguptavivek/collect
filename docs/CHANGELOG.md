@@ -1,25 +1,25 @@
 # Changelog
 
-All notable changes to AIIMS ODK Collect will be documented in this file.
+All notable changes to MEDRES ODK Collect will be documented in this file.
 
-## [v2025.3.3-AIIMS-RC2] - TBD
+## [v2025.3.3-MEDRES-RC2] - TBD
 
 ### Development
 
 - Initializing RC2 development cycle.
 
-## [v2025.3.3-AIIMS-RC1] - 2026-01-01
+## [v2025.3.3-MEDRES-RC1] - 2026-01-01
 
 ### Release Candidate 1
 
 **Based on**: ODK Collect v2025.3.3 (November 1, 2025)
 
-This is the first release candidate for AIIMS ODK Collect, marking a major milestone with comprehensive AIIMS-specific customizations built on top of the standard ODK Collect application.
+This is the first release candidate for MEDRES ODK Collect, marking a major milestone with comprehensive MEDRES-specific customizations built on top of the standard ODK Collect application.
 
 ### Major Features
 
-#### AIIMS Authentication Module
--   **Custom Authentication**: Replaced standard ODK authentication with Bearer Token system using `AiimsAuthManager`
+#### MEDRES Authentication Module
+-   **Custom Authentication**: Replaced standard ODK authentication with Bearer Token system using `MedresAuthManager`
 -   **PIN Security**: Enforced local PIN setup immediately after login with configurable PIN length (4-6 digits)
 -   **Re-authentication Flow**: Automatic re-authentication on 401 responses with seamless token refresh
 -   **App Lock**: Automatically locks the app when minimized; requires PIN on resume
@@ -48,7 +48,7 @@ This is the first release candidate for AIIMS ODK Collect, marking a major miles
 -   **Battery Efficiency**: Significant reduction in battery usage through intelligent caching
 
 #### Project Management
--   **AIIMS Restrictions**: Disabled project creation, deletion, and QR code import for AIIMS flavor
+-   **MEDRES Restrictions**: Disabled project creation, deletion, and QR code import for MEDRES flavor
 -   **Data Isolation**: Enhanced data cleanup on logout (deletes blank forms, preserves filled forms)
 -   **Settings Persistence**: Fixed manual project configuration to persist correctly
 
@@ -71,12 +71,12 @@ This is the first release candidate for AIIMS ODK Collect, marking a major miles
     -   `maps` module: FragmentScenario compilation errors (2 tests)
     -   `material` module: FragmentScenario compilation errors (7 tests)
     -   `collect_app` module: SSL certificate test failures (3 tests), Project settings tests (2 tests)
--   **Note**: These failures are in upstream ODK modules and do not affect AIIMS-specific functionality
+-   **Note**: These failures are in upstream ODK modules and do not affect MEDRES-specific functionality
 
 ### Technical Details
 
 -   **Version Code**: 5113
--   **Version Name**: v2025.3.3-AIIMS-RC1-AIIMS
+-   **Version Name**: v2025.3.3-MEDRES-RC1-MEDRES
 -   **Min SDK**: 21 (Android 5.0)
 -   **Target SDK**: 34 (Android 14)
 -   **APK Sizes**: 
@@ -94,7 +94,7 @@ Testers should focus on:
 
 ### Documentation
 
-Comprehensive documentation available in `docs/aiims-custom/`:
+Comprehensive documentation available in `docs/medres-custom/`:
 -   Architecture: 15 documents covering design, boundaries, and technical details
 -   Operations: 8 documents for deployment, versioning, and maintenance
 -   Development: 10 documents for contributing and development workflows
@@ -102,7 +102,7 @@ Comprehensive documentation available in `docs/aiims-custom/`:
 
 ### Upgrade Notes
 
-This is the first release of AIIMS ODK Collect. For future upgrades:
+This is the first release of MEDRES ODK Collect. For future upgrades:
 -   Always backup data before upgrading
 -   Review breaking changes in release notes
 -   Test authentication flow after upgrade

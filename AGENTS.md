@@ -39,18 +39,18 @@ cd ..
 - **Architecture**: MVVM, Clean Architecture principles
 - **Key Modules**:
     - `collect_app`: Main application module
-    - `aiims_auth_module`: Custom authentication module for AIIMS integration
+    - `medres_auth_module`: Custom authentication module for MEDRES integration
 
 ### Project Workflows
 
 - **Building**: `./gradlew assembleDebug`
 - **Testing**: `./gradlew test` (Unit tests), `./gradlew connectedCheck` (Instrumentation tests)
 
-This project uses product flavors (odk and aiims), 
+This project uses product flavors (odk and medres), 
 DO NOt use installDebug - which can be ambiguous or lead to building unnecessary artifacts.
-- To build and install the AIIMS debug version specifically, use:
-   `./gradlew :collect_app:installAiimsDebug`
-  (Or simply ./gradlew installAiimsDebug if running from the root directory).
+- To build and install the MEDRES debug version specifically, use:
+   `./gradlew :collect_app:installMedresDebug`
+  (Or simply ./gradlew installMedresDebug if running from the root directory).
 
 - To build and install the standard ODK debug version, use:
    `./gradlew :collect_app:installOdkDebug`
@@ -387,13 +387,13 @@ bd close collect-abc --reason "RESOLUTION:
 
 **Solution:**
 1. Created values-night/colors.xml with inverted color palette
-2. Added Widget.Aiims.TextInputLayout.OutlinedBox style with boxBackgroundColor
-3. Updated layouts to use AIIMS styles instead of Material defaults
+2. Added Widget.Medres.TextInputLayout.OutlinedBox style with boxBackgroundColor
+3. Updated layouts to use MEDRES styles instead of Material defaults
 
 **Files Changed:**
 - values-night/colors.xml - Dark mode color palette (#FFFFFF text, #2A2A2A backgrounds)
 - values-night/styles.xml - TextInputLayout with 2dp border, light gray background
-- activity_aiims_login.xml - Applied Widget.Aiims.TextInputLayout.OutlinedBox
+- activity_medres_login.xml - Applied Widget.Medres.TextInputLayout.OutlinedBox
 
 **Verification:** Built and installed on emulator, tested both light and dark modes"
 ```

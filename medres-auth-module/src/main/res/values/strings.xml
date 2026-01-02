@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">MEDRES ODK Collect</string>
+    <string name="medres_app_name">MEDRES ODK Collect</string>
+
+    <!-- Authentication Labels -->
+    <string name="medres_login">Login</string>
+    <string name="medres_logout">Logout</string>
+    <string name="medres_email">Email</string>
+    <string name="medres_password">Password</string>
+    <string name="medres_pin">PIN</string>
+    <string name="medres_confirm_pin">Confirm PIN</string>
+    <string name="medres_forgot_pin">Forgot PIN?</string>
+    <string name="medres_settings">Authentication Settings</string>
+
+    <!-- Messages -->
+    <string name="medres_login_success">Login successful</string>
+    <string name="medres_login_failed">Login failed. Please try again.</string>
+    <string name="medres_pin_success">PIN verified</string>
+    <string name="medres_pin_incorrect">Incorrect PIN</string>
+    <string name="medres_pin_set">PIN set successfully</string>
+    <string name="medres_session_expired">Session expired. Please login again.</string>
+    <string name="medres_welcome_user">Welcome %s</string>
+    <string name="medres_welcome_back_user">Welcome back, %s</string>
+    <string name="medres_initializing">Initializing...</string>
+    <string name="medres_no_project_configured">No Project Configured. Please scan a QR code.</string>
+    <string name="medres_project_configured">Project Configured: %1$s\nServer: %2$s</string>
+    <string name="medres_invalid_project_config">Invalid Project Configuration.\nURL: %s</string>
+    <string name="medres_error_reading_project_settings">Error reading project settings: %s</string>
+    <string name="medres_project_saved">Project Saved: %s</string>
+    <string name="medres_token_copied">Token copied to clipboard</string>
+    <string name="medres_device_id_copied">Device ID copied</string>
+
+    <!-- Labels and Hints -->
+    <string name="medres_username_hint">Username</string>
+    <string name="medres_password_hint">Password</string>
+    <string name="medres_pin_hint">PIN:</string>
+    <string name="medres_confirm_pin_hint">Confirm PIN:</string>
+    <string name="medres_current_pin_hint">Current PIN:</string>
+    <string name="medres_new_pin_hint">New PIN (4 digits):</string>
+    <string name="medres_confirm_new_pin_hint">Confirm New PIN:</string>
+    <string name="medres_server_base_url">Server Base URL</string>
+    <string name="medres_project_id_label">Project ID</string>
+    <string name="medres_base_url_hint">Base URL (e.g. https://central.local)</string>
+    <string name="medres_project_id_hint">Project ID (e.g. 1)</string>
+    <string name="medres_copy_to_clipboard_hint">(Tap to copy to clipboard)</string>
+    <string name="medres_user_details_title">User Details</string>
+    <string name="medres_device_token_title">Device Token</string>
+    <string name="medres_device_id_title">Device ID</string>
+
+    <!-- Settings -->
+    <string name="medres_api_url">API URL</string>
+    <string name="medres_offline_period">Offline Access Period</string>
+    <string name="medres_auto_logout">Auto-logout Timeout</string>
+    <string name="medres_biometric">Use Biometric</string>
+    <string name="medres_dev_server_label">🔧 Dev Server IP (DEBUG)</string>
+    <string name="medres_dev_server_hint">e.g. 192.168.1.100:8383</string>
+    <string name="medres_dev_server_clear">Clear</string>
+    <string name="medres_token_status_title">Token Status</string>
+    <string name="medres_button_refresh_token">Refresh Token</string>
+    <string name="medres_button_refresh_now">Refresh Now</string>
+    <string name="medres_button_get_project_details">Get Project Details</string>
+    <string name="medres_token_expiry_reminder">Your session will expire soon. Please refresh to avoid interruptions.</string>
+    <string name="medres_token_expires_in">Expires in: %s</string>
+
+    <!-- User Information -->
+    <string name="medres_user_info">User Information</string>
+    <string name="medres_user_email">Email</string>
+    <string name="medres_user_role">Role</string>
+    <string name="medres_partner">Partner</string>
+    <string name="medres_last_login">Last Login</string>
+
+    <!-- Buttons -->
+    <string name="medres_button_login">Login</string>
+    <string name="medres_button_verify">Verify PIN</string>
+    <string name="medres_button_setup">Set PIN</string>
+    <string name="medres_button_change">Change PIN</string>
+    <string name="medres_button_cancel">Cancel</string>
+    <string name="medres_button_ok">OK</string>
+    <string name="medres_button_save">Save</string>
+    <string name="medres_button_scan_qr_code">Scan QR Code</string>
+    <string name="medres_button_rescan_qr_code">Rescan QR Code</string>
+    <string name="medres_button_work_offline_grace">Work Offline (Grace Period)</string>
+    <string name="medres_button_grant_permissions">Grant Permissions</string>
+    <string name="medres_button_forgot_pin">Forgot PIN?</string>
+    <string name="medres_button_back_to_odk">Back to ODK</string>
+    <string name="medres_button_set">Set</string>
+    <string name="medres_button_direct_url">Direct URL</string>
+
+    <!-- Errors -->
+    <string name="medres_error_network">Network error. Please check your connection.</string>
+    <string name="medres_error_invalid_credentials">Invalid email or password.</string>
+    <string name="medres_error_pin_locked">PIN locked. Try again tomorrow.</string>
+    <string name="medres_error_server">Server error. Please try again later.</string>
+    <string name="medres_error_pin_required">PIN is required</string>
+    <string name="medres_error_pin_digits">PIN must be 4 digits</string>
+    <string name="medres_error_pin_confirm">Please confirm your PIN</string>
+    <string name="medres_error_pin_mismatch">PINs do not match</string>
+    <string name="medres_error_pin_different">New PIN must be different from current PIN</string>
+    <string name="medres_error_pin_incorrect">Current PIN is incorrect</string>
+    <string name="medres_error_too_many_attempts">Too many failed attempts. Please login again.</string>
+    <string name="medres_error_max_attempts_reached">Max attempts reached. Logging out...</string>
+    <string name="medres_error_incorrect_pin_attempts">Incorrect PIN. %d attempts remaining.</string>
+    <string name="medres_error_manual_config_missing">Please enter both Base URL and Project ID</string>
+    <string name="medres_error_saving_project">Error saving project: %s</string>
+    <string name="medres_error_invalid_url_format">Invalid Project URL format</string>
+    <string name="medres_error_qr_scanner_launch">Could not launch QR Scanner</string>
+
+    <!-- PIN and Permissions -->
+    <string name="medres_pin_create_title">Create PIN</string>
+    <string name="medres_pin_create_message">Create a 4-digit PIN for quick access</string>
+    <string name="medres_pin_confirm_title">Confirm PIN</string>
+    <string name="medres_pin_confirm_message">Re-enter your PIN to confirm</string>
+    <string name="medres_pin_mismatch">PINs do not match</string>
+    <string name="medres_pin_weak">PIN is too simple. Use different digits.</string>
+    <string name="medres_pin_setup_title">Setup PIN</string>
+    <string name="medres_pin_setup_message">Create a 4-digit PIN for quick access</string>
+    <string name="medres_pin_setup_success">PIN setup successful!</string>
+    <string name="medres_pin_required_title">PIN Required</string>
+    <string name="medres_pin_required_message">You must set up a PIN to continue using the app.</string>
+    <string name="medres_pin_changed_success">PIN changed successfully!</string>
+    <string name="medres_change_pin_title">Change PIN</string>
+    <string name="medres_change_pin_message">Update your 4-digit PIN for quick access</string>
+    <string name="medres_enter_pin_message">Enter your 4-digit PIN to continue</string>
+    <string name="medres_session_expired_title">Session Expired</string>
+    <string name="medres_session_expired_message">Server is reachable. Please re-login to refresh your session.\nOr work offline for now.</string>
+    <string name="medres_location_access_granted">✓ Location Access Granted</string>
+    <string name="medres_location_access_required">✗ Location Access Required</string>
+    <string name="medres_notifications_enabled">✓ Notifications Enabled</string>
+    <string name="medres_notifications_disabled">✗ Notifications Disabled</string>
+
+    <!-- Biometric -->
+    <string name="medres_biometric_title">MEDRES Authentication</string>
+    <string name="medres_biometric_subtitle">Use your fingerprint to authenticate</string>
+    <string name="medres_biometric_negative">Cancel</string>
+
+    <string name="medres_manual_configuration_title">Manual Configuration</string>
+    <string name="medres_auth_settings_title">Authentication Settings</string>
+
+    <!-- Offline Status -->
+    <string name="medres_offline_banner">Working offline</string>
+    <string name="medres_sync_pending">Data will sync when online</string>
+    <string name="medres_last_sync">Last sync: %s</string>
+
+    <!-- Log Export -->
+    <string name="medres_export_logs_button">Export Diagnostic Logs</string>
+    <string name="medres_exporting_logs">Exporting logs...</string>
+    <string name="medres_error_exporting_logs">Error exporting logs</string>
+    <string name="medres_logs_exported">Logs exported successfully</string>
+    <string name="medres_no_logs_found">No logs found to export</string>
+    <string name="medres_save_logs_button">Save Logs to Storage</string>
+    <string name="medres_logs_saved_to_downloads">Logs saved to Downloads/MEDRES_Logs</string>
+    <string name="medres_no_admin_pw">Admin password not set. Using default: "medres"</string>
+
+    <!-- QR Scanner -->
+    <string name="medres_scan_qr_code">Scan QR Code</string>
+    <string name="medres_qr_scanner_instruction">Position QR code within the frame to scan</string>
+    <string name="medres_select_from_gallery">Select from Gallery</string>
+    <string name="medres_close_scanner">Close Scanner</string>
+    <string name="medres_invalid_qr_code">Invalid QR code. Please try again.</string>
+    <string name="medres_settings_imported_successfully">Settings imported successfully</string>
+    <string name="medres_gd_protocol_not_supported">Google Drive protocol is not supported</string>
+    <string name="medres_camera_permission_required">Camera Permission Required</string>
+    <string name="medres_camera_permission_message">Camera permission is required to scan QR codes. Please grant camera permission to use this feature.</string>
+    <string name="medres_ok">OK</string>
+    
+    <!-- Accessibility Content Descriptions -->
+    <string name="medres_accessibility_logging_in">Logging in, please wait</string>
+    <string name="medres_accessibility_login_error">Login failed. %s</string>
+    <string name="medres_accessibility_pin_error">Incorrect PIN. %d attempts remaining</string>
+    <string name="medres_accessibility_grace_period">Token expired. Working offline. Time remaining: %s</string>
+    <string name="medres_accessibility_token_expiring">Your session will expire in %s. Tap refresh to renew</string>
+</resources>

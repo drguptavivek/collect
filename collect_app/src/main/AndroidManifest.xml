@@ -326,12 +326,12 @@ the specific language governing permissions and limitations under the License.
         </activity>
         <activity android:name="org.odk.collect.android.formhierarchy.FormHierarchyFragmentHostActivity" />
 
-        <!-- AIIMS Launcher (enabled when auth feature flag is true) -->
+        <!-- MEDRES Launcher (enabled when auth feature flag is true) -->
         <activity-alias
-            android:name=".AiimsLauncher"
-            android:targetActivity="org.aiims.odk.auth.activities.AiimsLoginActivity"
+            android:name=".MedresLauncher"
+            android:targetActivity="edu.aiims.medresodk.auth.activities.MedresLoginActivity"
             android:exported="true"
-            android:enabled="@bool/aiims_auth_enabled">
+            android:enabled="@bool/medres_auth_enabled">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

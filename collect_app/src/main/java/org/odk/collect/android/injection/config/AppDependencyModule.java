@@ -184,9 +184,9 @@ public class AppDependencyModule {
         
         String cacheDir = application.getCacheDir().getAbsolutePath();
 
-        // TOKEN PROVIDER: Delegate to AiimsTokenProvider (centralized token access)
+        // TOKEN PROVIDER: Delegate to MedresTokenProvider (centralized token access)
         org.odk.collect.openrosa.http.okhttp.TokenProvider tokenProvider = () ->
-            org.aiims.odk.auth.storage.AiimsTokenProvider.Companion.getInstance(application).getActiveProjectToken();
+            edu.aiims.medresodk.auth.storage.MedresTokenProvider.Companion.getInstance(application).getActiveProjectToken();
 
         return new OkHttpConnection(
                 cacheDir,
@@ -198,7 +198,7 @@ public class AppDependencyModule {
 
     @Provides
     @Singleton
-    public org.aiims.odk.auth.managers.ProjectCleaner provideProjectCleaner(
+    public edu.aiims.medresodk.auth.managers.ProjectCleaner provideProjectCleaner(
             org.odk.collect.android.storage.StoragePathProvider storagePathProvider,
             org.odk.collect.metadata.PropertyManager propertyManager,
             org.odk.collect.settings.SettingsProvider settingsProvider,
@@ -236,14 +236,14 @@ public class AppDependencyModule {
                 // Verify we are targeting the right directory
                 org.odk.collect.android.storage.StoragePaths paths = storagePathProvider.create(odkUuid);
                 String formsDir = paths.getFormsDir();
-                android.util.Log.d("AiimsAuth", "Forms Directory: " + formsDir);
+                android.util.Log.d("MedresAuth", "Forms Directory: " + formsDir);
 
                 File dir = new File(formsDir);
                 if (dir.exists() && dir.isDirectory()) {
                     String[] files = dir.list();
-                    android.util.Log.d("AiimsAuth", "Files BEFORE reset: " + java.util.Arrays.toString(files));
+                    android.util.Log.d("MedresAuth", "Files BEFORE reset: " + java.util.Arrays.toString(files));
                 } else {
-                    android.util.Log.d("AiimsAuth", "Forms Directory does not exist or is not a dir.");
+                    android.util.Log.d("MedresAuth", "Forms Directory does not exist or is not a dir.");
                 }
                 // --- DEBUGGING END ---
 
@@ -253,7 +253,7 @@ public class AppDependencyModule {
                 // --- DEBUGGING START ---
                 if (dir.exists() && dir.isDirectory()) {
                     String[] files = dir.list();
-                    android.util.Log.d("AiimsAuth", "Files AFTER reset: " + java.util.Arrays.toString(files));
+                    android.util.Log.d("MedresAuth", "Files AFTER reset: " + java.util.Arrays.toString(files));
                 }
                 // --- DEBUGGING END ---
 
@@ -262,7 +262,7 @@ public class AppDependencyModule {
 
             } catch (Exception e) {
                 // Log or ignore
-                android.util.Log.e("AiimsAuth", "Cleaner Error", e);
+                android.util.Log.e("MedresAuth", "Cleaner Error", e);
                 e.printStackTrace();
             }
         };
