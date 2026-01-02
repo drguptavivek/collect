@@ -2,11 +2,16 @@
 
 All notable changes to MEDRES ODK Collect will be documented in this file.
 
-## [v2025.3.3-MEDRES-RC2] - TBD
+## [v2025.3.3-MEDRES-RC2] - 2026-01-02
 
-### Development
+### Release Candidate 2
 
-- Initializing RC2 development cycle.
+#### Fixed
+- **Auth 404 Error**: Fixed missing `/v1` prefix in login URL during manual project configuration (collect-uyw)
+
+### Technical Details
+- **Version Code**: 5115
+- **Version Name**: v2025.3.3-MEDRES-RC2-MEDRES
 
 ## [v2025.3.3-MEDRES-RC1] - 2026-01-01
 

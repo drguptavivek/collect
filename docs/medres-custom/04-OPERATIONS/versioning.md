@@ -13,8 +13,8 @@ This document explains the versioning strategy for MEDRES ODK Collect.
 
 ```gradle
 defaultConfig {
-    versionCode 5114               // Integer for Play Store
-    versionName "v2025.3.3-MEDRES-RC2-DEV" // Human-readable version
+    versionCode 5115               // Integer for Play Store
+    versionName "v2025.3.3-MEDRES-RC2" // Human-readable version
     // ...
 }
 ```
@@ -24,12 +24,12 @@ defaultConfig {
 ### versionCode (Integer)
 - **Purpose:** Unique identifier used by Android/Play Store for updates
 - **Rule:** Must be **strictly increasing** for each release
-- **Current:** `5114`
+- **Current:** `5115`
 
 ### versionName (String)
 - **Purpose:** Human-readable version displayed to users
 - **Format:** `v{YEAR}.{MAJOR}.{PATCH}[-SUFFIX]`
-- **Current:** `v2025.3.3-MEDRES-RC2-DEV`
+- **Current:** `v2025.3.3-MEDRES-RC2`
 
 ### Automatic Suffixes
 
@@ -193,8 +193,8 @@ Track releases in a changelog:
 
 | versionCode | versionName | Date | Changes |
 |-------------|-------------|------|---------|
-| 5113 | v2025.1.0-RC1 | 2025-01 | Initial MEDRES release |
-| 5114 | v2025.1.1 | TBD | Bug fixes |
+| 5114 | v2025.3.3-MEDRES-RC1 | 2026-01-01 | Initial MEDRES release |
+| 5115 | v2025.3.3-MEDRES-RC2 | 2026-01-02 | Fix Auth 404 URL issue (collect-uyw) |
 
 ## Examples
 
