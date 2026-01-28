@@ -417,6 +417,13 @@ class MedresLoginActivity : MedresBaseActivity() {
                                  val keysIterator = generalJson.keys()
                                  while (keysIterator.hasNext()) {
                                      val key = keysIterator.next()
+                                     
+                                     // Validate key exists in ProjectKeys
+                                     if (!edu.aiims.medresodk.auth.utils.MedresSettingsValidator.isValidGeneralKey(key)) {
+                                         android.util.Log.w("MedresLogin", "Ignoring invalid general key from QR: $key")
+                                         continue
+                                     }
+                                     
                                      // Skip sensitive/identity keys that we handle explicitly
                                      if (key == org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL ||
                                          key == org.odk.collect.settings.keys.ProjectKeys.KEY_USERNAME ||
@@ -436,6 +443,34 @@ class MedresLoginActivity : MedresBaseActivity() {
                                      }
                                  }
                                  commit() // Sync
+                             }
+                             
+                             // Apply ADMIN settings from QR dynamically
+                             val adminJsonStr = authPrefs.getString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_QR_ADMIN_SETTINGS, "{}")
+                             val adminJson = org.json.JSONObject(adminJsonStr)
+                             
+                             val adminPrefs = getSharedPreferences("admin_prefs$targetUuid", Context.MODE_PRIVATE)
+                             adminPrefs.edit().apply {
+                                 val adminKeysIterator = adminJson.keys()
+                                 while (adminKeysIterator.hasNext()) {
+                                     val key = adminKeysIterator.next()
+                                     
+                                     // Validate key exists in ProtectedProjectKeys
+                                     if (!edu.aiims.medresodk.auth.utils.MedresSettingsValidator.isValidAdminKey(key)) {
+                                         android.util.Log.w("MedresLogin", "Ignoring invalid admin key from QR: $key")
+                                         continue
+                                     }
+                                     
+                                     val value = adminJson.get(key)
+                                     when (value) {
+                                         is Boolean -> putBoolean(key, value)
+                                         else -> {
+                                             android.util.Log.w("MedresLogin", "Admin key $key has non-boolean value, skipping")
+                                         }
+                                     }
+                                 }
+                                 commit()
+                                 android.util.Log.i("MedresLogin", "Applied admin settings from QR code")
                              }
                              
                              // Set Active

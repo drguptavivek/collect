@@ -235,7 +235,31 @@ class MedresQrScannerActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
+                // Validate QR payload size
+                if (qrData.length > edu.aiims.medresodk.auth.utils.MedresConstants.MAX_QR_PAYLOAD_SIZE) {
+                    binding.progressBar.visibility = View.GONE
+                    Toast.makeText(
+                        this@MedresQrScannerActivity,
+                        "QR code too large (${qrData.length} bytes). Maximum allowed: ${edu.aiims.medresodk.auth.utils.MedresConstants.MAX_QR_PAYLOAD_SIZE} bytes",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    isProcessing = false
+                    return@launch
+                }
+                
                 val decompressedData = CompressionUtils.decompress(qrData)
+                
+                // Validate decompressed size (prevent decompression bombs)
+                if (decompressedData.length > edu.aiims.medresodk.auth.utils.MedresConstants.MAX_QR_DECOMPRESSED_SIZE) {
+                    binding.progressBar.visibility = View.GONE
+                    Toast.makeText(
+                        this@MedresQrScannerActivity,
+                        "QR code decompressed to ${decompressedData.length} bytes. Maximum allowed: ${edu.aiims.medresodk.auth.utils.MedresConstants.MAX_QR_DECOMPRESSED_SIZE} bytes. Possible decompression bomb attack.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    isProcessing = false
+                    return@launch
+                }
 
                 // Parse JSON settings
                 val json = JSONObject(decompressedData)
@@ -293,6 +317,7 @@ class MedresQrScannerActivity : AppCompatActivity() {
                     .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_PROJECT_ID, projectId)
                     .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_PROJECT_NAME, projectSection.optString("name", ""))
                     .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_QR_GENERAL_SETTINGS, general.toString())
+                    .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_QR_ADMIN_SETTINGS, admin.toString())
                     // EXPLICITLY REMOVE STALE SESSION DATA
                     .remove(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_TOKEN)
                     .remove(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_USER_NAME)

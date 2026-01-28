@@ -90,3 +90,39 @@ Structure after decoding is identical to Standard QR:
 
 
 
+
+
+---
+
+## Security Protections
+
+All QR codes (MEDRES, Demo, and Standard ODK) are subject to the following security validations:
+
+### Size Limits
+- **Compressed**: Max 4KB (prevents oversized QR codes)
+- **Decompressed**: Max 16KB (prevents decompression bombs)
+- **Ratio**: 4:1 maximum compression ratio
+
+### Key Validation
+- **General Settings**: Validated against `ProjectKeys` constants
+- **Admin Settings**: Validated against `ProtectedProjectKeys.allKeys()`
+- **Invalid Keys**: Logged and skipped (prevents injection attacks)
+
+### Type Safety
+- Boolean, String, Integer type checking
+- Admin settings must be boolean only
+- Non-boolean admin values rejected
+
+### Sensitive Key Protection
+Blocked from QR override:
+- `server_url` (handled by login logic)
+- `username` (handled by login logic)  
+- `password` (never in QR)
+- `protocol` (enforced by app)
+
+### Attack Prevention
+- ❌ Decompression bombs (4KB → gigabytes)
+- ❌ Malicious key injection
+- ❌ Standard ODK QR overwrites
+- ❌ Credential theft via QR
+- ❌ OOM/ANR crashes

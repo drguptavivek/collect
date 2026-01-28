@@ -37,6 +37,7 @@ object MedresConstants {
     const val KEY_AUTH_PROJECT_ID = "auth_project_id"
     const val KEY_AUTH_PROJECT_NAME = "auth_project_name"
     const val KEY_QR_GENERAL_SETTINGS = "qr_general_settings"
+    const val KEY_QR_ADMIN_SETTINGS = "qr_admin_settings"
 
     // Feature Flags
     const val KEY_MEDRES_AUTH_ENABLED = "medres_auth_enabled"
@@ -49,6 +50,8 @@ object MedresConstants {
     const val MAX_PIN_ATTEMPTS = 3
     const val PIN_LENGTH_MIN = 4
     const val PIN_LENGTH_MAX = 6
+    const val MAX_QR_PAYLOAD_SIZE = 4096 // 4KB limit for QR code payload
+    const val MAX_QR_DECOMPRESSED_SIZE = 16384 // 16KB limit for decompressed payload (prevents decompression bombs)
 
     // Time Constants (in milliseconds)
     const val DAY_IN_MS = 24 * 60 * 60 * 1000L
