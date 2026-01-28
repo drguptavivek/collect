@@ -1,13 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
-  <bpmn:process id="LoginAuthentication" name="Login &#38; Authentication Flow" isExecutable="false">
+<?xml version='1.0' encoding='UTF-8'?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="LoginAuthentication" name="Login &amp; Authentication Flow" isExecutable="false">
     <bpmn:startEvent id="StartEvent" name="User opens app">
-      <bpmn:outgoing>Flow_EnterCredentials</bpmn:outgoing>
-    </bpmn:startEvent>
-    <bpmn:task id="EnterCredentials" name="Enter username/password">
-      <bpmn:incoming>Flow_EnterCredentials</bpmn:incoming>
+      <bpmn:outgoing>Flow_StartToCheck</bpmn:outgoing></bpmn:startEvent>
+    <bpmn:endEvent id="EndDemo" name="Demo Session Active"><bpmn:incoming>Flow_DemoEnd</bpmn:incoming></bpmn:endEvent><bpmn:task id="EnterDemoMode" name="Enter Demo Mode (Bypass Auth)"><bpmn:incoming>Flow_DraftYes</bpmn:incoming><bpmn:outgoing>Flow_DemoEnd</bpmn:outgoing></bpmn:task><bpmn:exclusiveGateway id="Gateway_DraftCheck" name="Is Draft?"><bpmn:incoming>Flow_CheckToGateway</bpmn:incoming><bpmn:outgoing>Flow_DraftYes</bpmn:outgoing><bpmn:outgoing>Flow_DraftNo</bpmn:outgoing></bpmn:exclusiveGateway><bpmn:task id="CheckDraftStatus" name="Check Project Type (Draft/Standard)"><bpmn:incoming>Flow_StartToCheck</bpmn:incoming><bpmn:outgoing>Flow_CheckToGateway</bpmn:outgoing></bpmn:task><bpmn:task id="EnterCredentials" name="Enter username/password">
       <bpmn:outgoing>Gateway_FormatCheck</bpmn:outgoing>
-    </bpmn:task>
+    <bpmn:incoming>Flow_DraftNo</bpmn:incoming><bpmn:incoming>Flow_RetryEnter</bpmn:incoming><bpmn:incoming>Flow_RetryEnter2</bpmn:incoming><bpmn:outgoing>Gateway_FormatCheck</bpmn:outgoing><bpmn:incoming>Flow_DraftNo</bpmn:incoming></bpmn:task>
     <bpmn:exclusiveGateway id="Gateway_FormatCheck" name="Valid format?">
       <bpmn:incoming>Flow_FormatCheck</bpmn:incoming>
       <bpmn:outgoing>Flow_CallAPI</bpmn:outgoing>
@@ -26,7 +24,7 @@
       <bpmn:outgoing>Flow_ShowAuthError</bpmn:outgoing>
       <bpmn:outgoing>Flow_SaveToken</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:task id="ShowAuthError" name="Show authentication error">
+    <bpmn:sequenceFlow id="Flow_DemoEnd" sourceRef="EnterDemoMode" targetRef="EndDemo" /><bpmn:sequenceFlow id="Flow_DraftNo" sourceRef="Gateway_DraftCheck" targetRef="EnterCredentials" name="No (Standard)" /><bpmn:sequenceFlow id="Flow_DraftYes" sourceRef="Gateway_DraftCheck" targetRef="EnterDemoMode" name="Yes (/draft)" /><bpmn:sequenceFlow id="Flow_CheckToGateway" sourceRef="CheckDraftStatus" targetRef="Gateway_DraftCheck" /><bpmn:sequenceFlow id="Flow_StartToCheck" sourceRef="StartEvent" targetRef="CheckDraftStatus" /><bpmn:task id="ShowAuthError" name="Show authentication error">
       <bpmn:incoming>Flow_ShowAuthError</bpmn:incoming>
       <bpmn:outgoing>Flow_RetryEnter</bpmn:outgoing>
     </bpmn:task>
@@ -58,7 +56,6 @@
     <bpmn:endEvent id="EndEvent" name="User can access app - See also the PIN Security flow">
       <bpmn:incoming>Flow_End</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flow_EnterCredentials" sourceRef="StartEvent" targetRef="EnterCredentials" />
     <bpmn:sequenceFlow id="Flow_FormatCheck" name="Validate" sourceRef="EnterCredentials" targetRef="Gateway_FormatCheck" />
     <bpmn:sequenceFlow id="Flow_CallAPI" name="Valid" sourceRef="Gateway_FormatCheck" targetRef="CallLoginAPI" />
     <bpmn:sequenceFlow id="Flow_APIResponse" sourceRef="CallLoginAPI" targetRef="Gateway_APIResponse" />
@@ -83,146 +80,142 @@
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_EnterCredentials" bpmnElement="EnterCredentials">
-        <dc:Bounds x="200" y="80" width="100" height="80" />
+        <dc:Bounds x="550.0" y="80" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_Gateway_FormatCheck" bpmnElement="Gateway_FormatCheck" isMarkerVisible="true">
-        <dc:Bounds x="350" y="95" width="50" height="50" />
+        <dc:Bounds x="700.0" y="95" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="343" y="71" width="64" height="14" />
+          <dc:Bounds x="693.0" y="71" width="64" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_ShowValidationError" bpmnElement="ShowValidationError">
-        <dc:Bounds x="390" y="220" width="100" height="80" />
+        <dc:Bounds x="740.0" y="220" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_CallLoginAPI" bpmnElement="CallLoginAPI">
-        <dc:Bounds x="450" y="80" width="100" height="80" />
+        <dc:Bounds x="800.0" y="80" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_Gateway_APIResponse" bpmnElement="Gateway_APIResponse" isMarkerVisible="true">
-        <dc:Bounds x="600" y="95" width="50" height="50" />
+        <dc:Bounds x="950.0" y="95" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="589" y="71" width="71" height="14" />
+          <dc:Bounds x="939.0" y="71" width="71" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_ShowAuthError" bpmnElement="ShowAuthError">
-        <dc:Bounds x="720" y="260" width="100" height="80" />
+        <dc:Bounds x="1070.0" y="260" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_SaveToken" bpmnElement="SaveToken">
-        <dc:Bounds x="700" y="80" width="100" height="80" />
+        <dc:Bounds x="1050.0" y="80" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_Gateway_PINSet" bpmnElement="Gateway_PINSet" isMarkerVisible="true">
-        <dc:Bounds x="850" y="95" width="50" height="50" />
+        <dc:Bounds x="1200.0" y="95" width="50" height="50" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_SetupPIN" bpmnElement="SetupPIN">
-        <dc:Bounds x="950" y="200" width="100" height="80" />
+        <dc:Bounds x="1300.0" y="200" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_HashPIN" bpmnElement="HashPIN">
-        <dc:Bounds x="1120" y="200" width="100" height="80" />
+        <dc:Bounds x="1470.0" y="200" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_ShowPINEntry" bpmnElement="ShowPINEntry">
-        <dc:Bounds x="950" y="80" width="100" height="80" />
+        <dc:Bounds x="1300.0" y="80" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_SetCurrentProject" bpmnElement="SetCurrentProject">
-        <dc:Bounds x="1100" y="80" width="100" height="80" />
+        <dc:Bounds x="1450.0" y="80" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Shape_EndEvent" bpmnElement="EndEvent">
-        <dc:Bounds x="1322" y="100" width="36" height="36" />
+        <dc:Bounds x="1672.0" y="100" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1295" y="145" width="90" height="53" />
+          <dc:Bounds x="1645.0" y="145" width="90" height="53" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Edge_EnterCredentials" bpmnElement="Flow_EnterCredentials">
-        <di:waypoint x="136" y="118" />
-        <di:waypoint x="200" y="120" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Edge_FormatCheck" bpmnElement="Flow_FormatCheck">
-        <di:waypoint x="300" y="120" />
-        <di:waypoint x="350" y="120" />
+        <di:waypoint x="650.0" y="120" />
+        <di:waypoint x="700.0" y="120" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="315" y="102" width="35" height="14" />
+          <dc:Bounds x="665.0" y="102" width="35" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Edge_CallAPI" bpmnElement="Flow_CallAPI">
-        <di:waypoint x="400" y="120" />
-        <di:waypoint x="450" y="120" />
+        <di:waypoint x="750.0" y="120" />
+        <di:waypoint x="800.0" y="120" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="415" y="102" width="30" height="14" />
+          <dc:Bounds x="765.0" y="102" width="30" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Edge_APIResponse" bpmnElement="Flow_APIResponse">
-        <di:waypoint x="550" y="120" />
-        <di:waypoint x="600" y="120" />
+        <di:waypoint x="900.0" y="120" />
+        <di:waypoint x="950.0" y="120" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Edge_ShowAuthError" bpmnElement="Flow_ShowAuthError">
-        <di:waypoint x="625" y="145" />
-        <di:waypoint x="625" y="300" />
-        <di:waypoint x="720" y="300" />
+        <di:waypoint x="975.0" y="145" />
+        <di:waypoint x="975.0" y="300" />
+        <di:waypoint x="1070.0" y="300" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="617" y="223" width="87" height="14" />
+          <dc:Bounds x="967.0" y="223" width="87" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Edge_SaveToken" bpmnElement="Flow_SaveToken">
-        <di:waypoint x="650" y="120" />
-        <di:waypoint x="700" y="120" />
+        <di:waypoint x="1000.0" y="120" />
+        <di:waypoint x="1050.0" y="120" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="655" y="102" width="40" height="14" />
+          <dc:Bounds x="1005.0" y="102" width="40" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Edge_PINSet" bpmnElement="Flow_PINSet">
-        <di:waypoint x="800" y="120" />
-        <di:waypoint x="850" y="120" />
+        <di:waypoint x="1150.0" y="120" />
+        <di:waypoint x="1200.0" y="120" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Edge_SetupPIN" bpmnElement="Flow_SetupPIN">
-        <di:waypoint x="875" y="145" />
-        <di:waypoint x="875" y="240" />
-        <di:waypoint x="950" y="240" />
+        <di:waypoint x="1225.0" y="145" />
+        <di:waypoint x="1225.0" y="240" />
+        <di:waypoint x="1300.0" y="240" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="880" y="190" width="20" height="14" />
+          <dc:Bounds x="1230.0" y="190" width="20" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Edge_ShowPINEntry" bpmnElement="Flow_ShowPINEntry">
-        <di:waypoint x="900" y="120" />
-        <di:waypoint x="950" y="120" />
+        <di:waypoint x="1250.0" y="120" />
+        <di:waypoint x="1300.0" y="120" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="910" y="102" width="20" height="14" />
+          <dc:Bounds x="1260.0" y="102" width="20" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Edge_HashPIN" bpmnElement="Flow_HashPIN">
-        <di:waypoint x="1050" y="240" />
-        <di:waypoint x="1120" y="240" />
+        <di:waypoint x="1400.0" y="240" />
+        <di:waypoint x="1470.0" y="240" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Edge_RetryEnter" bpmnElement="Flow_RetryEnter">
-        <di:waypoint x="390" y="260" />
-        <di:waypoint x="270" y="260" />
-        <di:waypoint x="270" y="160" />
+        <di:waypoint x="740.0" y="260" />
+        <di:waypoint x="620.0" y="260" />
+        <di:waypoint x="620.0" y="160" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="317" y="235" width="27" height="14" />
+          <dc:Bounds x="667.0" y="235" width="27" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Edge_RetryEnter2" bpmnElement="Flow_RetryEnter2">
-        <di:waypoint x="720" y="330" />
-        <di:waypoint x="250" y="330" />
-        <di:waypoint x="250" y="160" />
+        <di:waypoint x="1070.0" y="330" />
+        <di:waypoint x="600.0" y="330" />
+        <di:waypoint x="600.0" y="160" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="556" y="313" width="27" height="14" />
+          <dc:Bounds x="906.0" y="313" width="27" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Edge_SetCurrentProject" bpmnElement="Flow_SetCurrentProject">
-        <di:waypoint x="1170" y="200" />
-        <di:waypoint x="1170" y="180" />
-        <di:waypoint x="1150" y="180" />
-        <di:waypoint x="1150" y="160" />
+        <di:waypoint x="1520.0" y="200" />
+        <di:waypoint x="1520.0" y="180" />
+        <di:waypoint x="1500.0" y="180" />
+        <di:waypoint x="1500.0" y="160" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Edge_End" bpmnElement="Flow_End">
-        <di:waypoint x="1200" y="110" />
-        <di:waypoint x="1261" y="110" />
-        <di:waypoint x="1261" y="115" />
-        <di:waypoint x="1322" y="115" />
+        <di:waypoint x="1550.0" y="110" />
+        <di:waypoint x="1611.0" y="110" />
+        <di:waypoint x="1611.0" y="115" />
+        <di:waypoint x="1672.0" y="115" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_18anurd_di" bpmnElement="Flow_18anurd">
-        <di:waypoint x="375" y="145" />
-        <di:waypoint x="375" y="230" />
-        <di:waypoint x="390" y="230" />
+        <di:waypoint x="725.0" y="145" />
+        <di:waypoint x="725.0" y="230" />
+        <di:waypoint x="740.0" y="230" />
       </bpmndi:BPMNEdge>
-    </bpmndi:BPMNPlane>
+    <bpmndi:BPMNShape id="Shape_CheckDraftStatus" bpmnElement="CheckDraftStatus"><dc:Bounds x="200" y="80" width="100" height="80" /></bpmndi:BPMNShape><bpmndi:BPMNShape id="Shape_Gateway_DraftCheck" bpmnElement="Gateway_DraftCheck" isMarkerVisible="true"><dc:Bounds x="350" y="95" width="50" height="50" /></bpmndi:BPMNShape><bpmndi:BPMNShape id="Shape_EnterDemoMode" bpmnElement="EnterDemoMode"><dc:Bounds x="325" y="220" width="100" height="80" /></bpmndi:BPMNShape><bpmndi:BPMNShape id="Shape_EndDemo" bpmnElement="EndDemo"><dc:Bounds x="357" y="350" width="36" height="36" /></bpmndi:BPMNShape><bpmndi:BPMNEdge id="Edge_Flow_StartToCheck" bpmnElement="Flow_StartToCheck"><di:waypoint x="136" y="118" /><di:waypoint x="200" y="120" /></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="Edge_Flow_CheckToGateway" bpmnElement="Flow_CheckToGateway"><di:waypoint x="300" y="120" /><di:waypoint x="350" y="120" /></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="Edge_Flow_DraftYes" bpmnElement="Flow_DraftYes"><di:waypoint x="375" y="145" /><di:waypoint x="375" y="220" /></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="Edge_Flow_DemoEnd" bpmnElement="Flow_DemoEnd"><di:waypoint x="375" y="300" /><di:waypoint x="375" y="350" /></bpmndi:BPMNEdge><bpmndi:BPMNEdge id="Edge_Flow_DraftNo" bpmnElement="Flow_DraftNo"><di:waypoint x="400" y="120" /><di:waypoint x="550" y="120" /></bpmndi:BPMNEdge></bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>
