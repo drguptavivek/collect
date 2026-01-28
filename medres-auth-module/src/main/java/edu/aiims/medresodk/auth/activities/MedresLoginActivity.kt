@@ -602,8 +602,18 @@ class MedresLoginActivity : MedresBaseActivity() {
 
                 // Create new if not found
                 if (targetProjectUuid == null) {
+                    // Try to retrieve name from Auth Prefs (saved by QR Scanner)
+                    val authPrefs = getSharedPreferences(edu.aiims.medresodk.auth.utils.MedresConstants.MEDRES_PREFS_NAME, Context.MODE_PRIVATE)
+                    val savedProjectName = authPrefs.getString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_PROJECT_NAME, "")
+                    
+                    val finalProjectName = if (!savedProjectName.isNullOrEmpty()) {
+                        savedProjectName
+                    } else {
+                        "MEDRES Project $centralPid"
+                    }
+
                     val newProject = org.odk.collect.projects.Project.New(
-                        "MEDRES Project $centralPid",
+                        finalProjectName,
                         "A",
                         "#3e9fcc"
                     )

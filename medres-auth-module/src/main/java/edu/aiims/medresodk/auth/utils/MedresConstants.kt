@@ -35,6 +35,7 @@ object MedresConstants {
     // Auth Persistence Keys
     const val KEY_AUTH_URL = "auth_url"
     const val KEY_AUTH_PROJECT_ID = "auth_project_id"
+    const val KEY_AUTH_PROJECT_NAME = "auth_project_name"
     const val KEY_QR_GENERAL_SETTINGS = "qr_general_settings"
 
     // Feature Flags

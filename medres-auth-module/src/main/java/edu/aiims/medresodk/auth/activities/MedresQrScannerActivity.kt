@@ -291,6 +291,7 @@ class MedresQrScannerActivity : AppCompatActivity() {
                     // User says "clear url, username, token".
                     .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_URL, authUrl)
                     .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_PROJECT_ID, projectId)
+                    .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_PROJECT_NAME, projectSection.optString("name", ""))
                     .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_QR_GENERAL_SETTINGS, general.toString())
                     // EXPLICITLY REMOVE STALE SESSION DATA
                     .remove(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_TOKEN)
