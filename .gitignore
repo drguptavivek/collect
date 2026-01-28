@@ -13,6 +13,10 @@ local.properties
 # gradle env props
 secrets.properties
 
+# Signing certificates and keystores (NEVER commit these)
+*.jks
+*.keystore
+
 # built application files
 *.apk
 *.ap_
