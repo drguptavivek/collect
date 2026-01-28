@@ -2,6 +2,22 @@
 
 All notable changes to MEDRES ODK Collect will be documented in this file.
 
+## [v2025.3.3-MEDRES-RC3] - 2026-01-28
+
+### Release Candidate 3
+
+#### Added
+- **Release Signing Guide**: Added comprehensive documentation for production release signing and certificate verification.
+- **Trusted Keystore**: Successfully generated and configured a dedicated release keystore for the MEDRES flavor.
+
+#### Technical Details
+- **Version Code**: 5115
+- **Version Name**: v2025.3.3-MEDRES-RC3-MEDRES
+- **Min SDK**: 29 (Android 10)
+- **Target SDK**: 35 (Android 15)
+- **Compile SDK**: 36
+- **Tested On**: Android 14 (Samsung SM-E146B)
+
 ## [v2025.3.3-MEDRES-RC2] - 2026-01-02
 
 ### Release Candidate 2

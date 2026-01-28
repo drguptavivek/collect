@@ -31,6 +31,7 @@ class AuthSettingsActivity : MedresBaseActivity() {
         val tokenStatusText: TextView = findViewById(edu.aiims.medresodk.auth.R.id.token_status_text)
         val tokenValidityText: TextView = findViewById(edu.aiims.medresodk.auth.R.id.token_validity_text)
         val deviceIdText: TextView = findViewById(edu.aiims.medresodk.auth.R.id.device_id_text)
+        val signatureText: TextView = findViewById(edu.aiims.medresodk.auth.R.id.signature_text)
         val clockWarningText: TextView = findViewById(edu.aiims.medresodk.auth.R.id.clock_warning_text) // New View
         val getProjectDetailsButton: com.google.android.material.button.MaterialButton = findViewById(edu.aiims.medresodk.auth.R.id.get_project_details_button)
         val changePinButton: com.google.android.material.button.MaterialButton = findViewById(edu.aiims.medresodk.auth.R.id.change_pin_button)
@@ -74,6 +75,9 @@ class AuthSettingsActivity : MedresBaseActivity() {
 
         // Load user data
         loadUserData(userDetailsText, tokenStatusText, tokenValidityText, deviceIdText)
+        
+        // Load app signature
+        loadAppSignature(signatureText)
         
         // Setup Clock Warning Observer
         setupClockObserver(clockWarningText)
@@ -259,6 +263,44 @@ class AuthSettingsActivity : MedresBaseActivity() {
         // Device ID comes from Collect meta prefs
         val deviceId = getSharedPreferences("meta", MODE_PRIVATE).getString("metadata_installid", "No device ID found")
         deviceIdText.text = deviceId ?: "No device ID found"
+    }
+
+    private fun loadAppSignature(signatureText: TextView) {
+        try {
+            val packageInfo = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                packageManager.getPackageInfo(packageName, android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES)
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(packageName, android.content.pm.PackageManager.GET_SIGNATURES)
+            }
+
+            val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                packageInfo.signingInfo?.apkContentsSigners
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.signatures
+            }
+
+            if (signatures != null && signatures.isNotEmpty()) {
+                val cert = signatures[0].toByteArray()
+                val md = java.security.MessageDigest.getInstance("SHA-256")
+                val publicKey = md.digest(cert)
+                val hexString = publicKey.joinToString(":") { "%02X".format(it) }
+                signatureText.text = hexString
+
+                // Make it clickable to copy
+                signatureText.setOnClickListener {
+                    val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    val clip = android.content.ClipData.newPlainText("App Signature", hexString)
+                    clipboard.setPrimaryClip(clip)
+                    android.widget.Toast.makeText(this, "Signature copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                signatureText.text = "Unknown"
+            }
+        } catch (e: Exception) {
+            signatureText.text = "Error: ${e.message}"
+        }
     }
 
     private fun showProjectDetails() {

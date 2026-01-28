@@ -3,7 +3,7 @@
 <img src="docs/medres-custom/assets/MEDRES_collect_logo_cropped.png" width="200">
 </p>
 
-> **Version**: v2025.3.3-MEDRES-RC2-DEV | **Status**: Development Candidate
+> **Version**: v2025.3.3-MEDRES-RC3 | **Status**: Release Candidate
 > **Upstream**: ODK Collect v2025.3.3 (November 1, 2025)
 
 
@@ -161,6 +161,16 @@ For detailed technical specifications and maintenance guides, refer to the follo
 5.  **[Versioning Strategy](docs/medres-custom/04-OPERATIONS/versioning.md)**: Release candidate workflow and versioning rules.
 
 
+
+## Technical Specifications
+
+| Requirement | Specification |
+| :--- | :--- |
+| **Minimum OS** | Android 10 (API 29) |
+| **Target OS** | Android 15 (API 35) |
+| **Build SDK** | API 36 |
+| **Architecture** | ARM/x86 (64-bit optimized) |
+| **Permissions** | Location, Camera, Notifications, Storage |
 
 ## Credits
 Based on the official [ODK Collect](https://github.com/getodk/collect) project.

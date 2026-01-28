@@ -79,7 +79,7 @@ android {
         minSdk libs.versions.minSdk.get().toInteger()
         targetSdkVersion libs.versions.targetSdk.get().toInteger()
         versionCode 5115
-        versionName "v2025.3.3-MEDRES-RC2"
+        versionName "v2025.3.3-MEDRES-RC3"
         testInstrumentationRunner('androidx.test.runner.AndroidJUnitRunner')
         vectorDrawables.useSupportLibrary = true
     }
@@ -185,13 +185,8 @@ android {
         // Only medres flavor exists in this fork
         def baseName = "MEDRES-ODK-Collect"
 
-        // Determine build type suffix
-        def buildTypeSuffix
-        if (variant.buildType.name == "selfSignedRelease" || variant.buildType.name == "odkCollectRelease") {
-            buildTypeSuffix = defaultConfig.versionName
-        } else {
-            buildTypeSuffix = variant.buildType.name
-        }
+        // Include version name in all APK filenames
+        def buildTypeSuffix = "${defaultConfig.versionName}-${variant.buildType.name}"
 
         // Apply the naming
         variant.outputs.configureEach { output ->

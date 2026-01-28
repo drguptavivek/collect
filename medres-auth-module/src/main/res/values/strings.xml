@@ -48,6 +48,7 @@
     <string name="medres_user_details_title">User Details</string>
     <string name="medres_device_token_title">Device Token</string>
     <string name="medres_device_id_title">Device ID</string>
+    <string name="medres_app_signature_title">App Signature (SHA-256)</string>
 
     <!-- Settings -->
     <string name="medres_api_url">API URL</string>

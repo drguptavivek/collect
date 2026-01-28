@@ -165,7 +165,43 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Action Buttons -->
+        <!-- App Signature Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/signature_card"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_medium"
+            app:cardBackgroundColor="@color/medres_surface_variant"
+            app:cardElevation="2dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/device_id_card">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    style="@style/TextAppearance.Medres.TitleMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/medres_app_signature_title"
+                    android:textColor="@color/medres_primary" />
+
+                <TextView
+                    android:id="@+id/signature_text"
+                    style="@style/TextAppearance.Medres.BodySmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="monospace"
+                    android:textColor="@color/medres_on_surface"
+                    android:textIsSelectable="true"
+                    tools:text="75:AE:98:D1:72:E5:BF:EE:70:ED:A1:BC:77:E2:72:E4:DE:0D:73:D0:51:8F:0C:41:D6:FF:1A:71:B8:5C:28:DE" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
         <com.google.android.material.button.MaterialButton
             android:id="@+id/get_project_details_button"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
@@ -176,7 +212,7 @@
             app:icon="@drawable/ic_outline_info_24"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/device_id_card" />
+            app:layout_constraintTop_toBottomOf="@id/signature_card" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/change_pin_button"
