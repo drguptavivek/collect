@@ -79,7 +79,7 @@ android {
         minSdk libs.versions.minSdk.get().toInteger()
         targetSdkVersion libs.versions.targetSdk.get().toInteger()
         versionCode 5115
-        versionName "v2025.3.3-MEDRES-RC3"
+        versionName "v2025.3.3-MEDRES-RC4"
         testInstrumentationRunner('androidx.test.runner.AndroidJUnitRunner')
         vectorDrawables.useSupportLibrary = true
     }

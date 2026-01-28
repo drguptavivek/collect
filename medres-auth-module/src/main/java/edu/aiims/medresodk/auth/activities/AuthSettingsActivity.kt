@@ -311,10 +311,8 @@ class AuthSettingsActivity : MedresBaseActivity() {
     private fun showProjectDetails() {
         lifecycleScope.launch {
             var progressDialog: android.app.ProgressDialog? = null
-            var currentUser: edu.aiims.medresodk.auth.api.User? = null
             
             try {
-                // Show loading
                 progressDialog = android.app.ProgressDialog.show(
                     this@AuthSettingsActivity,
                     "Loading",
@@ -322,80 +320,32 @@ class AuthSettingsActivity : MedresBaseActivity() {
                     true
                 )
 
-                // Get current user and token
-                authManager.currentUser.collect { user ->
-                    currentUser = user
-                    // Cancel collection after first emission
-                    throw kotlinx.coroutines.CancellationException()
-                }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                // Expected - used to break out of collect
-            }
+                val success = authManager.fetchAndUpdateProjectDetails(this@AuthSettingsActivity)
+                
+                progressDialog.dismiss()
 
-            try {
-                val token = authManager.getActiveProjectToken()
-                val user = currentUser  // Local copy for smart cast
-
-                if (user == null || token == null) {
-                    progressDialog?.dismiss()
-                    android.widget.Toast.makeText(
-                        this@AuthSettingsActivity,
-                        "Unable to fetch project details: Not logged in",
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
-                    return@launch
-                }
-
-                // Get API URL from AuthManager
-                val apiUrl = authManager.getActiveProjectApiUrl()
-
-                if (apiUrl == null) {
-                    progressDialog?.dismiss()
-                    android.widget.Toast.makeText(
-                        this@AuthSettingsActivity,
-                        "Unable to fetch project details: API URL not found",
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
-                    return@launch
-                }
-
-                // Fetch project details
-                val authClient = edu.aiims.medresodk.auth.api.RealAuthClient.getInstance(this@AuthSettingsActivity, apiUrl)
-                val projectInfo = authClient.fetchProject(user.projectId, token)
-
-                progressDialog?.dismiss()
-
-                if (projectInfo != null) {
-                    // Update project name in Collect settings
-                    authManager.updateCollectProjectName(user.projectId, projectInfo.name)
-
-                    // Show project details in dialog
-                    val message = """
-                        Project ID: ${projectInfo.id}
-                        Name: ${projectInfo.name}
-                        Description: ${projectInfo.description ?: "N/A"}
-                        Archived: ${if (projectInfo.archived) "Yes" else "No"}
-                    """.trimIndent()
-
-                    android.app.AlertDialog.Builder(this@AuthSettingsActivity)
-                        .setTitle("Project Details")
-                        .setMessage(message)
-                        .setPositiveButton("OK", null)
-                        .show()
+                if (success) {
+                    // Fetch the updated name from manager or prefs
+                    authManager.currentUser.value?.let { user ->
+                         val projectName = getSharedPreferences("medres_auth_prefs", MODE_PRIVATE)
+                            .getString("project_name_${user.projectId}", user.projectId)
+                         
+                         android.app.AlertDialog.Builder(this@AuthSettingsActivity)
+                            .setTitle("Project Details")
+                            .setMessage("Project Name: $projectName\n\nSuccessfully updated from server.")
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
                 } else {
                     android.app.AlertDialog.Builder(this@AuthSettingsActivity)
-                        .setTitle("Fetch Failed")
-                        .setMessage("Failed to fetch project details for Project ID: ${user.projectId}. Please ensures your account has sufficient permissions in ODK Central.")
+                        .setTitle("Update Failed")
+                        .setMessage("Could not fetch project details. Please check your connection.")
                         .setPositiveButton("OK", null)
                         .show()
                 }
             } catch (e: Exception) {
                 progressDialog?.dismiss()
-                android.widget.Toast.makeText(
-                    this@AuthSettingsActivity,
-                    "Error: ${e.message}",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                android.widget.Toast.makeText(this@AuthSettingsActivity, "Error: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
             }
         }
     }

@@ -13,7 +13,6 @@
 
 ## Standard Managed QR Codes in usual upstream ODK Central
 
-## Standard Managed QR Codes in usual upstream ODK CEntral
 
 ```json
 {

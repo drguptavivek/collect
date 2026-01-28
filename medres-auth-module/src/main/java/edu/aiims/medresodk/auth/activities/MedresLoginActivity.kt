@@ -596,6 +596,23 @@ class MedresLoginActivity : MedresBaseActivity() {
                     if (projUrl == url) {
                         targetProjectUuid = proj.uuid
                         android.util.Log.d("MedresLogin", "Found existing project for URL $url: $targetProjectUuid")
+                        
+                        // FIX: Update name if generic or if we have a better one from QR
+                        // FIX: Hardcoded keys to solve persistence issue
+                        val authPrefs = getSharedPreferences("medres_auth_prefs", Context.MODE_PRIVATE)
+                        val savedProjectName = authPrefs.getString("auth_project_name", "")
+                        android.util.Log.e("MedresLogin", "EXISTING PROJECT: Found Name in Prefs: '$savedProjectName' (Current: '${proj.name}')")
+
+                        if (!savedProjectName.isNullOrEmpty() && proj.name != savedProjectName) {
+                             val updatedProject = org.odk.collect.projects.Project.Saved(
+                                 proj.uuid,
+                                 savedProjectName,
+                                 proj.icon,
+                                 proj.color
+                             )
+                             projectsRepo.save(updatedProject)
+                             android.util.Log.e("MedresLogin", "UPDATED project name to: $savedProjectName")
+                        }
                         break
                     }
                 }
@@ -603,9 +620,11 @@ class MedresLoginActivity : MedresBaseActivity() {
                 // Create new if not found
                 if (targetProjectUuid == null) {
                     // Try to retrieve name from Auth Prefs (saved by QR Scanner)
-                    val authPrefs = getSharedPreferences(edu.aiims.medresodk.auth.utils.MedresConstants.MEDRES_PREFS_NAME, Context.MODE_PRIVATE)
-                    val savedProjectName = authPrefs.getString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_PROJECT_NAME, "")
-                    
+                    // FIX: Hardcoded keys to solve persistence issue
+                    val authPrefs = getSharedPreferences("medres_auth_prefs", Context.MODE_PRIVATE)
+                    val savedProjectName = authPrefs.getString("auth_project_name", "")
+                    android.util.Log.e("MedresLogin", "NEW PROJECT: Found Name in Prefs: '$savedProjectName'")
+
                     val finalProjectName = if (!savedProjectName.isNullOrEmpty()) {
                         savedProjectName
                     } else {

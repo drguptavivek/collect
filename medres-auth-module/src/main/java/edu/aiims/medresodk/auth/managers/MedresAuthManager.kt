@@ -817,6 +817,35 @@ class MedresAuthManager @Inject constructor(
         }
     }
 
+    /**
+     * Fetches the latest project details from the server and updates the local name.
+     * Returns true if successful, false otherwise.
+     */
+    suspend fun fetchAndUpdateProjectDetails(context: Context): Boolean {
+        return kotlinx.coroutines.withContext(ioDispatcherForTesting ?: Dispatchers.IO) {
+            try {
+                val pid = activeProjectId ?: return@withContext false
+                val token = getPersistedToken(pid) ?: return@withContext false
+                val apiUrl = getApiUrlForProject(pid) ?: return@withContext false
+                
+                val client = edu.aiims.medresodk.auth.api.RealAuthClient.getInstance(context, apiUrl)
+                val projectInfo = client.fetchProject(pid, token)
+
+                if (projectInfo != null) {
+                    updateCollectProjectName(pid, projectInfo.name)
+                    // Also update internal prefs
+                    prefs.edit().putString("project_name_$pid", projectInfo.name).apply()
+                    Log.i("MedresAuthManager", "Refreshed project name from server: ${projectInfo.name}")
+                    return@withContext true
+                }
+                false
+            } catch (e: Exception) {
+                Log.e("MedresAuthManager", "Error fetching project details: ${e.message}")
+                false
+            }
+        }
+    }
+
     private fun keyToken(pid: String) = "auth_token_$pid"
     private fun keyUser(pid: String) = "user_data_$pid"
     private fun keyExpiresAt(pid: String) = "expires_at_$pid"

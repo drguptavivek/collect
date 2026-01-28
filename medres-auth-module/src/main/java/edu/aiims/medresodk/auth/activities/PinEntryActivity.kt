@@ -436,17 +436,20 @@ class PinEntryActivity : MedresBaseActivity() {
 
 
                 // Trigger Telemetry (Success)
-
                 lifecycleScope.launch {
-
                     authManager.submitTelemetry(getLastKnownLocation())
-
+                }
+                
+                // Trigger background project details update (fire and forget)
+                 lifecycleScope.launch {
+                    try {
+                         authManager.fetchAndUpdateProjectDetails(this@PinEntryActivity)
+                    } catch (e: Exception) {
+                        // Ignore
+                    }
                 }
 
-
-
                 // Navigate to main app
-
                 navigateToMain()
 
             } else {

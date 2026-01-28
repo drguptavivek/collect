@@ -220,6 +220,20 @@ class SetupPinActivity : MedresBaseActivity() {
             // Save the PIN
             pinManager.savePin(pin)
 
+            // PIN setup complete
+            
+             // Trigger background project details update
+            launch {
+                try {
+                     // We run this async and don't block navigation, 
+                     // or we can wait a bit if we want the user to see "Updating..."
+                     // Ideally, just fire and forget or show a quick toast
+                     authManager.fetchAndUpdateProjectDetails(this@SetupPinActivity)
+                } catch (e: Exception) {
+                    // Ignore errors, don't block login
+                }
+            }
+
             // Update auth state to LOGGED_IN now that PIN is set
             android.util.Log.d("SetupPinActivity", "PIN setup complete, setting state to LOGGED_IN")
             authManager.updateAuthState(edu.aiims.medresodk.auth.managers.AuthState.LOGGED_IN)

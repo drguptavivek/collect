@@ -1,5 +1,17 @@
 # Changelog
 
+## [v2025.3.3-MEDRES-RC4] - 2026-01-28
+### Added
+- **Automated Project Details Update**: Project details (name, etc.) are now automatically fetched and updated from the server upon successful PIN entry/setup.
+- **Background Update**: Returning users will see their project name refreshed silently in the background after login.
+- **Integration**: Added `fetchAndUpdateProjectDetails` to `AuthManager` and integrated it with `SetupPinActivity` and `PinEntryActivity`.
+- **UI Improvements**: Refactored `AuthSettingsActivity` to use the unified project update logic.
+
+### Fixed
+- **Project Name Persistence**: Resolved an issue where the generic "MEDRES Project #" would persist even after successful login.
+- **Setup Flow**: Ensured the dashboard immediately reflects the correct project name on first-time setup.
+
+---
 All notable changes to MEDRES ODK Collect will be documented in this file.
 
 ## [v2025.3.3-MEDRES-RC3] - 2026-01-28
