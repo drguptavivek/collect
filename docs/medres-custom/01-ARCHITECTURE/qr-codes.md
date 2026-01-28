@@ -1,4 +1,17 @@
-# QR CODES
+# QR Codes Reference
+
+## Quick Identification Guide
+
+| Type | URL Pattern / content | Medres Scanner Behavior | Intended Use |
+| :--- | :--- | :--- | :--- |
+| **MEDRES Project** | `/v1/projects/<ID>` (No `/key/`) | **ACCEPTED** (Login) | Standard production login for hospital staff. |
+| **Draft / Test** | `/draft` **AND** `/test/` | **ACCEPTED** (Demo Mode) | Configuring "Demo Mode" to test form updates. |
+| **Standard ODK** | `/key/<TOKEN>` | **REJECTED** | **Do Not Use**. Prevents overwriting secure settings. |
+| **Legacy ODK** | Base64 Encoded (decodes to `/key/`) | **REJECTED** | **Do Not Use**. Old ODK Central format. |
+
+---
+
+## Standard Managed QR Codes in usual upstream ODK Central
 
 ## Standard Managed QR Codes in usual upstream ODK CEntral
 
