@@ -20,10 +20,18 @@ The MEDRES customization adds a layer of security and authentication on top of s
     - [dialog_manual_config.xml](../../medres-auth-module/src/main/res/layout/dialog_manual_config.xml): Advanced server/project configuration dialog.
 - **Key Responsibilities**:
     - **Project Detection**: Automatically detects the current ODK Project from metadata or QR code.
+    - **Demo Mode**: Detects Draft projects (via QR or URL) and offers a restricted "Demo Mode" that bypasses authentication.
     - **Custom Authentication**: Authenticates against the MEDRES custom backend to obtain a short-lived JWT token.
     - **Manual Configuration**: Provides a dialog for manually setting the Server URL and Project ID.
     - **Re-authentication**: Handles "Soft Expiry" by prompting users to re-enter their password without logging out of the device.
     - **Permissions**: Ensures required Location and Notification permissions are granted.
+
+### [MedresQrScannerActivity](../../medres-auth-module/src/main/java/edu.aiims.medresodk.auth/activities/MedresQrScannerActivity.kt)
+**Purpose**: A specialized QR scanner that intelligently parses project configuration codes.
+- **Key Responsibilities**:
+    - **Intelligent Detection**: Distinguishes between Standard MEDRES Project QRs (accepted), Draft/Demo QRs (accepted for Demo Mode), and Standard ODK App User QRs (rejected to prevent config overwrite).
+    - **Session Clearing**: Wipes stale authentication data (tokens, PINs) upon successful scan to ensure a clean state for the new project.
+    - **Demo Mode Trigger**: Detects Draft URLs and triggers the "Demo Mode" rescue flow in the Login Activity.
 
 ---
 

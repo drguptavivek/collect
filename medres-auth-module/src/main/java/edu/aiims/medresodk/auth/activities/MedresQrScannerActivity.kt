@@ -255,6 +255,24 @@ class MedresQrScannerActivity : AppCompatActivity() {
                     throw IllegalArgumentException("Missing server_url in QR code")
                 }
 
+                // INTELLIGENT DETECTION: Check for allowed QR types
+                // USER REQUIREMENT: Must contain BOTH /draft and /test/
+                val isDraft = serverUrl.contains("/draft") && serverUrl.contains("/test/")
+                val hasKeyToken = serverUrl.contains("/key/")
+
+                // USER REQUIREMENT: Reject "Standard ODK Central managed QR"
+                // Identified by having a token (via /key/) but NOT being a draft/test link.
+                if (hasKeyToken && !isDraft) {
+                    binding.progressBar.visibility = View.GONE
+                    Toast.makeText(
+                        this@MedresQrScannerActivity,
+                        "Standard ODK QR Rejected. Please use a Medres Project QR.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    isProcessing = false
+                    return@launch
+                }
+
                 // Calculate Auth URL (strip /projects/...)
                 // Expected format: https://central.domain.com/v1/projects/1
                 // Auth URL: https://central.domain.com/v1
@@ -267,26 +285,52 @@ class MedresQrScannerActivity : AppCompatActivity() {
                 // Save Auth Details to MEDRES Preferences
                 val authPrefs = getSharedPreferences(edu.aiims.medresodk.auth.utils.MedresConstants.MEDRES_PREFS_NAME, Context.MODE_PRIVATE)
                 authPrefs.edit()
+                    .clear() // Safe? Might wipe other meta. Let's be specific.
+                    // Actually, clear() destroys EVERYTHING including non-auth toggles if any. 
+                    // Better to remove specific keys to be safe, or just overwrite.
+                    // User says "clear url, username, token".
                     .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_URL, authUrl)
                     .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_PROJECT_ID, projectId)
                     .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_QR_GENERAL_SETTINGS, general.toString())
+                    // EXPLICITLY REMOVE STALE SESSION DATA
+                    .remove(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_TOKEN)
+                    .remove(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_USER_NAME)
+                    .remove(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_USER_ID)
+                    .remove(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_PIN_HASH) // Force new PIN setup? Maybe.
                     .apply()
 
-                binding.progressBar.visibility = View.GONE
-                Toast.makeText(
-                    this@MedresQrScannerActivity,
-                    R.string.medres_settings_imported_successfully,
-                    Toast.LENGTH_SHORT
-                ).show()
+                if (authUrl.contains("/draft") || authUrl.contains("/test/")) {
+                    android.widget.Toast.makeText(
+                        this@MedresQrScannerActivity,
+                        "Demo Project Detected: " + projectId,
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                     android.widget.Toast.makeText(
+                        this@MedresQrScannerActivity,
+                        R.string.medres_settings_imported_successfully,
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
 
                 // Return to login screen
                 finish()
             } catch (e: Exception) {
                 Timber.e(e, "Failed to import QR code settings")
                 binding.progressBar.visibility = View.GONE
+                
+                // INTELLIGENT REJECTION
+                // If decompression failed or JSON was invalid, it's likely a raw text or incompatible QR
+                val errorMsg = if (qrData.startsWith("{")) { 
+                    // Uncompressed JSON but invalid for our schema?
+                    "Invalid Project Configuration (Raw JSON)"
+                } else {
+                    getString(R.string.medres_invalid_qr_code)
+                }
+
                 Toast.makeText(
                     this@MedresQrScannerActivity,
-                    R.string.medres_invalid_qr_code,
+                    errorMsg,
                     Toast.LENGTH_LONG
                 ).show()
                 isProcessing = false

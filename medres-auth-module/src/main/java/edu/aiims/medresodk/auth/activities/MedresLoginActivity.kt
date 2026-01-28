@@ -145,69 +145,143 @@ class MedresLoginActivity : MedresBaseActivity() {
         try {
             val authPrefs = getSharedPreferences(edu.aiims.medresodk.auth.utils.MedresConstants.MEDRES_PREFS_NAME, Context.MODE_PRIVATE)
 
-            // Read "meta" prefs to get current project ID
+            // 1. Get Staged Auth Details (Last Scanned)
+            val stagedUrl = authPrefs.getString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_URL, null)
+            val stagedPid = authPrefs.getString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_PROJECT_ID, null)
+
+            // 2. Get Current Active ODK Project
             val metaPrefs = getSharedPreferences("meta", Context.MODE_PRIVATE)
             currentSystemProjectId = metaPrefs.getString("current_project_id", null)
+            
+            // Derive Central ID from Current ODK Project (if exists)
+            var activeCentralPid: String? = null
+            var activeServerUrl: String? = null
+            
+            if (!currentSystemProjectId.isNullOrBlank()) {
+                 val projectPrefs = getSharedPreferences("general_prefs$currentSystemProjectId", Context.MODE_PRIVATE)
+                 activeServerUrl = projectPrefs.getString("server_url", null)
+                 activeCentralPid = MedresProjectUtils.getProjectIdFromUrl(activeServerUrl)
+            }
 
-            // FALLBACK 1: If ODK project missing, check for Staged Auth Details
-            if (currentSystemProjectId.isNullOrBlank()) {
-                val authUrl = authPrefs.getString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_URL, null)
-                val authPid = authPrefs.getString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_PROJECT_ID, null)
+            // 3. Determine Target Project (Prioritize Staged if Different)
+            var targetPid: String? = activeCentralPid
+            var targetUrl: String? = activeServerUrl
+            var isStagedOverride = false
 
-                if (!authUrl.isNullOrBlank() && !authPid.isNullOrBlank()) {
-                    // Temporarily set context to allow login
-                    serverUrl = authUrl
-                    centralProjectId = authPid
-                    authManager.setActiveProject(authPid!!)
-                    
-                    val displayUrl = MedresProjectUtils.formatUrlForDisplay(authUrl)
-                    binding.statusText.text = getString(edu.aiims.medresodk.auth.R.string.medres_project_configured, authPid, displayUrl)
+            if (!stagedPid.isNullOrBlank() && !stagedUrl.isNullOrBlank()) {
+                 // Check if Staged (Scanned) matches Active
+                 // Override if PID mismatch OR URL mismatch (e.g. switching from Draft URL to Main URL for same Project ID)
+                 if (activeCentralPid == null || activeCentralPid != stagedPid || activeServerUrl != stagedUrl) {
+                     targetPid = stagedPid
+                     targetUrl = stagedUrl
+                     isStagedOverride = true
+                     android.util.Log.i("MedresLogin", "Staged Auth matches ($stagedPid) but differs from Active. Switching UI context.")
+                 }
+            }
+
+            // 4. Apply Target Configuration
+            if (targetPid != null) {
+                // Check if Draft/Demo
+                val checkUrlForDraft = targetUrl ?: ""
+                
+                // We need to use authManager.isDraftProject but it relies on ODK Project settings.
+                // If this is a STAGED OVERRIDE, the ODK project might not exist or be active yet.
+                // So we check the URL string directly first.
+                // USER REQUIREMENT: Must contain BOTH /draft and /test/
+                val checkUrlIsDraft = checkUrlForDraft.contains("/draft") && checkUrlForDraft.contains("/test/")
+                
+                val isDraft = if (isStagedOverride) {
+                    // TRUST THE SCANNED URL. Do not fallback to potentially stale ODK project config.
+                    checkUrlIsDraft
+                } else {
+                    // Use scanned URL check OR fallback to manager (for existing sessions)
+                    checkUrlIsDraft || authManager.isDraftProject(targetPid)
+                }
+
+                if (isDraft) {
+                     // DRAFT / DEMO MODE UI
+                     // ... same logic as before ...
+                     android.util.Log.i("MedresLogin", "Draft Project detected ($targetPid). Entering Demo Mode.")
+                     if (isStagedOverride) {
+                         // Apply Staged to Auth Manager Context temporarily
+                         authManager.setActiveProject(targetPid)
+                         serverUrl = targetUrl
+                         centralProjectId = targetPid
+                     } else {
+                         // Existing Demo Project
+                         serverUrl = activeServerUrl
+                         centralProjectId = activeCentralPid ?: targetPid
+                     }
+
+                    binding.statusText.text = "Demo Mode: Draft Project Active"
                     binding.statusText.visibility = View.VISIBLE
+                    binding.statusText.setTextColor(ContextCompat.getColor(this, edu.aiims.medresodk.auth.R.color.medres_warning))
                     
-                    // Already configured (staged) -> Rescan
-                    binding.scanQrButton.setText(edu.aiims.medresodk.auth.R.string.medres_button_rescan_qr_code)
+                    binding.usernameLayout.visibility = View.GONE
+                    binding.passwordLayout.visibility = View.GONE
+                    binding.loginButton.text = "Enter Demo Mode"
+                    binding.loginButton.visibility = View.VISIBLE
+                    binding.loginButton.isEnabled = true
+                    binding.loginButton.setOnClickListener { navigateToMain() }
                     
                     enableLoginUi(true)
                     return
                 }
-            }
 
-            if (currentSystemProjectId.isNullOrBlank()) {
-                showProjectMissingState()
-                return
-            }
-
-            // Read Project Settings (ODK uses "general_prefs" + projectId)
-            val projectPrefs = getSharedPreferences("general_prefs$currentSystemProjectId", Context.MODE_PRIVATE)
-            val odkServerUrl = projectPrefs.getString("server_url", null)
-
-            // Extract Central Project ID
-            centralProjectId = MedresProjectUtils.getProjectIdFromUrl(odkServerUrl)
-
-            if (centralProjectId != null) {
-                // Set Active Project in Auth Manager
+                // STANDARD PROJECT UI
+                centralProjectId = targetPid
+                serverUrl = targetUrl
+                
                 authManager.setActiveProject(centralProjectId!!)
+                if (currentSystemProjectId != null && !isStagedOverride) {
+                    authManager.setProjectMapping(centralProjectId!!, currentSystemProjectId!!)
+                }
+
+                // Format URL for display (Prioritize MEDRES Prefs -> Staged -> ODK)
+                val displayUrlString = if (isStagedOverride) targetUrl else {
+                    authPrefs.getString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_URL, null) 
+                    ?: authManager.getActiveProjectApiUrl() 
+                    ?: targetUrl?.substringBefore("/v1")
+                }
                 
-                // Prioritize Auth URL from MEDRES Prefs for UI display
-                val authUrl = authPrefs.getString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_URL, null)
-                    ?: authManager.getActiveProjectApiUrl()
-                    ?: odkServerUrl?.substringBefore("/v1") // Fallback
-                
-                serverUrl = authUrl
-                
-                // Ensure mapping is established
-                authManager.setProjectMapping(centralProjectId!!, currentSystemProjectId!!)
-                
-                val displayUrl = MedresProjectUtils.formatUrlForDisplay(serverUrl)
+                val displayUrl = MedresProjectUtils.formatUrlForDisplay(displayUrlString)
                 binding.statusText.text = getString(edu.aiims.medresodk.auth.R.string.medres_project_configured, centralProjectId, displayUrl)
                 binding.statusText.visibility = View.VISIBLE
+                // Reset color logic - use default text color or specific success color
+                binding.statusText.setTextColor(ContextCompat.getColor(this, android.R.color.black))
+
+                // Reset Login UI standard state
+                binding.usernameLayout.visibility = View.VISIBLE
+                binding.passwordLayout.visibility = View.VISIBLE
+                binding.loginButton.text = "Login"
+                binding.loginButton.visibility = View.VISIBLE
+                binding.loginButton.setOnClickListener { attemptLogin() }
                 
-                // Configured -> Rescan
-                binding.scanQrButton.setText(edu.aiims.medresodk.auth.R.string.medres_button_rescan_qr_code)
-                
+                // If visual state was previously hidden/disabled
                 enableLoginUi(true)
+                
+                // Update "Rescan" button
+                binding.scanQrButton.setText(edu.aiims.medresodk.auth.R.string.medres_button_rescan_qr_code)
+
             } else {
-                binding.statusText.text = getString(edu.aiims.medresodk.auth.R.string.medres_invalid_project_config, odkServerUrl)
+                // NO VALID PROJECT (Active or Staged)
+                 if (activeServerUrl != null && (activeServerUrl.contains("/draft") || activeServerUrl.contains("/test/"))) {
+                     // Fallback detection for Drafts where PID extraction failed
+                     // (This block might be redundant with the isDraft check above, but keeps safety)
+                     android.util.Log.i("MedresLogin", "Draft URL detected (fallback type 2). Entering Demo Mode.")
+                     binding.statusText.text = "Demo Mode: Draft Project Active"
+                     binding.statusText.visibility = View.VISIBLE
+                     binding.statusText.setTextColor(ContextCompat.getColor(this, edu.aiims.medresodk.auth.R.color.medres_warning))
+                     binding.usernameLayout.visibility = View.GONE
+                     binding.passwordLayout.visibility = View.GONE
+                     binding.loginButton.text = "Enter Demo Mode"
+                     binding.loginButton.visibility = View.VISIBLE
+                     binding.loginButton.setOnClickListener { navigateToMain() }
+                     enableLoginUi(true)
+                     return
+                 }
+
+                binding.statusText.text = getString(edu.aiims.medresodk.auth.R.string.medres_invalid_project_config, activeServerUrl)
                 binding.statusText.visibility = View.VISIBLE
                 enableLoginUi(false)
             }

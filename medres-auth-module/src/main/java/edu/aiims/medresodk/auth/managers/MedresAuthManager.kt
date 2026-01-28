@@ -349,13 +349,32 @@ class MedresAuthManager @Inject constructor(
                     }
                 }
             } else {
-                _authState.value = AuthState.LOGGED_OUT
-                _currentUser.value = null
-                updateSoftExpiry(false)
-                _isExpiringSoon.value = false
-                _tokenExpiryTime.value = 0L
-                _validatedCurrentTime.value = System.currentTimeMillis()
-                _serverTimeDifferenceMs.value = 0L
+                // Token missing or User missing.
+                // CHECK FOR DEMO/DRAFT MODE BEFORE LOGGING OUT
+                if (isDraftProject(pid)) {
+                    android.util.Log.i("MedresAuthManager", "Draft Project detected ($pid). Entering DEMO_MODE.")
+                    _authState.value = AuthState.DEMO_MODE
+                    _currentUser.value = User(
+                         id = "demo_user",
+                         username = "Draft Tester",
+                         projectId = pid
+                    )
+                    updateSoftExpiry(false)
+                    _isExpiringSoon.value = false
+                    _tokenExpiryTime.value = 0L
+                    
+                    // In Demo Mode, we assume the server is reachable via the Draft URL
+                    // But we don't have a standard token to check reachability effectively
+                    // So we treat it as "Always Online" or "Best Effort"
+                } else {
+                    _authState.value = AuthState.LOGGED_OUT
+                    _currentUser.value = null
+                    updateSoftExpiry(false)
+                    _isExpiringSoon.value = false
+                    _tokenExpiryTime.value = 0L
+                    _validatedCurrentTime.value = System.currentTimeMillis()
+                    _serverTimeDifferenceMs.value = 0L
+                }
             }
         } catch (e: Exception) {
             android.util.Log.e("MedresAuthManager", "Critical: Auth storage corruption detected during refreshState", e)
@@ -375,6 +394,42 @@ class MedresAuthManager @Inject constructor(
                      android.util.Log.e("MedresAuthManager", "Failed to clear corrupted session", cleanupEx)
                  }
             }
+        }
+    }
+
+    /**
+     * Checks if the given project is a Draft/Demo project.
+     * Logic: Inspects ODK Project settings for 'server_url' containing '/draft'.
+     */
+    fun isDraftProject(projectId: String): Boolean {
+        return try {
+            val repository = getProjectsRepository()
+            val allProjects = repository.getAll()
+            
+            for (project in allProjects) {
+                // Check 1: Project Name contains "[Draft]"
+                if (project.name.contains("[Draft]", ignoreCase = true)) {
+                    android.util.Log.i("MedresAuthManager", "Draft detected by name: ${project.name}")
+                    return true
+                }
+
+                // Check 2: URL analysis
+                val projPrefs = context.getSharedPreferences("general_prefs${project.uuid}", Context.MODE_PRIVATE)
+                val url = projPrefs.getString("server_url", "") ?: ""
+                
+                // Detection Logic:
+                // USER REQUIREMENT: Must contain BOTH "/draft" and "/test/"
+                // URL structure: .../v1/test/<TOKEN>/projects/<PID>/forms/<FORM_ID>/draft
+                
+                if (url.contains("/projects/$projectId") && (url.contains("/draft") && url.contains("/test/"))) {
+                     android.util.Log.i("MedresAuthManager", "Draft detected by URL: $url")
+                    return true
+                }
+            }
+            false
+        } catch (e: Exception) {
+            android.util.Log.e("MedresAuthManager", "Error checking for draft project", e)
+            false
         }
     }
     
@@ -1262,6 +1317,7 @@ enum class AuthState {
     INITIAL,
     LOGGED_IN,
     LOGGED_IN_REQUIRES_PIN,  // Logged in but must set up PIN first (Forgot PIN, Logout, First-time login)
+    DEMO_MODE,               // Specialized mode for Draft/Testing (No strict auth)
     LOGGED_OUT,
     ERROR
 }

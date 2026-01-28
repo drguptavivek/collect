@@ -39,6 +39,7 @@ class AuthSettingsActivity : MedresBaseActivity() {
         val saveLogsButton: com.google.android.material.button.MaterialButton = findViewById(edu.aiims.medresodk.auth.R.id.save_logs_button)
         val refreshTokenButton: com.google.android.material.button.MaterialButton = findViewById(edu.aiims.medresodk.auth.R.id.refresh_token_button)
         val logoutButton: com.google.android.material.button.MaterialButton = findViewById(edu.aiims.medresodk.auth.R.id.logout_button)
+        val scanDemoQrButton: com.google.android.material.button.MaterialButton = findViewById(edu.aiims.medresodk.auth.R.id.scan_demo_qr_button)
 
         // Set up click listeners
         getProjectDetailsButton.setOnClickListener {
@@ -63,6 +64,10 @@ class AuthSettingsActivity : MedresBaseActivity() {
 
         logoutButton.setOnClickListener {
             logout()
+        }
+
+        scanDemoQrButton.setOnClickListener {
+            launchNativeQrScanner()
         }
 
         // Device ID click to copy
@@ -440,6 +445,16 @@ class AuthSettingsActivity : MedresBaseActivity() {
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
             finish()
+        }
+    }
+
+    private fun launchNativeQrScanner() {
+        try {
+            val intent = Intent()
+            intent.setClassName(this, "org.odk.collect.android.configure.qr.QRCodeTabsActivity")
+            startActivity(intent)
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(this, "Could not launch QR Scanner: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 }
