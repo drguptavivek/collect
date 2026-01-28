@@ -371,6 +371,22 @@ class MedresLoginActivity : MedresBaseActivity() {
                                 val serverUrl = projPrefs.getString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, "") ?: ""
                                 if (edu.aiims.medresodk.auth.utils.MedresProjectUtils.getProjectIdFromUrl(serverUrl) == pid) {
                                     targetUuid = proj.uuid
+                                    
+                                    // FIX: Name not updating on existing projects
+                                    val jsonStr = authPrefs.getString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_QR_GENERAL_SETTINGS, "{}")
+                                    val json = org.json.JSONObject(jsonStr)
+                                    val projectSection = json.optJSONObject("project") ?: org.json.JSONObject()
+                                    val qrProjectName = projectSection.optString("name", "")
+
+                                    if (qrProjectName.isNotEmpty() && proj.name != qrProjectName) {
+                                         val updatedProject = org.odk.collect.projects.Project.Saved(
+                                             proj.uuid,
+                                             qrProjectName,
+                                             proj.icon,
+                                             proj.color
+                                         )
+                                         projectsRepo.save(updatedProject)
+                                    }
                                     break
                                 }
                             }
@@ -397,8 +413,28 @@ class MedresLoginActivity : MedresBaseActivity() {
                                  putString(org.odk.collect.settings.keys.ProjectKeys.KEY_PROTOCOL, org.odk.collect.settings.keys.ProjectKeys.PROTOCOL_SERVER)
                                  putString(org.odk.collect.settings.keys.ProjectKeys.KEY_USERNAME, username)
                                  putString(org.odk.collect.settings.keys.ProjectKeys.KEY_PASSWORD, password)
-                                 // Apply other settings from QR
-                                 putString(org.odk.collect.settings.keys.ProjectKeys.KEY_FORM_UPDATE_MODE, generalJson.optString("form_update_mode", "manual"))
+                                 // Apply ALL settings from QR dynamically
+                                 val keysIterator = generalJson.keys()
+                                 while (keysIterator.hasNext()) {
+                                     val key = keysIterator.next()
+                                     // Skip sensitive/identity keys that we handle explicitly
+                                     if (key == org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL ||
+                                         key == org.odk.collect.settings.keys.ProjectKeys.KEY_USERNAME ||
+                                         key == org.odk.collect.settings.keys.ProjectKeys.KEY_PASSWORD ||
+                                         key == org.odk.collect.settings.keys.ProjectKeys.KEY_PROTOCOL) {
+                                         continue
+                                     }
+
+                                     val value = generalJson.get(key)
+                                     when (value) {
+                                         is Boolean -> putBoolean(key, value)
+                                         is String -> putString(key, value)
+                                         is Int -> putInt(key, value)
+                                         is Long -> putLong(key, value)
+                                         is Double -> putFloat(key, value.toFloat()) // JSON numbers are Double
+                                         else -> putString(key, value.toString()) // Fallback
+                                     }
+                                 }
                                  commit() // Sync
                              }
                              
