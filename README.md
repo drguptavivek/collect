@@ -134,8 +134,7 @@ Backend Documentation: [ODK Central Docs](docs/medres-custom/ODK_Central_docs/)
 
 ## Screenshots
 
-<details>
-<summary>Click to view authentication and security workflows</summary>
+Click to view authentication and security workflows
 
 ### Login & Configuration
 <p align="center">
@@ -170,7 +169,7 @@ Backend Documentation: [ODK Central Docs](docs/medres-custom/ODK_Central_docs/)
 <img src="docs/medres-custom/ODK_Central_docs/screenshots/03_telemetry_table.png" width="600" alt="Telemetry">
 <img src="docs/medres-custom/ODK_Central_docs/screenshots/04_telemetry_map.png" width="600" alt="Telemetry Map">
 
-</details>
+
 
 ## What's New in RC4
 
