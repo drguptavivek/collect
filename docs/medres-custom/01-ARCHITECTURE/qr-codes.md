@@ -17,6 +17,24 @@
 
 ```
 
+## Legacy ODK Central QR Codes
+Older ODK Central versions generate QRs that are **Base64 encoded** before ZLIB compression.
+Structure after decoding is identical to Standard QR:
+```json
+{
+  "general": {
+    "server_url": "https://DOMAIN/v1/key/<TOKEN>/projects/<PROJECT>",
+    "form_update_mode": "match_exactly",
+    "autosend": "wifi_and_cellular"
+  },
+  "project": {
+    "name": "Project XXX"
+  },
+  "admin": {}
+}
+```
+**Behavior**: Rejected by Medres Scanner (contains `/key/`).
+
 
 ## MEDRES Project Cnmfiguration QR Codes
 ```json
