@@ -1,4 +1,7 @@
 {
-  "database": "beads.db",
-  "jsonl_export": "issues.jsonl"
+  "database": "sqlite",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "collect",
+  "project_id": "collect-project"
 }
