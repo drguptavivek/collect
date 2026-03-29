@@ -74,4 +74,5 @@ dependencies {
     androidTestImplementation(libs.junit)
 
     debugImplementation(project(":fragments-test"))
+    testImplementation(project(":fragments-test"))
 }

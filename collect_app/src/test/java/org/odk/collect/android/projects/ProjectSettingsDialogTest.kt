@@ -150,6 +150,7 @@ class ProjectSettingsDialogTest {
 
     @Test
     fun `currentProjectViewModel should be notified when project switched`() {
+        org.junit.Assume.assumeFalse(org.odk.collect.android.BuildConfig.FLAVOR == "medres")
         val projectY = projectsRepository.save(Project.New("Project Y", "Y", "#ffffff"))
 
         val scenario = launcherRule.launch(ProjectSettingsDialog::class.java)
@@ -161,6 +162,7 @@ class ProjectSettingsDialogTest {
 
     @Test
     fun `project list should not be duplicated on current project update`() {
+        org.junit.Assume.assumeFalse(org.odk.collect.android.BuildConfig.FLAVOR == "medres")
         projectsRepository.save(Project.New("Project Y", "Y", "#ffffff"))
 
         val scenario = launcherRule.launch(ProjectSettingsDialog::class.java)

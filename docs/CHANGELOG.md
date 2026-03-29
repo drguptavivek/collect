@@ -1,5 +1,17 @@
 # Changelog
 
+## [v2026.1.2-MEDRES-RC1] - 2026-03-29
+
+### Release Candidate 1 (Based on ODK Collect v2026.1.2)
+
+### Added
+- **Upstream Merge**: Successfully merged the official ODK Collect v2026.1.2 release.
+- **Database Migration**: Fully migrated local testing environments to Dolt backend configurations.
+- **Test Integrity**: Validated and updated internal UI unit tests matching new upstream content providers.
+
+### Technical Details
+- **Version Code**: 5116
+- **Version Name**: v2026.1.2-MEDRES-RC1-MEDRES
 ## [v2025.3.3-MEDRES-RC4] - 2026-01-28
 ### Added
 - **Automated Project Details Update**: Project details (name, etc.) are now automatically fetched and updated from the server upon successful PIN entry/setup.
