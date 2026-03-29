@@ -3,8 +3,8 @@
 <img src="docs/medres-custom/assets/MEDRES_collect_logo_cropped.png" width="200">
 </p>
 
-> **Version**: v2025.3.3-MEDRES-RC4 | **Status**: Release Candidate  
-> **Upstream**: ODK Collect v2025.3.3 (November 1, 2025)
+> **Version**: v2026.1.2-MEDRES-RC1 | **Status**: Release Candidate  
+> **Upstream**: ODK Collect v2026.1.2
 
 ## Overview
 
