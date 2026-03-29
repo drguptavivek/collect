@@ -14,6 +14,9 @@
 - **Version Name**: v2026.1.2-MEDRES-RC1-MEDRES
 ## [v2025.3.3-MEDRES-RC4] - 2026-01-28
 ### Added
+- **Intelligent QR Code Detection**: Complete separation of production data collection from form testing, rejecting old/standard ODK QR codes to prevent unintentional configuration overlap or security bypass.
+- **Draft QRs (Demo Mode)**: Introduced "Demo Mode" safely allowing draft form testing isolated from active authentication data.
+- **5-Layer QR Security Validation**: Hardened validation protecting against decompression bombs (16KB cap), key injection attacks, type configuration confusion, and blocked credential token theft overrides on QR scans. 
 - **Automated Project Details Update**: Project details (name, etc.) are now automatically fetched and updated from the server upon successful PIN entry/setup.
 - **Background Update**: Returning users will see their project name refreshed silently in the background after login.
 - **Integration**: Added `fetchAndUpdateProjectDetails` to `AuthManager` and integrated it with `SetupPinActivity` and `PinEntryActivity`.
