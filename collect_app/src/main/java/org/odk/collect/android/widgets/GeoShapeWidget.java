@@ -20,7 +20,6 @@ import android.util.TypedValue;
 import android.view.View;
 
 import org.javarosa.core.model.data.IAnswerData;
-import org.javarosa.core.model.data.StringData;
 import org.javarosa.form.api.FormEntryPrompt;
 import org.odk.collect.android.databinding.GeoshapeQuestionBinding;
 import org.odk.collect.android.formentry.questions.QuestionDetails;
@@ -74,16 +73,11 @@ public class GeoShapeWidget extends QuestionWidget {
 
     @Override
     public IAnswerData getAnswer() {
-        return getAnswerText().isEmpty() ? null : new StringData(getAnswerText());
+        return getFormEntryPrompt().getAnswerValue();
     }
 
     @Override
-    public void clearAnswer() {
-        binding.geoAnswerText.setText(null);
-        binding.geoAnswerText.setVisibility(GONE);
-        binding.simpleButton.setText(org.odk.collect.strings.R.string.get_polygon);
-        widgetValueChanged();
-    }
+    public void clearAnswer() {}
 
     @Override
     public void setOnLongClickListener(OnLongClickListener l) {
@@ -96,9 +90,5 @@ public class GeoShapeWidget extends QuestionWidget {
         super.cancelLongPress();
         binding.simpleButton.cancelLongPress();
         binding.geoAnswerText.cancelLongPress();
-    }
-
-    private String getAnswerText() {
-        return binding.geoAnswerText.getText().toString();
     }
 }

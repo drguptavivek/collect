@@ -37,7 +37,6 @@ import org.odk.collect.android.javarosawrapper.FakeFormController;
 import org.odk.collect.android.support.MockFormEntryPromptBuilder;
 import org.odk.collect.android.utilities.Appearances;
 import org.odk.collect.android.utilities.ChangeLocks;
-import org.odk.collect.androidshared.data.Consumable;
 import org.odk.collect.forms.Form;
 import org.odk.collect.forms.FormsRepository;
 import org.odk.collect.formstest.InMemFormsRepository;
@@ -214,16 +213,16 @@ public class FormEntryViewModelTest {
 
     @Test
     public void moveForward_withEvaluateConstraints_whenThereIsAFailedConstraint_setsFailedConstraint() {
-        Consumable<FailedValidationResult> failedValidationResult =
-                new Consumable<>(new FailedValidationResult(startingIndex, 0, null, org.odk.collect.strings.R.string.invalid_answer_error));
-        formController.setFailedConstraint(failedValidationResult.getValue());
+        FailedValidationResult failedValidationResult =
+                new FailedValidationResult(startingIndex, 0, null, org.odk.collect.strings.R.string.invalid_answer_error);
+        formController.setFailedConstraint(failedValidationResult);
 
         HashMap<FormIndex, IAnswerData> answers = new HashMap<>();
         answers.put(startingIndex, new StringData("answer"));
         viewModel.moveForward(answers, true);
         scheduler.flush();
 
-        assertThat(getOrAwaitValue(viewModel.getValidationResult()), equalTo(failedValidationResult));
+        assertThat(getOrAwaitValue(viewModel.getCurrentIndex()).getValidationResult(), equalTo(failedValidationResult));
     }
 
     /**
@@ -344,7 +343,7 @@ public class FormEntryViewModelTest {
     public void validate_setsLoadingToTrueWhileBackgroundWorkHappens() {
         assertThat(getOrAwaitValue(viewModel.isLoading()), equalTo(false));
 
-        viewModel.validate();
+        viewModel.validateForm();
         assertThat(getOrAwaitValue(viewModel.isLoading()), equalTo(true));
 
         scheduler.flush();
@@ -355,7 +354,7 @@ public class FormEntryViewModelTest {
     public void validate_whenThereIsAnErrorValidating_setsError() {
         formController.setValidationError(new JavaRosaException(new IOException("OH NO")));
 
-        viewModel.validate();
+        viewModel.validateForm();
         scheduler.flush();
         assertThat(viewModel.getError().getValue(), equalTo(new FormError.NonFatal("OH NO")));
     }
@@ -456,27 +455,12 @@ public class FormEntryViewModelTest {
     }
 
     @Test
-    public void answerQuestion_withValidateTrue_updatesIndexWithValidationResult() {
-        TreeReference reference = new TreeReference();
-        reference.add("blah", TreeReference.INDEX_UNBOUND);
-        FormIndex formIndex = new FormIndex(null, 1, 1, reference);
-        FormEntryPrompt prompt = new MockFormEntryPromptBuilder().build();
-        formController.setPrompt(formIndex, prompt);
-
-        FailedValidationResult failedValidationResult = new FailedValidationResult(startingIndex, 0, null, org.odk.collect.strings.R.string.invalid_answer_error);
-        formController.setFailedConstraint(failedValidationResult);
-
-        viewModel.answerQuestion(formIndex, new StringData("answer"), true);
-        scheduler.flush(true);
-        assertThat(viewModel.getCurrentIndex().getValue().getSecond(), equalTo(failedValidationResult));
-    }
-
-    @Test
     public void answerQuestion_whenQuestionIsAutoAdvance_movesForward() {
         TreeReference reference = new TreeReference();
         reference.add("blah", TreeReference.INDEX_UNBOUND);
         FormIndex formIndex = new FormIndex(null, 1, 1, reference);
         FormEntryPrompt prompt = new MockFormEntryPromptBuilder()
+                .withControlType(CONTROL_SELECT_ONE)
                 .withAppearance(Appearances.QUICK)
                 .build();
         formController.setPrompt(formIndex, prompt);
@@ -493,6 +477,7 @@ public class FormEntryViewModelTest {
         reference.add("blah", TreeReference.INDEX_UNBOUND);
         FormIndex formIndex = new FormIndex(null, 1, 1, reference);
         FormEntryPrompt prompt = new MockFormEntryPromptBuilder()
+                .withControlType(CONTROL_SELECT_ONE)
                 .withAppearance(Appearances.QUICK)
                 .build();
         formController.setPrompt(formIndex, prompt);
@@ -503,7 +488,80 @@ public class FormEntryViewModelTest {
         FormIndex originalIndex = formController.getFormIndex();
         viewModel.answerQuestion(formIndex, new StringData("answer"));
         scheduler.flush(true);
-        assertThat(getOrAwaitValue(viewModel.getCurrentIndex()).getSecond(), equalTo(failedValidationResult));
+        assertThat(getOrAwaitValue(viewModel.getCurrentIndex()).getValidationResult(), equalTo(failedValidationResult));
         assertThat(formController.getFormIndex(), equalTo(new FormIndex(null, originalIndex.getLocalIndex(), 0, new TreeReference())));
+    }
+
+    @Test
+    public void answerQuestion_setsQuestionIndexToUpdatedQuestionIndex() {
+        TreeReference reference = new TreeReference();
+        reference.add("blah", TreeReference.INDEX_UNBOUND);
+        FormIndex formIndex = new FormIndex(null, 1, 1, reference);
+        FormEntryPrompt prompt = new MockFormEntryPromptBuilder()
+                .build();
+        formController.setPrompt(formIndex, prompt);
+
+        FormIndex originalIndex = formController.getFormIndex();
+        viewModel.answerQuestion(formIndex, new StringData("answer"));
+        scheduler.flush(true);
+        assertThat(
+                getOrAwaitValue(viewModel.getCurrentIndex()).getScreenIndex(),
+                equalTo(originalIndex)
+        );
+        assertThat(
+                getOrAwaitValue(viewModel.getCurrentIndex()).getQuestionIndex(),
+                equalTo(formIndex)
+        );
+    }
+
+    @Test
+    public void answerQuestion_whenQuestionIsAutoAdvance_setsScreenIndexToNextScreenIndex() {
+        TreeReference reference = new TreeReference();
+        reference.add("blah", TreeReference.INDEX_UNBOUND);
+        FormIndex formIndex = new FormIndex(null, 1, 1, reference);
+        FormEntryPrompt prompt = new MockFormEntryPromptBuilder()
+                .withControlType(CONTROL_SELECT_ONE)
+                .withAppearance(Appearances.QUICK)
+                .build();
+        formController.setPrompt(formIndex, prompt);
+
+        FormIndex originalIndex = formController.getFormIndex();
+        viewModel.answerQuestion(formIndex, new StringData("answer"));
+        scheduler.flush(true);
+        assertThat(
+                getOrAwaitValue(viewModel.getCurrentIndex()).getScreenIndex(),
+                equalTo(new FormIndex(null, originalIndex.getLocalIndex() + 1, 0, new TreeReference()))
+        );
+        assertThat(
+                getOrAwaitValue(viewModel.getCurrentIndex()).getQuestionIndex(),
+                equalTo(null)
+        );
+    }
+
+    @Test
+    public void answerQuestion_whenQuestionIsAutoAdvance_andAnswerViolatesConstraint_setsScreenIndexToCurrentScreenIndex() {
+        TreeReference reference = new TreeReference();
+        reference.add("blah", TreeReference.INDEX_UNBOUND);
+        FormIndex formIndex = new FormIndex(null, 1, 1, reference);
+        FormEntryPrompt prompt = new MockFormEntryPromptBuilder()
+                .withControlType(CONTROL_SELECT_ONE)
+                .withAppearance(Appearances.QUICK)
+                .build();
+        formController.setPrompt(formIndex, prompt);
+
+        FailedValidationResult failedValidationResult = new FailedValidationResult(startingIndex, 0, null, org.odk.collect.strings.R.string.invalid_answer_error);
+        formController.setFailedConstraint(failedValidationResult);
+
+        FormIndex originalIndex = formController.getFormIndex();
+        viewModel.answerQuestion(formIndex, new StringData("answer"));
+        scheduler.flush(true);
+        assertThat(
+                getOrAwaitValue(viewModel.getCurrentIndex()).getScreenIndex(),
+                equalTo(originalIndex)
+        );
+        assertThat(
+                getOrAwaitValue(viewModel.getCurrentIndex()).getQuestionIndex(),
+                equalTo(null)
+        );
     }
 }

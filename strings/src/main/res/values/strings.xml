@@ -683,6 +683,39 @@
     <!-- Description for button that removes the last recorded point -->
     <string name="remove_last_point">Remove last point</string>
 
+    <!-- Message shown when an error with the trace/shape has been fixed  -->
+    <string name="error_fixed">✅ Error fixed</string>
+
+    <!-- Description for button that explains how to modify the map -->
+    <string name="show_how_to_modify_map">Show how to modify the map</string>
+
+    <!-- Title for instructions on how to modify map features -->
+    <string name="how_to_modify_map">How to modify the map</string>
+
+    <!-- Instruction in a list on how to move a point -->
+    <string name="long_press_to_move_point_info_item">Long press to move point</string>
+
+    <!-- Instruction in a list on how to remove the most recently added point -->
+    <string name="remove_last_point_info_item">Remove last point</string>
+
+    <!-- Instruction in a list on how to delete the current shape to start over -->
+    <string name="delete_shape_to_start_over_info_item">Delete shape to start over</string>
+
+    <!-- Instruction in a list on how to add a new point -->
+    <string name="add_point_info_item">Add point</string>
+
+    <!-- Instruction in a list on how to tap to add a point -->
+    <string name="tap_to_add_a_point_info_item">Tap to add a point</string>
+
+    <!-- Instruction in a list on how to delete the entire shape -->
+    <string name="delete_entire_shape_info_item">Delete entire shape</string>
+
+    <!-- Button text to close the instructions dialog -->
+    <string name="done">Done</string>
+
+    <!-- Button text to open the instructions dialog from the error snackbar -->
+    <string name="how_to_modify">How to modify</string>
+
     <!--
     ##############################################
     # SEND FINALIZED FORM
@@ -1222,9 +1255,6 @@
 
     <!-- An entity is any person, place or thing that a form can be about. This title appears on an experimental settings screen to view entities managed in the current project. -->
     <string name="entities_title">Entity lists</string>
-
-    <!-- Title for setting that controls whether entities spec v2025.1 are enabled or not -->
-    <string name="entities_spec_v2025_1">Enable entities spec v2025.1</string>
 
     <!-- Text for button that leads to browser for the user to view and manage entity lists -->
     <string name="entity_browser_button">View entity lists</string>

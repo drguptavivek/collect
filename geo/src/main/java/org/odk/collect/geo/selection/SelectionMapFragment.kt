@@ -22,6 +22,7 @@ import org.odk.collect.androidshared.ui.DialogFragmentUtils
 import org.odk.collect.androidshared.ui.FragmentFactoryBuilder
 import org.odk.collect.androidshared.ui.ToastUtils
 import org.odk.collect.androidshared.ui.multiclicksafe.setMultiClickSafeOnClickListener
+import org.odk.collect.androidshared.utils.sanitizeToColorInt
 import org.odk.collect.async.Scheduler
 import org.odk.collect.geo.GeoDependencyComponentProvider
 import org.odk.collect.geo.databinding.SelectionMapLayoutBinding
@@ -319,7 +320,7 @@ class SelectionMapFragment(
 
                         map.setMarkerIcon(
                             featureId,
-                            MarkerIconDescription(item.largeIcon, item.color, item.symbol)
+                            MarkerIconDescription.DrawableResource(item.largeIcon, item.color, item.symbol)
                         )
                     }
                 }
@@ -380,7 +381,7 @@ class SelectionMapFragment(
         if (featureId != null) {
             map.setMarkerIcon(
                 featureId,
-                MarkerIconDescription(selectedItem.smallIcon, selectedItem.color, selectedItem.symbol)
+                MarkerIconDescription.DrawableResource(selectedItem.smallIcon, selectedItem.color, selectedItem.symbol)
             )
         }
     }
@@ -402,16 +403,29 @@ class SelectionMapFragment(
                 MapPoint(it.point.latitude, it.point.longitude),
                 false,
                 MapFragment.BOTTOM,
-                MarkerIconDescription(it.smallIcon, it.color, it.symbol)
+                MarkerIconDescription.DrawableResource(it.smallIcon, it.color, it.symbol)
             )
         }
 
         val pointIds = map.addMarkers(markerDescriptions)
         val lineIds = lines.fold(listOf<Int>()) { ids, item ->
-            ids + map.addPolyLine(LineDescription(item.points, item.strokeWidth, item.strokeColor))
+            ids + map.addPolyLine(
+                LineDescription(
+                    item.points,
+                    item.strokeWidth,
+                    item.strokeColor?.sanitizeToColorInt()
+                )
+            )
         }
         val polygonIds = polygons.fold(listOf<Int>()) { ids, item ->
-            ids + map.addPolygon(PolygonDescription(item.points, item.strokeWidth, item.strokeColor, item.fillColor))
+            ids + map.addPolygon(
+                PolygonDescription(
+                    item.points,
+                    item.strokeWidth,
+                    item.strokeColor?.sanitizeToColorInt(),
+                    item.fillColor?.sanitizeToColorInt()
+                )
+            )
         }
 
         (singlePoints + lines + polygons).zip(pointIds + lineIds + polygonIds).forEach { (item, featureId) ->
