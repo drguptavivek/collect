@@ -3,7 +3,7 @@
 <img src="docs/medres-custom/assets/MEDRES_collect_logo_cropped.png" width="200">
 </p>
 
-> **Version**: v2025.3.3-MEDRES-RC3 | **Status**: Release Candidate
+> **Version**: v2025.3.3-MEDRES-RC4 | **Status**: Release Candidate
 > **Upstream**: ODK Collect v2025.3.3 (November 1, 2025)
 
 
@@ -159,6 +159,8 @@ For detailed technical specifications and maintenance guides, refer to the follo
 3.  **[API Specification](docs/medres-custom/03-API/reference.md)**: Backend endpoint definitions for the Customized ODK Central API.
 4.  **[Maintenance Guide](docs/medres-custom/04-OPERATIONS/maintenance.md)**: Instructions for merging upstream changes.
 5.  **[Versioning Strategy](docs/medres-custom/04-OPERATIONS/versioning.md)**: Release candidate workflow and versioning rules.
+6.  **[QR Codes Reference](docs/medres-custom/01-ARCHITECTURE/qr-codes.md)**: QR types, detection rules, and security boundaries.
+7.  **[Scanning Draft QRs](docs/medres-custom/01-ARCHITECTURE/scanning-draft-form-QRs.md)**: Draft Testing Mode workflow.
 
 
 
@@ -227,6 +229,13 @@ Built-in utilities for exporting and securely saving encrypted logs for remote t
 ### 11. Permissions Audit
 Automated system providing a clear overview of mandatory permissions needed for operation.
 <p align="center"><img src="docs/medres-custom/screenshots/11_permissions_check.png" width="200" alt="Permissions Check"></p>
+
+## QR Workflow Notes
+
+- **MEDRES Project QR**: stages project metadata and returns the user to login.
+- **Draft QR**: enters **Draft Testing Mode** without username/password login.
+- **Standard ODK Managed QR**: rejected to avoid overwriting MEDRES configuration.
+- Draft QR `project.name` is treated as display-only draft form metadata, not as the persistent production project name.
 
 ---
 

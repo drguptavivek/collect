@@ -1,7 +1,7 @@
 # MEDRES Preferences & Persistence
 
-> Last Updated: 2025-12-31
-> Reviewed At: 2025-12-31
+> Last Updated: 2026-04-10
+> Reviewed At: 2026-04-10
 
 This document details the configuration and persistence settings for the MEDRES customization of ODK Collect. It explains how settings are initialized, updated, and managed throughout the application lifecycle.
 
@@ -40,9 +40,19 @@ This file is managed by both `MedresAuthManager` (for project-specific metadata)
 #### Staged Configuration (From QR)
 | Key | Purpose |
 | :--- | :--- |
-| `auth_url` | The base API URL for the Central server. |
-| `auth_project_id` | The target Project ID on the Central server. |
-| `qr_general_settings` | Raw JSON of ODK settings to apply later. |
+| `staged_qr_type` | Typed discriminator for staged QR context. Values: `medres_project`, `draft_form`. |
+| `auth_url` | Base API URL for MEDRES project login flow. |
+| `auth_project_id` | Target Central Project ID for MEDRES project login flow. |
+| `auth_project_name` | Persistent project name staged from MEDRES project QR. |
+| `auth_username_hint` | Optional username hint shown on login UI. |
+| `qr_general_settings` | Raw JSON of non-sensitive ODK project settings to apply after successful login. |
+| `qr_admin_settings` | Raw JSON of admin settings to apply after successful login. |
+| `draft_url` | Full draft/test URL preserved exactly as scanned. |
+| `draft_project_id` | Project ID derived from the draft URL path. |
+| `draft_form_id` | Form ID derived from the draft URL path. |
+| `draft_display_name` | Draft form label shown in the UI. This is display-only metadata. |
+| `draft_display_icon` | Optional draft icon from QR metadata. |
+| `draft_general_settings` | General settings bundled with a draft QR. Used only for draft testing context. |
 
 #### Project-Specific Metadata
 | Key Pattern | Purpose |
@@ -87,41 +97,45 @@ On the first launch, the application initializes its base state:
 ### Phase 2: Configuration (Staged State)
 When a user scans a QR code or enters details manually via `MedresLoginActivity`:
 - **Staged Details**: Base configuration is stored in `medres_auth_prefs` to enable the login UI without yet creating an ODK project.
-- **`auth_url`**, **`auth_project_id`**, and **`qr_general_settings`** are populated.
+- The scanner first classifies the QR into one of two accepted staged contexts:
+  - **MEDRES Project QR**: stages `auth_url`, `auth_project_id`, `auth_project_name`, `auth_username_hint`, `qr_general_settings`, and `qr_admin_settings`.
+  - **Draft Form QR**: stages `draft_url`, `draft_project_id`, `draft_form_id`, `draft_display_name`, `draft_display_icon`, and `draft_general_settings`.
 - **UI State**: The login screen displays the configured project and changes the "Scan QR" button to **"Rescan QR Code"**.
+- **No broad wipe**: rescanning clears only session/security keys and staged QR keys. Preserved project mappings and shared-device continuity data remain intact.
 
 ### Phase 3: Login & Project Materialization
-Upon successful authentication, the configuration is "materialized" into the standard ODK storage:
+Upon successful authentication, a staged **MEDRES Project QR** is "materialized" into standard ODK storage:
 - **Tokenized URL**: A specialized URL is constructed and saved to `server_url` in `general_prefs[UUID]`.
   - Format: `<BaseURL>/key/<BearerToken>/projects/<PID>`
 - **Project Creation**: A standard ODK project is created/updated in the `meta` prefs `projects` repository.
 - **Settings Application**: Properties from `qr_general_settings` (like `form_update_mode`) are mapped to `general_prefs[UUID]`.
+- **Admin Locks**: Properties from `qr_admin_settings` are applied to the project's admin preferences after key validation.
 - **Identity**: `current_project_id` in `meta` is set to the ODK UUID of the new project.
 - **Mapping**: `central_to_odk_$pid` is saved to link the systems.
+
+### Phase 4: Draft Testing Materialization
+When a **Draft Form QR** is staged:
+- **No username/password login is required**. The QR already contains the test token in its URL.
+- The full `draft_url` is preserved and becomes the active `server_url` for a dedicated draft-testing ODK project.
+- `draft_display_name` is used only for the login/status UI (`Draft Testing Mode`) and must not overwrite the persistent name of the production MEDRES project.
+- Draft testing is isolated from the main MEDRES project onboarding flow.
 
 ---
 
 ## 4. Security Cleanup (Logout/Wipe) Behavior
 
-When a security event occurs (manual logout, 3 failed PIN attempts, or hard expiry), the application follows an **"Option B" (Shared Device Stability)** model. It clears the sensitive security context but preserves project data to ensure continuity for the next user on the same device.
+When a security event occurs (manual logout, 3 failed PIN attempts, hard expiry, or QR rescan), the application follows an **"Option B" (Shared Device Stability)** model. It clears only the sensitive security context and staged QR state while preserving project data to ensure continuity for the next user on the same device.
 
 | Category | Item | Action | Rationale |
 |----------|------|--------|-----------|
 | **Security** | Auth Token (JWT) | ✅ **Wiped** | Prevents unauthorized API access. |
 | **Security** | Security PIN | ✅ **Wiped** | Forces next user to set their own PIN. |
-| **Security** | Session State | ✅ **Wiped** | Clears `is_authenticated` and `active_project_id`. |
+| **Security** | Session State | ✅ **Wiped** | Clears auth/session flags and staged QR type. |
 | **Security** | Clock State | ✅ **Wiped** | Resets `last_valid_wall_time` to prevent replay. |
 | **User Data** | User Profile | ✅ **Wiped** | Clears `user_data_$pid` (ID, Username). |
+| **QR Staging** | `auth_*`, `draft_*`, `qr_*` staged keys | ✅ **Wiped** | Prevents stale QR context leaking across rescans or users. |
 | **Project Data** | Blank Forms | ❌ **Preserved** | Bandwidth efficiency; shared team access. |
 | **Project Data** | Saved Instances | ❌ **Preserved** | Team visibility; shared device drafts. |
 | **Project Data** | Submitted History | ❌ **Preserved** | Local audit trail for device users. |
 | **Configuration** | Project URL/Name | ❌ **Preserved** | Simplifies re-login for the next user. |
 | **Configuration** | ODK Settings | ❌ **Preserved** | Maintains ODK core stability. |
-
----
-
-## 5. Related Tracking (Beads)
-
-The MEDRES customization uses an internal issue tracker named **Beads**. References like **`collect-cc3`** or **`collect-mtf`** in logs refer to specific feature requirements in this tracker.
-
----
