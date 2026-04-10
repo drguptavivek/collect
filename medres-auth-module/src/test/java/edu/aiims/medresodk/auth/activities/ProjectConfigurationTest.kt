@@ -17,6 +17,7 @@ import org.odk.collect.projects.SharedPreferencesProjectsRepository
 import org.odk.collect.settings.keys.MetaKeys
 import org.odk.collect.settings.keys.ProjectKeys
 import org.odk.collect.shared.strings.UUIDGenerator
+import java.net.URI
 
 /**
  * Tests for the Find-or-Create project pattern used in MedresLoginActivity.
@@ -95,6 +96,99 @@ class ProjectConfigurationTest {
         metaPrefs.edit().putString(MetaKeys.CURRENT_PROJECT_ID, targetProjectUuid).commit()
 
         return targetProjectUuid!!
+    }
+
+    /**
+     * Helper to simulate draft project materialization logic from MedresLoginActivity.
+     * Draft projects are isolated from production projects and reused by stable identity:
+     * server authority + Central project ID + form ID.
+     */
+    private fun findOrCreateDraftProject(
+        draftUrl: String,
+        displayName: String,
+        generalSettings: Map<String, Any> = emptyMap()
+    ): String {
+        val draftIdentity = extractDraftProjectIdentity(draftUrl)
+        var targetProjectUuid: String? = null
+
+        for (proj in projectsRepo.getAll()) {
+            val projPrefs = context.getSharedPreferences("general_prefs${proj.uuid}", Context.MODE_PRIVATE)
+            val projUrl = projPrefs.getString(ProjectKeys.KEY_SERVER_URL, null)
+            if (draftIdentity != null && draftIdentity == projUrl?.let { extractDraftProjectIdentity(it) }) {
+                targetProjectUuid = proj.uuid
+                if (proj.name != displayName) {
+                    projectsRepo.save(Project.Saved(proj.uuid, displayName, proj.icon, proj.color))
+                }
+                break
+            }
+        }
+
+        if (targetProjectUuid == null) {
+            targetProjectUuid = projectsRepo.save(
+                Project.New(displayName, "D", "#f0ad4e")
+            ).uuid
+        }
+
+        val projPrefs = context.getSharedPreferences("general_prefs$targetProjectUuid", Context.MODE_PRIVATE)
+        projPrefs.edit().apply {
+            putString(ProjectKeys.KEY_SERVER_URL, draftUrl)
+            putString(ProjectKeys.KEY_PROTOCOL, ProjectKeys.PROTOCOL_SERVER)
+            generalSettings.forEach { (key, value) ->
+                when (value) {
+                    is Boolean -> putBoolean(key, value)
+                    is String -> putString(key, value)
+                    is Int -> putInt(key, value)
+                    is Long -> putLong(key, value)
+                    is Float -> putFloat(key, value)
+                }
+            }
+            commit()
+        }
+
+        metaPrefs.edit().putString(MetaKeys.CURRENT_PROJECT_ID, targetProjectUuid).commit()
+        return targetProjectUuid
+    }
+
+    /**
+     * Simulates MedresLoginActivity main-login project selection behavior:
+     * - match by Central PID
+     * - exclude draft URLs (/test/.../draft)
+     */
+    private fun findMainProjectUuidByCentralPidExcludingDraft(centralPid: String): String? {
+        for (proj in projectsRepo.getAll()) {
+            val projPrefs = context.getSharedPreferences("general_prefs${proj.uuid}", Context.MODE_PRIVATE)
+            val url = projPrefs.getString(ProjectKeys.KEY_SERVER_URL, "") ?: ""
+            val isDraft = url.contains("/test/") && url.contains("/draft")
+            val pid = edu.aiims.medresodk.auth.utils.MedresProjectUtils.getProjectIdFromUrl(url)
+            if (!isDraft && pid == centralPid) {
+                return proj.uuid
+            }
+        }
+        return null
+    }
+
+    private fun extractDraftProjectIdentity(url: String): String? {
+        return try {
+            val uri = URI(url)
+            val pathSegments = uri.path.orEmpty()
+                .trimEnd('/')
+                .split("/")
+                .filter { it.isNotEmpty() }
+
+            val projectIdx = pathSegments.indexOf("projects")
+            val formIdx = pathSegments.indexOf("forms")
+            if (projectIdx < 0 || formIdx < 0 || projectIdx + 1 >= pathSegments.size || formIdx + 1 >= pathSegments.size) {
+                null
+            } else {
+                val projectId = pathSegments[projectIdx + 1]
+                val formId = pathSegments[formIdx + 1]
+                val authority = uri.authority ?: return null
+                val scheme = uri.scheme ?: "https"
+                "$scheme://$authority|$projectId|$formId"
+            }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     @Test
@@ -227,6 +321,65 @@ class ProjectConfigurationTest {
         assertThat(projectsRepo.get(teamAProject), notNullValue())
         assertThat(projectsRepo.get(teamBProject), notNullValue())
         assertThat(projectsRepo.get(teamCProject), notNullValue())
+    }
+
+    @Test
+    fun `draft token refresh reuses isolated draft project for same form`() {
+        val productionProject = findOrCreateProject("https://central.example.com/v1/projects/1")
+        val draftUrlV2 = "https://central.example.com/v1/test/TOKEN_V2/projects/1/forms/form_b/draft"
+        val draftUrlV3 = "https://central.example.com/v1/test/TOKEN_V3/projects/1/forms/form_b/draft"
+
+        val draftProjectV2 = findOrCreateDraftProject(
+            draftUrlV2,
+            "[Draft] Form B v2",
+            mapOf(ProjectKeys.KEY_FORM_UPDATE_MODE to "match_exactly")
+        )
+        val draftProjectV3 = findOrCreateDraftProject(
+            draftUrlV3,
+            "[Draft] Form B v3",
+            mapOf(ProjectKeys.KEY_AUTOSEND to "wifi_and_cellular")
+        )
+
+        assertThat(draftProjectV3, equalTo(draftProjectV2))
+        assertThat(draftProjectV3, not(equalTo(productionProject)))
+        assertThat(projectsRepo.getAll().size, equalTo(2))
+
+        val draftPrefs = context.getSharedPreferences("general_prefs$draftProjectV3", Context.MODE_PRIVATE)
+        assertThat(draftPrefs.getString(ProjectKeys.KEY_SERVER_URL, null), equalTo(draftUrlV3))
+        assertThat(draftPrefs.getString(ProjectKeys.KEY_AUTOSEND, null), equalTo("wifi_and_cellular"))
+    }
+
+    @Test
+    fun `different draft forms remain isolated from each other and production`() {
+        val productionProject = findOrCreateProject("https://central.example.com/v1/projects/1")
+        val draftFormA = findOrCreateDraftProject(
+            "https://central.example.com/v1/test/TOKEN_A/projects/1/forms/form_a/draft",
+            "[Draft] Form A"
+        )
+        val draftFormB = findOrCreateDraftProject(
+            "https://central.example.com/v1/test/TOKEN_B/projects/1/forms/form_b/draft",
+            "[Draft] Form B"
+        )
+
+        assertThat(draftFormA, not(equalTo(draftFormB)))
+        assertThat(draftFormA, not(equalTo(productionProject)))
+        assertThat(draftFormB, not(equalTo(productionProject)))
+        assertThat(projectsRepo.getAll().size, equalTo(3))
+    }
+
+    @Test
+    fun `main login selection ignores draft project with same central project id`() {
+        val mainUrl = "https://central.example.com/v1/projects/1"
+        val mainProject = findOrCreateProject(mainUrl)
+
+        // Create draft project for the same Central project ID
+        findOrCreateDraftProject(
+            "https://central.example.com/v1/test/TOKEN/projects/1/forms/form_b/draft",
+            "[Draft] Form B"
+        )
+
+        val selected = findMainProjectUuidByCentralPidExcludingDraft("1")
+        assertThat(selected, equalTo(mainProject))
     }
 
     // =============================================
