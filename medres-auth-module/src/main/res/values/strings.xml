@@ -81,6 +81,7 @@
     <string name="medres_button_ok">OK</string>
     <string name="medres_button_save">Save</string>
     <string name="medres_button_scan_qr_code">Scan QR Code</string>
+    <string name="medres_button_scan_new_qr">Scan New QR</string>
     <string name="medres_button_rescan_qr_code">Rescan QR Code</string>
     <string name="medres_button_work_offline_grace">Work Offline (Grace Period)</string>
     <string name="medres_button_grant_permissions">Grant Permissions</string>

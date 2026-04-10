@@ -35,6 +35,26 @@ The payload is:
 3. Base64 encoded
 4. Encoded into QR code
 
+## QR Type Semantics
+
+The same top-level JSON shape is used for multiple QR workflows, but the fields do not mean the same thing in every QR type.
+
+### MEDRES App-User / Project QR
+- `general.server_url` points to `/v1/projects/<ID>`
+- `project.project_id` is expected
+- `project.name` is persistent project metadata
+- This QR is used for normal project configuration and login
+
+### Draft / Demo QR
+- `general.server_url` points to `/v1/test/<TOKEN>/projects/<ID>/forms/<FORM_ID>/draft`
+- `project.project_id` is typically absent
+- `project.name` is a display label for the draft form context, usually prefixed with `[Draft]`
+- This QR is used for Demo Mode and must not overwrite the persistent MEDRES project identity
+
+### Standard ODK Managed QR
+- `general.server_url` points to `/v1/key/<TOKEN>/projects/<ID>`
+- This QR is incompatible with MEDRES auth and is rejected
+
 ---
 
 ## Behavior Comparison
@@ -67,6 +87,7 @@ The payload is:
 - 'Import Settings' option HIDDEN from Project Management
 - 'Delete Project' option HIDDEN from Project Management
 - Single project enforcement (no multi-project support)
+- Draft QR display metadata MUST NOT be materialized as the persistent MEDRES project name
 
 ---
 
@@ -132,14 +153,82 @@ private fun isMedresAuthEnabled(): Boolean {
 
 ---
 
-## Security Implications
+## Security Protections
+
+MEDRES implements defense-in-depth security for QR code processing:
+
+### 1. Payload Size Limits (DoS Prevention)
+
+| Limit | Value | Purpose |
+|-------|-------|---------|
+| **Compressed Payload** | 4KB (4096 bytes) | Prevents oversized QR codes |
+| **Decompressed Payload** | 16KB (16384 bytes) | Prevents decompression bombs |
+| **Compression Ratio** | 4:1 maximum | Blocks zip bomb attacks |
+
+**Attack Prevention:**
+- ❌ Oversized QR codes rejected before processing
+- ❌ Decompression bombs (4KB → gigabytes) blocked
+- ❌ Out of Memory (OOM) crashes prevented
+- ❌ App freeze/ANR attacks mitigated
+
+### 2. QR Type Detection (Intelligent Filtering)
+
+| QR Type | URL Pattern | Behavior | Reason |
+|---------|-------------|----------|--------|
+| **Standard ODK** | Contains `/key/` but NOT `/draft` AND `/test/` | **REJECTED** | Prevents accidental overwrite of ODK Central managed projects |
+| **Demo/Test** | Contains both `/draft` AND `/test/` | **ACCEPTED** (Demo Mode) | Allows testing without production credentials |
+| **MEDRES Project** | No `/key/` token | **ACCEPTED** (Normal) | Standard production login |
+
+### Draft Metadata Handling
+
+For Draft/Test QRs, the `project` object should be interpreted as **draft display metadata**, not as durable project identity:
+- `project.name` is the draft form label shown in Demo Mode
+- `project.icon` is presentation metadata
+- the real Central project id should be derived from the URL path
+- draft metadata must not rename or overwrite the persistent MEDRES project used for normal login
+
+### 3. Key Validation (Injection Prevention)
+
+**General Settings:**
+- Validated against `ProjectKeys` constants using reflection
+- Only known ODK settings keys are accepted
+- Invalid keys are logged and skipped
+
+**Admin Settings:**
+- Validated against `ProtectedProjectKeys.allKeys()`
+- Only boolean values accepted (admin flags)
+- Invalid keys are logged and skipped
+
+**Attack Prevention:**
+- ❌ Malicious key injection (`"evil_setting": "value"`)
+- ❌ SQL injection attempts
+- ❌ Path traversal attempts
+- ❌ Script injection attempts
+
+### 4. Sensitive Key Protection
+
+**Blocked from QR Override:**
+- `server_url` (handled separately by login logic)
+- `username` (handled separately by login logic)
+- `password` (never stored in QR)
+- `protocol` (enforced by app)
+
+**Purpose:**
+- ❌ Prevents credential theft via malicious QR
+- ❌ Prevents server hijacking
+- ❌ Prevents man-in-the-middle attacks
+
+### 5. Authentication Enforcement
 
 | Aspect | Protection |
 |--------|------------|
-| Authentication Bypass | QR cannot skip MEDRES login |
-| Session Hijacking | Tokens invalidated on server/project change |
-| Multi-project Attack | Single project enforcement |
-| Unauthorized Access | All auth flows go through MEDRES module |
+| **Authentication Bypass** | QR cannot skip MEDRES login |
+| **Session Hijacking** | Tokens invalidated on server/project change |
+| **Multi-project Attack** | Single project enforcement |
+| **Unauthorized Access** | All auth flows go through MEDRES module |
+| **Context Binding** | Settings only applied to matching Project ID |
+| **Post-Auth Execution** | Settings applied only after successful login |
+| **Draft Isolation** | Draft QR metadata is confined to Demo Mode and does not pollute production project identity |
 
 ---
 

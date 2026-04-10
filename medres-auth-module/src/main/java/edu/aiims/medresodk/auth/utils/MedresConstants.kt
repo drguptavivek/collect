@@ -32,11 +32,49 @@ object MedresConstants {
     const val KEY_API_VERSION = "api_version"
     const val KEY_DEV_SERVER_IP = "dev_server_ip" // DEBUG only - overrides base URL
 
-    // Auth Persistence Keys
+    // Auth Persistence Keys — MEDRES project QR staging
     const val KEY_AUTH_URL = "auth_url"
     const val KEY_AUTH_PROJECT_ID = "auth_project_id"
     const val KEY_AUTH_PROJECT_NAME = "auth_project_name"
+    const val KEY_AUTH_USERNAME_HINT = "auth_username_hint"
     const val KEY_QR_GENERAL_SETTINGS = "qr_general_settings"
+
+    // Typed staged QR context discriminator
+    const val KEY_STAGED_QR_TYPE = "staged_qr_type"
+    const val STAGED_QR_TYPE_MEDRES_PROJECT = "medres_project"
+    const val STAGED_QR_TYPE_DRAFT_FORM = "draft_form"
+
+    // Draft/Demo QR staging keys
+    const val KEY_DRAFT_URL = "draft_url"
+    const val KEY_DRAFT_PROJECT_ID = "draft_project_id"
+    const val KEY_DRAFT_FORM_ID = "draft_form_id"
+    const val KEY_DRAFT_DISPLAY_NAME = "draft_display_name"
+    const val KEY_DRAFT_DISPLAY_ICON = "draft_display_icon"
+    const val KEY_DRAFT_GENERAL_SETTINGS = "draft_general_settings"
+
+    // Session / security keys — cleared precisely on rescan
+    val SESSION_KEYS_TO_CLEAR = setOf(
+        KEY_AUTH_TOKEN,
+        KEY_USER_ID,
+        KEY_USER_EMAIL,
+        KEY_TOKEN_EXPIRY,
+        KEY_IS_AUTHENTICATED,
+        KEY_IS_SOFT_EXPIRY,
+        KEY_LAST_AUTH_TIMESTAMP,
+        KEY_STAGED_QR_TYPE,
+        KEY_AUTH_URL,
+        KEY_AUTH_PROJECT_ID,
+        KEY_AUTH_PROJECT_NAME,
+        KEY_AUTH_USERNAME_HINT,
+        KEY_QR_GENERAL_SETTINGS,
+        KEY_QR_ADMIN_SETTINGS,
+        KEY_DRAFT_URL,
+        KEY_DRAFT_PROJECT_ID,
+        KEY_DRAFT_FORM_ID,
+        KEY_DRAFT_DISPLAY_NAME,
+        KEY_DRAFT_DISPLAY_ICON,
+        KEY_DRAFT_GENERAL_SETTINGS
+    )
 
     // Feature Flags
     const val KEY_MEDRES_AUTH_ENABLED = "medres_auth_enabled"
