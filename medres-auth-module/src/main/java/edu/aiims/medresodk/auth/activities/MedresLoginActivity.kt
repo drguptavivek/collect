@@ -406,30 +406,6 @@ class MedresLoginActivity : MedresBaseActivity() {
         }
     }
 
-    private fun extractDraftProjectIdentity(url: String): String? {
-        return try {
-            val uri = URI(url)
-            val pathSegments = uri.path.orEmpty()
-                .trimEnd('/')
-                .split("/")
-                .filter { it.isNotEmpty() }
-
-            val projectIdx = pathSegments.indexOf("projects")
-            val formIdx = pathSegments.indexOf("forms")
-            if (projectIdx < 0 || formIdx < 0 || projectIdx + 1 >= pathSegments.size || formIdx + 1 >= pathSegments.size) {
-                return null
-            }
-
-            val projectId = pathSegments[projectIdx + 1]
-            val formId = pathSegments[formIdx + 1]
-            val authority = uri.authority ?: return null
-            val scheme = uri.scheme ?: "https"
-            "$scheme://$authority|$projectId|$formId"
-        } catch (_: Exception) {
-            null
-        }
-    }
-
 
     private fun showProjectMissingState() {
         binding.statusText.text = getString(edu.aiims.medresodk.auth.R.string.medres_no_project_configured)
