@@ -19,9 +19,11 @@ import edu.aiims.medresodk.auth.databinding.ActivityMedresLoginBinding
 import edu.aiims.medresodk.auth.injection.MedresAuthDependencyComponentProvider
 import edu.aiims.medresodk.auth.managers.MedresAuthManager
 import edu.aiims.medresodk.auth.utils.MedresProjectUtils
+import edu.aiims.medresodk.auth.utils.MedresSettingsValidator
 import edu.aiims.medresodk.auth.utils.PinManager
 import edu.aiims.medresodk.auth.utils.TokenRevocationManager
 import edu.aiims.medresodk.auth.analytics.MedresAppAnalytics
+import java.net.URI
 import javax.inject.Inject
 
 /**
@@ -39,9 +41,10 @@ class MedresLoginActivity : MedresBaseActivity() {
     private var currentSystemProjectId: String? = null // ODK's internal UUID
     private var centralProjectId: String? = null // Central's integer ID
     private var serverUrl: String? = null
-    
+
     // Re-authentication mode flag (used for token refresh flow)
     private var isReauthMode = false
+
 
     override fun injectDependencies() {
         (application as MedresAuthDependencyComponentProvider).medresAuthDependencyComponent.inject(this)
@@ -117,7 +120,7 @@ class MedresLoginActivity : MedresBaseActivity() {
             authManager.authState.collect { state ->
                 when (state) {
                     edu.aiims.medresodk.auth.managers.AuthState.LOGGED_IN -> {
-                        // Skip auto-navigation if in re-auth mode - user must enter password first
+                        // Skip auto-navigation if in re-auth mode — user must enter password first
                         if (!isReauthMode) {
                             navigateToMain()
                         }
@@ -288,6 +291,7 @@ class MedresLoginActivity : MedresBaseActivity() {
     private fun ensureDraftProjectConfigured(
         staged: edu.aiims.medresodk.auth.qr.StagedDraftFormContext
     ) {
+        val stagedDraftIdentity = extractDraftProjectIdentity(staged.originalDraftUrl)
         val uuidGenerator = org.odk.collect.shared.strings.UUIDGenerator()
         val gson = com.google.gson.Gson()
         val metaPrefs = getSharedPreferences("meta", Context.MODE_PRIVATE)
@@ -303,7 +307,8 @@ class MedresLoginActivity : MedresBaseActivity() {
         for (proj in projectsRepo.getAll()) {
             val projPrefs = getSharedPreferences("general_prefs${proj.uuid}", Context.MODE_PRIVATE)
             val projUrl = projPrefs.getString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, null)
-            if (projUrl == staged.originalDraftUrl) {
+            val existingDraftIdentity = projUrl?.let { extractDraftProjectIdentity(it) }
+            if (stagedDraftIdentity != null && stagedDraftIdentity == existingDraftIdentity) {
                 targetUuid = proj.uuid
                 val displayName = staged.displayName ?: ""
                 if (displayName.isNotEmpty() && proj.name != displayName) {
@@ -331,13 +336,41 @@ class MedresLoginActivity : MedresBaseActivity() {
         }
 
         val projPrefs = getSharedPreferences("general_prefs$targetUuid", Context.MODE_PRIVATE)
-        projPrefs.edit()
-            .putString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, staged.originalDraftUrl)
-            .putString(
+        val generalJson = org.json.JSONObject(staged.generalSettingsJson)
+        projPrefs.edit().apply {
+            putString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, staged.originalDraftUrl)
+            putString(
                 org.odk.collect.settings.keys.ProjectKeys.KEY_PROTOCOL,
                 org.odk.collect.settings.keys.ProjectKeys.PROTOCOL_SERVER
             )
-            .commit()
+
+            val keysIterator = generalJson.keys()
+            while (keysIterator.hasNext()) {
+                val key = keysIterator.next()
+                if (!MedresSettingsValidator.isValidGeneralKey(key)) {
+                    android.util.Log.w("MedresLogin", "Ignoring invalid draft general key from QR: $key")
+                    continue
+                }
+
+                if (key == org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL ||
+                    key == org.odk.collect.settings.keys.ProjectKeys.KEY_PROTOCOL ||
+                    key == org.odk.collect.settings.keys.ProjectKeys.KEY_USERNAME ||
+                    key == org.odk.collect.settings.keys.ProjectKeys.KEY_PASSWORD) {
+                    continue
+                }
+
+                val value = generalJson.get(key)
+                when (value) {
+                    is Boolean -> putBoolean(key, value)
+                    is String -> putString(key, value)
+                    is Int -> putInt(key, value)
+                    is Long -> putLong(key, value)
+                    is Double -> putFloat(key, value.toFloat())
+                    else -> putString(key, value.toString())
+                }
+            }
+            commit()
+        }
 
         metaSettings.save(org.odk.collect.settings.keys.MetaKeys.CURRENT_PROJECT_ID, targetUuid)
         currentSystemProjectId = targetUuid
@@ -345,7 +378,32 @@ class MedresLoginActivity : MedresBaseActivity() {
         centralProjectId = staged.centralProjectId
 
         authManager.setActiveProject(staged.centralProjectId)
-        authManager.setProjectMapping(staged.centralProjectId, targetUuid)
+        // Do not overwrite the production central->ODK mapping with a draft project UUID.
+        // Draft and production can share Central projectId but must stay isolated locally.
+    }
+
+    private fun extractDraftProjectIdentity(url: String): String? {
+        return try {
+            val uri = URI(url)
+            val pathSegments = uri.path.orEmpty()
+                .trimEnd('/')
+                .split("/")
+                .filter { it.isNotEmpty() }
+
+            val projectIdx = pathSegments.indexOf("projects")
+            val formIdx = pathSegments.indexOf("forms")
+            if (projectIdx < 0 || formIdx < 0 || projectIdx + 1 >= pathSegments.size || formIdx + 1 >= pathSegments.size) {
+                return null
+            }
+
+            val projectId = pathSegments[projectIdx + 1]
+            val formId = pathSegments[formIdx + 1]
+            val authority = uri.authority ?: return null
+            val scheme = uri.scheme ?: "https"
+            "$scheme://$authority|$projectId|$formId"
+        } catch (_: Exception) {
+            null
+        }
     }
 
 
@@ -414,7 +472,8 @@ class MedresLoginActivity : MedresBaseActivity() {
                         // Only materialize ODK project for a MEDRES project QR.
                         // Draft QRs never go through login → never reach this path.
                         if (stagedCtx is edu.aiims.medresodk.auth.qr.StagedMedresProjectContext &&
-                            stagedCtx.centralProjectId == pid
+                            stagedCtx.centralProjectId == pid &&
+                            !isDraftLikeUrl(stagedCtx.authBaseUrl)
                         ) {
                             // Initialize ODK Repositories
                             val uuidGenerator = org.odk.collect.shared.strings.UUIDGenerator()
@@ -433,7 +492,10 @@ class MedresLoginActivity : MedresBaseActivity() {
                             for (proj in allProjects) {
                                 val projPrefs = getSharedPreferences("general_prefs${proj.uuid}", Context.MODE_PRIVATE)
                                 val projUrl = projPrefs.getString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, "") ?: ""
-                                if (edu.aiims.medresodk.auth.utils.MedresProjectUtils.getProjectIdFromUrl(projUrl) == pid) {
+                                val isDraftProjectUrl =
+                                    projUrl.contains("/test/") && projUrl.contains("/draft")
+                                if (!isDraftProjectUrl &&
+                                    edu.aiims.medresodk.auth.utils.MedresProjectUtils.getProjectIdFromUrl(projUrl) == pid) {
                                     targetUuid = proj.uuid
 
                                     // Use typed staged project name — durable identity from QR metadata
@@ -525,6 +587,13 @@ class MedresLoginActivity : MedresBaseActivity() {
 
                             // Update local activity state for UI
                             serverUrl = projPrefs.getString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, null)
+                        } else if (stagedCtx is edu.aiims.medresodk.auth.qr.StagedMedresProjectContext &&
+                            isDraftLikeUrl(stagedCtx.authBaseUrl)
+                        ) {
+                            android.util.Log.w(
+                                "MedresLogin",
+                                "Blocked main materialization for draft-like staged auth URL: ${stagedCtx.authBaseUrl}"
+                            )
                         }
                     } catch (e: Exception) {
                         android.util.Log.e("MedresLogin", "Failed to setup ODK project after login", e)
@@ -583,6 +652,11 @@ class MedresLoginActivity : MedresBaseActivity() {
         // Launch MEDRES QR Scanner Activity
         val intent = Intent(this, edu.aiims.medresodk.auth.activities.MedresQrScannerActivity::class.java)
         startActivity(intent)
+    }
+
+    private fun isDraftLikeUrl(url: String?): Boolean {
+        val safe = url ?: return false
+        return safe.contains("/test/") && safe.contains("/draft")
     }
 
     override fun onBackPressed() {
