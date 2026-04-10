@@ -39,7 +39,6 @@ class AuthSettingsActivity : MedresBaseActivity() {
         val saveLogsButton: com.google.android.material.button.MaterialButton = findViewById(edu.aiims.medresodk.auth.R.id.save_logs_button)
         val refreshTokenButton: com.google.android.material.button.MaterialButton = findViewById(edu.aiims.medresodk.auth.R.id.refresh_token_button)
         val logoutButton: com.google.android.material.button.MaterialButton = findViewById(edu.aiims.medresodk.auth.R.id.logout_button)
-        val scanDemoQrButton: com.google.android.material.button.MaterialButton = findViewById(edu.aiims.medresodk.auth.R.id.scan_demo_qr_button)
 
         // Set up click listeners
         getProjectDetailsButton.setOnClickListener {
@@ -66,10 +65,6 @@ class AuthSettingsActivity : MedresBaseActivity() {
             logout()
         }
 
-        scanDemoQrButton.setOnClickListener {
-            launchNativeQrScanner()
-        }
-
         // Device ID click to copy
         deviceIdText.setOnClickListener {
             val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
@@ -89,17 +84,15 @@ class AuthSettingsActivity : MedresBaseActivity() {
     }
 
     private fun exportLogs() {
-        val progressDialog = android.app.ProgressDialog.show(
-            this,
-            null,
-            getString(edu.aiims.medresodk.auth.R.string.medres_exporting_logs),
-            true
+        val loadingDialog = createLoadingDialog(
+            getString(edu.aiims.medresodk.auth.R.string.medres_exporting_logs)
         )
+        loadingDialog.show()
 
         lifecycleScope.launch {
             val zipFile = edu.aiims.medresodk.auth.utils.LogExporter.exportLogs(this@AuthSettingsActivity, settingsProvider)
             
-            progressDialog.dismiss()
+            loadingDialog.dismiss()
 
             if (zipFile != null) {
                 shareLogFile(zipFile)
@@ -114,19 +107,17 @@ class AuthSettingsActivity : MedresBaseActivity() {
     }
 
     private fun saveLogs() {
-        val progressDialog = android.app.ProgressDialog.show(
-            this,
-            null,
-            getString(edu.aiims.medresodk.auth.R.string.medres_exporting_logs),
-            true
+        val loadingDialog = createLoadingDialog(
+            getString(edu.aiims.medresodk.auth.R.string.medres_exporting_logs)
         )
+        loadingDialog.show()
 
         lifecycleScope.launch {
             val zipFile = edu.aiims.medresodk.auth.utils.LogExporter.exportLogs(this@AuthSettingsActivity, settingsProvider)
             
             if (zipFile != null) {
                 val success = edu.aiims.medresodk.auth.utils.LogExporter.saveToDownloads(this@AuthSettingsActivity, zipFile)
-                progressDialog.dismiss()
+                loadingDialog.dismiss()
 
                 if (success) {
                     android.widget.Toast.makeText(
@@ -142,7 +133,7 @@ class AuthSettingsActivity : MedresBaseActivity() {
                     ).show()
                 }
             } else {
-                progressDialog.dismiss()
+                loadingDialog.dismiss()
                 android.widget.Toast.makeText(
                     this@AuthSettingsActivity,
                     getString(edu.aiims.medresodk.auth.R.string.medres_no_logs_found),
@@ -206,7 +197,10 @@ class AuthSettingsActivity : MedresBaseActivity() {
             authManager.currentUser.collect { user ->
                 user?.let {
                     // Get project name from storage (fetched during login)
-                    val projectName = getSharedPreferences("medres_auth", MODE_PRIVATE)
+                    val projectName = getSharedPreferences(
+                        edu.aiims.medresodk.auth.utils.MedresConstants.MEDRES_PREFS_NAME,
+                        MODE_PRIVATE
+                    )
                         .getString("project_name_${it.projectId}", null) ?: it.projectId
                     
                     // Get base API URL for display
@@ -310,24 +304,23 @@ class AuthSettingsActivity : MedresBaseActivity() {
 
     private fun showProjectDetails() {
         lifecycleScope.launch {
-            var progressDialog: android.app.ProgressDialog? = null
+            var loadingDialog: androidx.appcompat.app.AlertDialog? = null
             
             try {
-                progressDialog = android.app.ProgressDialog.show(
-                    this@AuthSettingsActivity,
-                    "Loading",
-                    "Fetching project details...",
-                    true
-                )
+                loadingDialog = createLoadingDialog("Fetching project details...")
+                loadingDialog.show()
 
                 val success = authManager.fetchAndUpdateProjectDetails(this@AuthSettingsActivity)
                 
-                progressDialog.dismiss()
+                loadingDialog.dismiss()
 
                 if (success) {
                     // Fetch the updated name from manager or prefs
                     authManager.currentUser.value?.let { user ->
-                         val projectName = getSharedPreferences("medres_auth_prefs", MODE_PRIVATE)
+                         val projectName = getSharedPreferences(
+                            edu.aiims.medresodk.auth.utils.MedresConstants.MEDRES_PREFS_NAME,
+                            MODE_PRIVATE
+                        )
                             .getString("project_name_${user.projectId}", user.projectId)
                          
                          android.app.AlertDialog.Builder(this@AuthSettingsActivity)
@@ -335,19 +328,57 @@ class AuthSettingsActivity : MedresBaseActivity() {
                             .setMessage("Project Name: $projectName\n\nSuccessfully updated from server.")
                             .setPositiveButton("OK", null)
                             .show()
+                    } ?: run {
+                        android.app.AlertDialog.Builder(this@AuthSettingsActivity)
+                            .setTitle("Project Details")
+                            .setMessage("Project details were refreshed, but there is no active authenticated user context to display.")
+                            .setPositiveButton("OK", null)
+                            .show()
                     }
                 } else {
                     android.app.AlertDialog.Builder(this@AuthSettingsActivity)
                         .setTitle("Update Failed")
-                        .setMessage("Could not fetch project details. Please check your connection.")
+                        .setMessage("Could not fetch project details. Make sure you are logged in to a normal MEDRES project and that the server is reachable.")
                         .setPositiveButton("OK", null)
                         .show()
                 }
             } catch (e: Exception) {
-                progressDialog?.dismiss()
+                loadingDialog?.dismiss()
                 android.widget.Toast.makeText(this@AuthSettingsActivity, "Error: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun createLoadingDialog(message: String): androidx.appcompat.app.AlertDialog {
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            setPadding(48, 40, 48, 40)
+            gravity = android.view.Gravity.CENTER_VERTICAL
+        }
+
+        val progressBar = android.widget.ProgressBar(this).apply {
+            isIndeterminate = true
+        }
+
+        val messageView = TextView(this).apply {
+            text = message
+            setPadding(32, 0, 0, 0)
+        }
+
+        container.addView(progressBar)
+        container.addView(
+            messageView,
+            android.widget.LinearLayout.LayoutParams(
+                0,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+        )
+
+        return com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setView(container)
+            .setCancelable(false)
+            .create()
     }
 
     private fun refreshToken() {
@@ -398,13 +429,4 @@ class AuthSettingsActivity : MedresBaseActivity() {
         }
     }
 
-    private fun launchNativeQrScanner() {
-        try {
-            val intent = Intent()
-            intent.setClassName(this, "org.odk.collect.android.configure.qr.QRCodeTabsActivity")
-            startActivity(intent)
-        } catch (e: Exception) {
-            android.widget.Toast.makeText(this, "Could not launch QR Scanner: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
-        }
-    }
 }

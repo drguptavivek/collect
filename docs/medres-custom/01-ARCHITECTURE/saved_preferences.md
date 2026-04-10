@@ -1,7 +1,7 @@
 # MEDRES Preferences & Persistence
 
-> Last Updated: 2025-12-31
-> Reviewed At: 2025-12-31
+> Last Updated: 2026-04-10
+> Reviewed At: 2026-04-10
 
 This document details the configuration and persistence settings for the MEDRES customization of ODK Collect. It explains how settings are initialized, updated, and managed throughout the application lifecycle.
 
@@ -29,29 +29,32 @@ The application uses a combination of custom MEDRES-specific SharedPreferences a
 
 This file is managed by both `MedresAuthManager` (for project-specific metadata) and `MedresSecureStorageImpl` (for global non-sensitive state).
 
-#### Global State & Flags
+#### Global State (Non-sensitive)
 | Key | Purpose |
 | :--- | :--- |
-| `active_project_id` | Tracks the currently active Central Project ID (User Context). |
-| `is_soft_expiry` | `true`/`false` - Flag for incomplete expiry (Grace Period UI). |
-| `last_soft_expiry_dismissal` | Timestamp (Long) - Tracks when user last snoozed the expiry warning. |
-| `medres_auth_enabled` | `true`/`false` - Feature flag globally enabling Medres Auth. |
-| `first_launch` | Flag to trigger the setup/QR scanning flow. |
-| `dev_server_ip` | [Debug] Overrides base URL for local testing (e.g., 10.0.2.2). |
-| `user_id` | Current user's identifier string (non-sensitive). |
-| `user_name` | Current username for display. |
-| `is_authenticated` | Simple boolean for UI logic/navigation (Legacy). |
+| `is_authenticated` | Simple boolean for UI logic/navigation. |
 | `last_auth_timestamp` | Timestamp of the last successful login. |
+| `first_launch` | Flag to trigger the setup/QR scanning flow. |
+| `active_project_id` | Tracks the currently selected Central Project ID. |
 
 #### Staged Configuration (From QR)
 | Key | Purpose |
 | :--- | :--- |
-| `auth_url` | The base API URL for the Central server (Staged). |
-| `auth_project_id` | The target Project ID on the Central server (Staged). |
-| `auth_project_name` | The project name from the QR JSON (Staged for Login UI). |
-| `qr_general_settings` | Raw JSON of ODK settings to apply later. |
+| `staged_qr_type` | Typed discriminator for staged QR context. Values: `medres_project`, `draft_form`. |
+| `auth_url` | Base API URL for MEDRES project login flow. |
+| `auth_project_id` | Target Central Project ID for MEDRES project login flow. |
+| `auth_project_name` | Persistent project name staged from MEDRES project QR. |
+| `auth_username_hint` | Optional username hint shown on login UI. |
+| `qr_general_settings` | Raw JSON of non-sensitive ODK project settings to apply after successful login. |
+| `qr_admin_settings` | Raw JSON of admin settings to apply after successful login. |
+| `draft_url` | Full draft/test URL preserved exactly as scanned. |
+| `draft_project_id` | Project ID derived from the draft URL path. |
+| `draft_form_id` | Form ID derived from the draft URL path. |
+| `draft_display_name` | Draft form label shown in the UI. This is display-only metadata. |
+| `draft_display_icon` | Optional draft icon from QR metadata. |
+| `draft_general_settings` | General settings bundled with a draft QR. Used only for draft testing context. |
 
-#### Project-Specific Metadata (Legacy/Helper)
+#### Project-Specific Metadata
 | Key Pattern | Purpose |
 | :--- | :--- |
 | `user_data_$pid` | JSON blob with user details (ID, Username, Expiry). |
@@ -61,19 +64,17 @@ This file is managed by both `MedresAuthManager` (for project-specific metadata)
 
 ### B. MEDRES Secure Storage (`medres_auth_secure`)
 
-Encrypted storage for sensitive credentials and security metadata. Managed by `MedresSecureStorageImpl` (AES-256-GCM).
+Encrypted storage for sensitive credentials and security metadata. Managed by `MedresSecureStorageImpl`.
 
 | Key | Purpose |
 | :--- | :--- |
 | `auth_token` | The Bearer JWT used for all API requests. |
-| `token_expiry` | ISO 8601 Date / Long - Expiration timestamp for the current token. |
+| `token_expiry` | Milliseconds timestamp of when the token expires. |
 | `pin_hash` | PBKDF2-HMAC-SHA1 hash of the security PIN. |
 | `pin_salt` | Unique salt used for the PIN hash. |
 | `pin_attempts` | Counter for failed PIN entries. |
 | `last_pin_attempt` | Timestamp of the last failed PIN entry (for lockout). |
 | `project_id` | Validates that the token matches the active project. |
-| `biometric_enabled` | [Reserved/Future] `true`/`false` - if Biometric Unlock is active. |
-| `biometric_key_alias` | Alias for the Keystore key used for biometric checks. |
 
 #### Clock Validation (Encrypted)
 | Key | Purpose |
@@ -82,215 +83,6 @@ Encrypted storage for sensitive credentials and security metadata. Managed by `M
 | `last_elapsed_realtime` | Monotonic time anchor for wall time verification. |
 | `server_time_offset_ms` | Calculated skew between device and server time. |
 | `clock_manipulation_detected` | Flag indicating persistent clock mismatch. |
-
-### C. Standard ODK Preferences (Integration)
-
-These are standard ODK Collect keys that MEDRES manages to maintain compatibility.
-
-#### `meta` (Global State)
-| Key | Description | MEDRES Integration |
-| :--- | :--- | :--- |
-| `metadata_installid` | Unique Device ID. | Used as `deviceId` for MEDRES Telemetry. |
-| `current_project_id` | UUID of Active Project. | MEDRES updates this upon login to switch context. |
-| `projects` | JSON List of Projects. | MEDRES manipulates this to create/update projects. |
-
-#### `general_prefs` (Per-Project Settings)
-| Key | Description | MEDRES Integration |
-| :--- | :--- | :--- |
-| `server_url` | ODK Server URL. | **CRITICAL**: MEDRES injects the tokenized URL here: `.../v1/key/<TOKEN>/...` |
-| `username` | ODK Username. | Synced from MEDRES login (for metadata/form submission). |
-| `password` | ODK Password. | Synced from MEDRES login. |
-| `protocol` | Server Protocol. | MEDRES enforces `odk_default`. |
-| `form_update_mode` | Update Policy. | Applied from `qr_general_settings` during setup. |
-
-### D. User-Modifiable Project Settings (Detailed Reference)
-
-These settings are accepted in the `qr_general_settings` JSON and are saved per-project in `general_prefs_{UUID}`.
-
-| Setting Name | Key | Valid Options (Internal Value) |
-| :--- | :--- | :--- |
-| **Blank Form Update Mode** | `form_update_mode` | • Manual (`manual`)<br>• Previously Downloaded Only (`previously_downloaded_only`)<br>• Exactly Match Server (`match_exactly`) |
-| **Auto Update Frequency** | `periodic_form_updates_check` | • Every 15 min (`every_fifteen_minutes`)<br>• Every hour (`every_one_hour`)<br>• Every 6 hours (`every_six_hours`)<br>• Every 24 hours (`every_24_hours`) |
-| **Automatic Download** | `automatic_update` | • Enabled (`true`)<br>• Disabled (`false`) |
-| **Hide Old Versions** | `hide_old_form_versions` | • Enabled (`true`)<br>• Disabled (`false`) |
-| **Auto Send** | `autosend` | • Off (`off`)<br>• Wifi Only (`wifi_only`)<br>• Cellular Only (`cellular_only`)<br>• Wifi or Cellular (`wifi_and_cellular`) |
-| **Delete After Send** | `delete_send` | • Enabled (`true`)<br>• Disabled (`false`) |
-| **Navigation** | `navigation` | • Horizontal Swipes (`swipe`)<br>• Forward/Back Buttons (`buttons`)<br>• Swipes & Buttons (`swipe_buttons`) |
-| **Constraint Processing** | `constraint_behavior` | • Validate on Swipe (`on_swipe`)<br>• Defer to Finalize (`on_finalize`) |
-| **Font Size** | `font_size` | • Extra Small (`13`)<br>• Small (`17`)<br>• Medium (`21`)<br>• Large (`25`)<br>• Extra Large (`29`) |
-| **App Language** | `app_language` | standard BCP 47 language code (e.g., `en`, `es`, `fr`, `hi`) |
-| **Image Size** | `image_size` | • Original (`original_image_size`)<br>• Very Small (`very_small`)<br>• Small (`small`)<br>• Medium (`medium`)<br>• Large (`large`) |
-| **High Res Video** | `high_resolution` | • Enabled (`true`)<br>• Disabled (`false`) |
-| **Guidance Hints** | `guidance_hint` | • No (`no`)<br>• Yes (`yes`)<br>• Collapsed (`yes_collapsed`) |
-| **External Audio Rec** | `external_app_recording` | • Enabled (`true`)<br>• Disabled (`false`) |
-| **Instance Sync** | `instance_sync` | • Enabled (`true`)<br>• Disabled (`false`) (Finalize forms on import) |
-| **Form Metadata** | `form_metadata` | • Enabled (`true`)<br>• Disabled (`false`) |
-| **Basemap Source** | `basemap_source` | • Google (`google`)<br>• Mapbox (`mapbox`)<br>• OpenStreetMap (`osm`)<br>• USGS (`usgs`)<br>• Carto (`carto`) |
-
-> **Note**: While ODK allows changing Server settings here, MEDRES users are generally expected to use the **Login Flow** or **QR Scan** to configure server details safely.
-
-### E. Admin Access Control Keys (Protected Settings)
-
-These settings are part of the `admin` object in the QR code or `admin_prefs`. They allow administrators to hide specific buttons or settings from the user, effectively "locking" the application.
-
-| Category | Capability / Setting | Admin Key | Values |
-| :--- | :--- | :--- | :--- |
-| **Main Menu** | Edit Saved Form | `edit_saved` | `true`/`false` |
-| **Main Menu** | Send Finalized Form | `send_finalized` | `true`/`false` |
-| **Main Menu** | View Sent Form | `view_sent` | `true`/`false` |
-| **Main Menu** | Get Blank Form | `get_blank` | `true`/`false` |
-| **Main Menu** | Delete Saved Form | `delete_saved` | `true`/`false` |
-| **User Settings** | Server Settings | `change_server` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Project Display | `change_project_display` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | App Language | `change_app_language` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Font Size | `change_font_size` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Navigation | `change_navigation` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Map Settings | `maps` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Form Update Mode | `form_update_mode` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Auto Update Freq | `periodic_form_updates_check` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Auto Download | `automatic_update` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Hide Old Versions | `hide_old_form_versions` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Auto Send | `change_autosend` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Delete After Send | `delete_after_send` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Constraint Processing | `change_constraint_behavior` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | High Res Video | `high_resolution` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Image Size | `image_size` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Guidance Hints | `guidance_hint` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | External Audio Rec | `external_app_recording` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Instance Sync | `instance_form_sync` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Form Metadata | `change_form_metadata` | `true` (Editable) / `false` (Locked) |
-| **User Settings** | Analytics | `analytics` | `true` (Editable) / `false` (Locked) |
-| **Form Entry** | Moving Backwards | `moving_backwards` | `true` (Allowed) / `false` (Prevented) |
-| **Form Entry** | Access Settings | `access_settings` | `true` (Visible) / `false` (Hidden) |
-| **Form Entry** | Change Language | `change_language` | `true` (Visible) / `false` (Hidden) |
-| **Form Entry** | Go To Prompt | `jump_to` | `true` (Visible) / `false` (Hidden) |
-| **Form Entry** | Save as Draft | `save_mid` | `true` (Visible) / `false` (Hidden) |
-| **Form Entry** | Save as Draft (Exit) | `save_as_draft` | `true` (Visible) / `false` (Hidden) |
-| **Form Entry** | Finalize | `finalize_in_form_entry` | `true` (Visible) / `false` (Hidden) |
-| **Form Entry** | Bulk Finalize | `bulk_finalize` | `true` (Visible) / `false` (Hidden) |
-
-### F. Recommended Admin Configuration for MEDRES
-
-To ensure system integrity, compliance with isolation policies, and a simplified user experience, it is **highly recommended** to lock specific settings in the QR code generation.
-
-#### Critical Security Locks (MUST LOCK)
-| Blocked Capability | Admin Key | Value | Reason |
-| :--- | :--- | :--- | :--- |
-| **Change Server** | `change_server` | `false` | Prevents users from pointing the app to unauthorized servers or untokenized URLs. |
-| **Change Identity** | `change_form_metadata` | `false` | Ensures submitted data is reliably attributed to the logged-in user (synced from auth). |
-| **Reset Project** | `change_project_display` | `false` | Prevents users from renaming the project or changing its icon/color, ensuring consistent branding. |
-| **Access Settings** | `access_settings` | `false` | Hides the "Settings" menu entirely to prevent any tampering. (Optional: Lock individual items instead if some settings are needed). |
-
-#### Workflow Integrity Locks (SHOULD LOCK)
-| Blocked Capability | Admin Key | Value | Reason |
-| :--- | :--- | :--- | :--- |
-| **Disable Autosend** | `change_autosend` | `false` | Enforces the "Auto Send" policy (e.g., Wifi Only) to ensure data reaches the server timely. |
-| **Delete Saved Forms** | `delete_saved` | `false` | **Crucial**: Blocks the entire "Delete Saved Form" interface. This prevents deleting Key Execution Data (Sent Forms/Audit Trail) and Blank Forms. <br>*(Note: This also prevents deleting Drafts, as ODK does not support granular deletion permissions).* |
-| **Manual Updates** | `form_update_mode` | `false` | If using "Match Exactly", prevents users from switching to Manual or interfering with sync. |
-| **Check Frequency** | `periodic_form_updates_check` | `false` | Enforces the standard update interval (e.g., Every 15 minutes). |
-
-#### JSON Snippet for ODK Central
-When generating a QR code (or editing the JSON directly), include these keys in the `admin` object:
-
-```json
-"admin": {
-    "change_server": false,
-    "change_project_display": false,
-    "change_form_metadata": false,
-    "change_autosend": false,
-    "delete_saved": false,
-    "periodic_form_updates_check": false,
-    "form_update_mode": false,
-    "access_settings": false
-}
-```
-
-### G. Unified Configuration Reference (Master Table)
-
-This table consolidates the application settings, their valid values, recommended MEDRES configuration, and the corresponding Admin Control to enforce these choices.
-
-| App Setting (General Key) | Possible Values (Internal) | Recommended Value | Admin Control Key | Admin Option (Lock) |
-| :--- | :--- | :--- | :--- | :--- |
-| **Server URL**<br>`server_url` | Any valid URL | *Dynamic (Injected)* | `change_server` | `false` (Locked) |
-| **Project Identity**<br>`form_metadata` | `true`, `false` | `false` (Managed by Login) | `change_form_metadata` | `false` (Locked) |
-| **Project Display**<br>`project_name`, `icon` | String | *Dynamic (From Login)* | `change_project_display` | `false` (Locked) |
-| **Auto Send**<br>`autosend` | • `off`<br>• `wifi_only`<br>• `cellular_only`<br>• `wifi_and_cellular` | `wifi_and_cellular` | `change_autosend` | `true` (Unlocked) |
-| **Delete After Send**<br>`delete_send` | `true`, `false` | `true` (Clean up forms) | `delete_after_send` *(User Settings)* | `false` (Locked) |
-| **Delete Saved Forms**<br>N/A | N/A | N/A | `delete_saved` *(Main Menu)* | `false` (Locked) |
-| **Form Update Mode**<br>`form_update_mode` | • `manual`<br>• `previously_downloaded`<br>• `match_exactly` | `match_exactly` | `form_update_mode` | `false` (Locked) |
-| **Update Frequency**<br>`periodic_form_updates_check` | • `every_fifteen_minutes`<br>• `every_one_hour`<br>• `every_six_hours`<br>• `every_24_hours` | `every_fifteen_minutes` | `periodic_form_updates_check` | `false` (Locked) |
-| **Auto Download**<br>`automatic_update` | `true`, `false` | `true` | `automatic_update` | `false` (Locked) |
-| **Hide Old Versions**<br>`hide_old_form_versions` | `true`, `false` | `true` | `hide_old_form_versions` | `false` (Locked) |
-| **Constraint Processing**<br>`constraint_behavior` | • `on_swipe`<br>• `on_finalize` | `on_swipe` | `change_constraint_behavior` | `false` (Locked) |
-| **Navigation**<br>`navigation` | • `swipe`<br>• `buttons`<br>• `swipe_buttons` | `swipe` | `change_navigation` | `true` (Unlocked) |
-| **Guidance Hints**<br>`guidance_hint` | • `yes`<br>• `yes_collapsed`<br>• `no` | `yes` | `guidance_hint` | `true` (Unlocked) |
-| **Image Size**<br>`image_size` | • `original_image_size`<br>• `large` (3072px)<br>• `medium` (2048px)<br>• `small` (1024px)<br>• `very_small` (640px) | `medium` (2048px) | `image_size` | `false` (Locked) |
-| **High Res Video**<br>`high_resolution` | `true`, `false` | `true` | `high_resolution` | `false` (Locked) |
-| **External Audio Rec**<br>`external_app_recording` | `true`, `false` | `false` | `external_app_recording` | `false` (Locked) |
-| **Instance Sync**<br>`instance_sync` | `true`, `false` | `true` | `instance_form_sync` | `false` (Locked) |
-| **Analytics**<br>`analytics` | `true`, `false` | `false` (Anonymous Usage Data) | `analytics` | `false` (Locked) |
-| **Maps**<br>`basemap_source` | `google`, `mapbox`, `osm`, etc. | `google` | `maps` | `false` (Locked) |
-
-#### Master JSON Snippet (Copy-Paste)
-
-This JSON object includes the **Recommended General Settings** (including Auto-Delete and Medium Images) matched with the **Locked Admin Controls** (allowing Autosend, Navigation, and Guidance changes).
-
-```json
-{
-  "general": {
-    "autosend": "wifi_and_cellular",
-    "delete_send": true,
-    "form_update_mode": "match_exactly",
-    "periodic_form_updates_check": "every_fifteen_minutes",
-    "automatic_update": true,
-    "hide_old_form_versions": true,
-    "constraint_behavior": "on_swipe",
-    "navigation": "swipe",
-    "guidance_hint": "yes",
-    "image_size": "medium",
-    "high_resolution": true,
-    "external_app_recording": false,
-    "instance_sync": true,
-    "analytics": false
-  },
-  "admin": {
-    "change_server": false,
-    "change_form_metadata": false,
-    "change_project_display": false,
-    "change_autosend": true,
-    "delete_saved": false,
-    "form_update_mode": false,
-    "periodic_form_updates_check": false,
-    "automatic_update": false,
-    "hide_old_form_versions": false,
-    "change_constraint_behavior": false,
-    "change_navigation": true,
-    "guidance_hint": true,
-    "image_size": false,
-    "high_resolution": false,
-    "external_app_recording": false,
-    "instance_form_sync": false,
-    "analytics": false,
-    "maps": false,
-    "access_settings": false
-  }
-}
-```
-
----
-
-This customization bridges two identity systems:
-1.  **Central ID** (Numeric, e.g., "1") from the server.
-2.  **ODK UUID** (Random String) used internally by Collect.
-
-**The Mapping Key:**
-*   File: `medres_auth_prefs`
-*   Key: `central_to_odk_{CentralID}`
-*   Value: `ODK_Project_UUID`
-
-**Workflow:**
-*   **Login**: MEDRES Login obtains `CentralID` -> Looks up `UUID` -> Sets `current_project_id = UUID`.
-*   **API Interaction**: `MedresAuthManager` uses this map to find which ODK Project to update when refreshing tokens.
 
 ---
 
@@ -305,101 +97,45 @@ On the first launch, the application initializes its base state:
 ### Phase 2: Configuration (Staged State)
 When a user scans a QR code or enters details manually via `MedresLoginActivity`:
 - **Staged Details**: Base configuration is stored in `medres_auth_prefs` to enable the login UI without yet creating an ODK project.
-- **`auth_url`**, **`auth_project_id`**, and **`qr_general_settings`** are populated.
+- The scanner first classifies the QR into one of two accepted staged contexts:
+  - **MEDRES Project QR**: stages `auth_url`, `auth_project_id`, `auth_project_name`, `auth_username_hint`, `qr_general_settings`, and `qr_admin_settings`.
+  - **Draft Form QR**: stages `draft_url`, `draft_project_id`, `draft_form_id`, `draft_display_name`, `draft_display_icon`, and `draft_general_settings`.
 - **UI State**: The login screen displays the configured project and changes the "Scan QR" button to **"Rescan QR Code"**.
+- **No broad wipe**: rescanning clears only session/security keys and staged QR keys. Preserved project mappings and shared-device continuity data remain intact.
 
 ### Phase 3: Login & Project Materialization
-Upon successful authentication, the configuration is "materialized" into the standard ODK storage:
+Upon successful authentication, a staged **MEDRES Project QR** is "materialized" into standard ODK storage:
 - **Tokenized URL**: A specialized URL is constructed and saved to `server_url` in `general_prefs[UUID]`.
   - Format: `<BaseURL>/key/<BearerToken>/projects/<PID>`
 - **Project Creation**: A standard ODK project is created/updated in the `meta` prefs `projects` repository.
 - **Settings Application**: Properties from `qr_general_settings` (like `form_update_mode`) are mapped to `general_prefs[UUID]`.
+- **Admin Locks**: Properties from `qr_admin_settings` are applied to the project's admin preferences after key validation.
 - **Identity**: `current_project_id` in `meta` is set to the ODK UUID of the new project.
 - **Mapping**: `central_to_odk_$pid` is saved to link the systems.
+
+### Phase 4: Draft Testing Materialization
+When a **Draft Form QR** is staged:
+- **No username/password login is required**. The QR already contains the test token in its URL.
+- The full `draft_url` is preserved and becomes the active `server_url` for a dedicated draft-testing ODK project.
+- `draft_display_name` is used only for the login/status UI (`Draft Testing Mode`) and must not overwrite the persistent name of the production MEDRES project.
+- Draft testing is isolated from the main MEDRES project onboarding flow.
 
 ---
 
 ## 4. Security Cleanup (Logout/Wipe) Behavior
 
-When a security event occurs (manual logout, 3 failed PIN attempts, or hard expiry), the application follows an **"Option B" (Shared Device Stability)** model. It clears the sensitive security context but preserves project data to ensure continuity for the next user on the same device.
+When a security event occurs (manual logout, 3 failed PIN attempts, hard expiry, or QR rescan), the application follows an **"Option B" (Shared Device Stability)** model. It clears only the sensitive security context and staged QR state while preserving project data to ensure continuity for the next user on the same device.
 
 | Category | Item | Action | Rationale |
 |----------|------|--------|-----------|
 | **Security** | Auth Token (JWT) | ✅ **Wiped** | Prevents unauthorized API access. |
 | **Security** | Security PIN | ✅ **Wiped** | Forces next user to set their own PIN. |
-| **Security** | Session State | ✅ **Wiped** | Clears `is_authenticated` and `active_project_id`. |
+| **Security** | Session State | ✅ **Wiped** | Clears auth/session flags and staged QR type. |
 | **Security** | Clock State | ✅ **Wiped** | Resets `last_valid_wall_time` to prevent replay. |
 | **User Data** | User Profile | ✅ **Wiped** | Clears `user_data_$pid` (ID, Username). |
+| **QR Staging** | `auth_*`, `draft_*`, `qr_*` staged keys | ✅ **Wiped** | Prevents stale QR context leaking across rescans or users. |
 | **Project Data** | Blank Forms | ❌ **Preserved** | Bandwidth efficiency; shared team access. |
 | **Project Data** | Saved Instances | ❌ **Preserved** | Team visibility; shared device drafts. |
 | **Project Data** | Submitted History | ❌ **Preserved** | Local audit trail for device users. |
 | **Configuration** | Project URL/Name | ❌ **Preserved** | Simplifies re-login for the next user. |
 | **Configuration** | ODK Settings | ❌ **Preserved** | Maintains ODK core stability. |
-
----
-
-
-### H. QR Code to Settings Translation Process
-
-The translation of a QR code into active application settings follows a strict multi-stage pipeline designed to ensure security (isolation) and consistency (all users get the same settings).
-
-#### Stage 1: Scanning & Parsing (`MedresQrScannerActivity`)
-When a user scans a QR code, the app performs the following:
-1.  **Decompression**: The QR payload is decompressed (gzip).
-2.  **Validation**: It checks for required keys (`server_url`, `project_id`) and ensures it is NOT a standard ODK QR (must be a MEDRES-formatted JSON).
-3.  **Extraction**:
-    *   **Auth Data**: Extracts `server_url` and `project_id`.
-    *   **Settings Data**: Extracts the `general` object **verbatim** as a raw JSON string.
-4.  **Staging**:
-    *   `auth_url` and `auth_project_id` are saved to `medres_auth_prefs`.
-    *   The `general` JSON string is saved to the key `qr_general_settings` in `medres_auth_prefs`.
-    *   **Crucially**, no ODK settings are changed yet. The user is not yet logged in.
-
-#### Stage 2: Authentication & Materialization (`MedresLoginActivity`)
-Settings are only applied **AFTER** a successful login to prevent unauthorized configuration changes.
-1.  **Login Verification**: The user enters credentials. The app authenticates against the `auth_url`.
-2.  **Context Match**: The app verifies that the logged-in Project ID matches the Staged Project ID from the QR code.
-3.  **Project Creation**:
-    *   If a matching ODK Project (by Project ID) exists, it is selected.
-    *   If not, a new ODK Project is created using the name from the QR code (or a default "MEDRES Project [ID]").
-4.  **Settings Application ("The Import Loop")**:
-    *   The app reads the `qr_general_settings` JSON string from `medres_auth_prefs`.
-    *   It opens the `general_prefs_[UUID]` file for the specific ODK Project.
-    *   **Key Validation**: Each key is validated against `ProjectKeys` constants using reflection. Invalid keys are logged and skipped.
-    *   **Dynamic Usage**: It iterates through **ALL** keys present in the JSON object (e.g., `autosend`, `navigation`, `image_size`) and applies them directly to the preferences file, respecting their data types (Boolean, String, Integer).
-    *   **Safeguard**: Sensitive keys like `server_url`, `username`, and `password` are skipped during this loop as they are handled explicitly by the specialized login logic.
-    *   **Server Injection**: The `server_url` is constructed securely (`.../v1/key/[Token]/projects/[ID]`) and written separately to ensure connectivity.
-
-#### Stage 3: Admin Lock Application
-Admin settings (from the `admin` object in the QR) are applied immediately after general settings.
-*   **Validation**: Each admin key is validated against `ProtectedProjectKeys.allKeys()` before application. Invalid keys are logged and skipped.
-*   **Target**: Settings are written to `admin_prefs_[UUID]` file for the specific ODK Project.
-*   **Type Enforcement**: Only boolean values are accepted (admin settings are all boolean flags). Non-boolean values are logged and skipped.
-*   **UI Effect**: The ODK UI layer reads these preferences to determine visibility of menus and settings buttons. For example, `change_autosend: false` hides the autosend setting from the user.
-*   **Security**: The validation ensures that only known admin keys from `ProtectedProjectKeys` can be applied, preventing injection of malicious or invalid settings.
-
-#### Security Summary
-
-The QR code processing pipeline implements defense-in-depth security:
-
-| Security Layer | Protection Against | Implementation |
-|---------------|-------------------|----------------|
-| **Payload Size Limit** | Oversized QR codes, DoS attacks | Max 4KB compressed payload |
-| **Decompression Bomb Protection** | Zip bomb attacks, OOM crashes | Max 16KB decompressed (4:1 ratio) |
-| **QR Type Detection** | Accidental ODK Central overwrites | Rejects Standard ODK QRs with `/key/` tokens |
-| **Key Validation** | Malicious setting injection | Whitelist validation against `ProjectKeys` & `ProtectedProjectKeys` |
-| **Type Safety** | Data corruption, crashes | Type checking for Boolean, String, Integer values |
-| **Sensitive Key Protection** | Credential theft, server hijacking | Blocks `server_url`, `username`, `password` from QR override |
-| **Context Binding** | Cross-project contamination | Settings only applied to matching Project ID |
-| **Post-Auth Execution** | Unauthorized configuration | Settings applied only after successful login |
-
-**Attack Scenarios Prevented:**
-- ❌ Decompression bombs (4KB → gigabytes)
-- ❌ Malicious key injection (`"evil_setting": "value"`)
-- ❌ Standard ODK QR overwrites
-- ❌ Cross-project setting leakage
-- ❌ Credential theft via QR
-- ❌ Type confusion attacks
-- ❌ OOM/ANR crashes
-
----

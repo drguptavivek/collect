@@ -2,6 +2,7 @@ package org.odk.collect.geo
 
 import android.content.Context
 import android.location.Location
+import org.javarosa.core.model.data.GeoPointData
 import org.odk.collect.maps.MapPoint
 import org.odk.collect.shared.strings.StringUtils.removeEnd
 import org.odk.collect.strings.R
@@ -85,5 +86,14 @@ object GeoUtils {
         } else {
             return null
         }
+    }
+
+    @JvmStatic
+    fun GeoPointData.toMapPoint(): MapPoint {
+        return MapPoint(this.getPart(0), this.getPart(1), this.getPart(2), this.getPart(3))
+    }
+
+    fun MapPoint.toLocation(): org.odk.collect.location.Location {
+        return org.odk.collect.location.Location(latitude, longitude, altitude, accuracy.toFloat())
     }
 }

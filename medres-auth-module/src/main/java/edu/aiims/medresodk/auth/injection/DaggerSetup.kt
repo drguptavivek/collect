@@ -8,6 +8,7 @@ import dagger.Provides
 import edu.aiims.medresodk.auth.activities.MedresLoginActivity
 import edu.aiims.medresodk.auth.activities.AuthSettingsActivity
 import edu.aiims.medresodk.auth.activities.ChangePinActivity
+import edu.aiims.medresodk.auth.activities.MedresQrScannerActivity
 import edu.aiims.medresodk.auth.activities.PinEntryActivity
 import edu.aiims.medresodk.auth.activities.SetupPinActivity
 import edu.aiims.medresodk.auth.managers.MedresAuthManager
@@ -38,6 +39,7 @@ interface MedresAuthDependencyComponent {
     }
 
     fun inject(activity: MedresLoginActivity)
+    fun inject(activity: MedresQrScannerActivity)
     fun inject(activity: PinEntryActivity)
     fun inject(activity: SetupPinActivity)
     fun inject(activity: ChangePinActivity)

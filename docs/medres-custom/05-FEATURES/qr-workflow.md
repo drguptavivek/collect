@@ -35,6 +35,26 @@ The payload is:
 3. Base64 encoded
 4. Encoded into QR code
 
+## QR Type Semantics
+
+The same top-level JSON shape is used for multiple QR workflows, but the fields do not mean the same thing in every QR type.
+
+### MEDRES App-User / Project QR
+- `general.server_url` points to `/v1/projects/<ID>`
+- `project.project_id` is expected
+- `project.name` is persistent project metadata
+- This QR is used for normal project configuration and login
+
+### Draft / Demo QR
+- `general.server_url` points to `/v1/test/<TOKEN>/projects/<ID>/forms/<FORM_ID>/draft`
+- `project.project_id` is typically absent
+- `project.name` is a display label for the draft form context, usually prefixed with `[Draft]`
+- This QR is used for Demo Mode and must not overwrite the persistent MEDRES project identity
+
+### Standard ODK Managed QR
+- `general.server_url` points to `/v1/key/<TOKEN>/projects/<ID>`
+- This QR is incompatible with MEDRES auth and is rejected
+
 ---
 
 ## Behavior Comparison
@@ -67,6 +87,7 @@ The payload is:
 - 'Import Settings' option HIDDEN from Project Management
 - 'Delete Project' option HIDDEN from Project Management
 - Single project enforcement (no multi-project support)
+- Draft QR display metadata MUST NOT be materialized as the persistent MEDRES project name
 
 ---
 
@@ -158,6 +179,14 @@ MEDRES implements defense-in-depth security for QR code processing:
 | **Demo/Test** | Contains both `/draft` AND `/test/` | **ACCEPTED** (Demo Mode) | Allows testing without production credentials |
 | **MEDRES Project** | No `/key/` token | **ACCEPTED** (Normal) | Standard production login |
 
+### Draft Metadata Handling
+
+For Draft/Test QRs, the `project` object should be interpreted as **draft display metadata**, not as durable project identity:
+- `project.name` is the draft form label shown in Demo Mode
+- `project.icon` is presentation metadata
+- the real Central project id should be derived from the URL path
+- draft metadata must not rename or overwrite the persistent MEDRES project used for normal login
+
 ### 3. Key Validation (Injection Prevention)
 
 **General Settings:**
@@ -199,6 +228,7 @@ MEDRES implements defense-in-depth security for QR code processing:
 | **Unauthorized Access** | All auth flows go through MEDRES module |
 | **Context Binding** | Settings only applied to matching Project ID |
 | **Post-Auth Execution** | Settings applied only after successful login |
+| **Draft Isolation** | Draft QR metadata is confined to Demo Mode and does not pollute production project identity |
 
 ---
 

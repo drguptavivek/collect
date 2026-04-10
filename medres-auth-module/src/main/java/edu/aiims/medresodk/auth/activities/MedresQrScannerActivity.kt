@@ -18,24 +18,24 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.gson.Gson
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
-import com.google.gson.Gson
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import edu.aiims.medresodk.auth.R
 import edu.aiims.medresodk.auth.databinding.ActivityMedresQrScannerBinding
-import org.odk.collect.androidshared.utils.CompressionUtils
-import org.odk.collect.projects.Project
+import edu.aiims.medresodk.auth.injection.MedresAuthDependencyComponentProvider
+import edu.aiims.medresodk.auth.managers.MedresAuthManager
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.odk.collect.projects.ProjectsRepository
-import org.odk.collect.shared.strings.UUIDGenerator
 import org.odk.collect.settings.keys.MetaKeys
-import org.odk.collect.settings.keys.ProjectKeys
-import org.json.JSONObject
+import org.odk.collect.shared.strings.UUIDGenerator
 import timber.log.Timber
+import javax.inject.Inject
+
 
 /**
  * MEDRES QR Scanner Activity
@@ -48,6 +48,9 @@ import timber.log.Timber
  * - Import from gallery photos
  */
 class MedresQrScannerActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var authManager: MedresAuthManager
 
     private lateinit var binding: ActivityMedresQrScannerBinding
     private lateinit var cameraProvider: ProcessCameraProvider
@@ -77,6 +80,8 @@ class MedresQrScannerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        (application as MedresAuthDependencyComponentProvider).medresAuthDependencyComponent.inject(this)
 
         try {
             // Initialize dependencies manually without Dagger
@@ -234,134 +239,106 @@ class MedresQrScannerActivity : AppCompatActivity() {
         binding.progressBar.visibility = View.VISIBLE
 
         lifecycleScope.launch {
-            try {
-                // Validate QR payload size
-                if (qrData.length > edu.aiims.medresodk.auth.utils.MedresConstants.MAX_QR_PAYLOAD_SIZE) {
+            // --- Classify via typed parser ---
+            val parseResult = edu.aiims.medresodk.auth.qr.MedresQrParser().parse(qrData)
+
+            when (parseResult) {
+                is edu.aiims.medresodk.auth.qr.InvalidQr -> {
                     binding.progressBar.visibility = View.GONE
+                    Timber.w("QR rejected — invalid: ${parseResult.reason}")
                     Toast.makeText(
                         this@MedresQrScannerActivity,
-                        "QR code too large (${qrData.length} bytes). Maximum allowed: ${edu.aiims.medresodk.auth.utils.MedresConstants.MAX_QR_PAYLOAD_SIZE} bytes",
+                        getString(R.string.medres_invalid_qr_code),
                         Toast.LENGTH_LONG
                     ).show()
                     isProcessing = false
-                    return@launch
                 }
-                
-                val decompressedData = CompressionUtils.decompress(qrData)
-                
-                // Validate decompressed size (prevent decompression bombs)
-                if (decompressedData.length > edu.aiims.medresodk.auth.utils.MedresConstants.MAX_QR_DECOMPRESSED_SIZE) {
+
+                is edu.aiims.medresodk.auth.qr.StandardOdkManagedQr -> {
                     binding.progressBar.visibility = View.GONE
+                    Timber.i("Standard ODK managed QR rejected")
                     Toast.makeText(
                         this@MedresQrScannerActivity,
-                        "QR code decompressed to ${decompressedData.length} bytes. Maximum allowed: ${edu.aiims.medresodk.auth.utils.MedresConstants.MAX_QR_DECOMPRESSED_SIZE} bytes. Possible decompression bomb attack.",
+                        "Standard ODK QR rejected. Please use a MEDRES Project QR.",
                         Toast.LENGTH_LONG
                     ).show()
                     isProcessing = false
-                    return@launch
                 }
 
-                // Parse JSON settings
-                val json = JSONObject(decompressedData)
-
-                // Extract settings from nested structure
-                val general = json.optJSONObject("general") ?: JSONObject()
-                val admin = json.optJSONObject("admin") ?: JSONObject()
-                val projectSection = json.optJSONObject("project") ?: JSONObject()
-
-                // Extract values from general section
-                val serverUrl = general.optString("server_url", "")
-                
-                // Extract project info
-                val projectId = projectSection.optString("project_id", "")
-                
-                if (serverUrl.isEmpty()) {
-                    throw IllegalArgumentException("Missing server_url in QR code")
+                is edu.aiims.medresodk.auth.qr.MedresProjectQr -> {
+                    handleMedresProjectQr(parseResult)
                 }
 
-                // INTELLIGENT DETECTION: Check for allowed QR types
-                // USER REQUIREMENT: Must contain BOTH /draft and /test/
-                val isDraft = serverUrl.contains("/draft") && serverUrl.contains("/test/")
-                val hasKeyToken = serverUrl.contains("/key/")
-
-                // USER REQUIREMENT: Reject "Standard ODK Central managed QR"
-                // Identified by having a token (via /key/) but NOT being a draft/test link.
-                if (hasKeyToken && !isDraft) {
-                    binding.progressBar.visibility = View.GONE
-                    Toast.makeText(
-                        this@MedresQrScannerActivity,
-                        "Standard ODK QR Rejected. Please use a Medres Project QR.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    isProcessing = false
-                    return@launch
+                is edu.aiims.medresodk.auth.qr.DraftFormQr -> {
+                    handleDraftFormQr(parseResult)
                 }
-
-                // Calculate Auth URL (strip /projects/...)
-                // Expected format: https://central.domain.com/v1/projects/1
-                // Auth URL: https://central.domain.com/v1
-                val authUrl = if (serverUrl.contains("/projects")) {
-                    serverUrl.substringBefore("/projects")
-                } else {
-                    serverUrl
-                }
-
-                // Save Auth Details to MEDRES Preferences
-                val authPrefs = getSharedPreferences(edu.aiims.medresodk.auth.utils.MedresConstants.MEDRES_PREFS_NAME, Context.MODE_PRIVATE)
-                authPrefs.edit()
-                    .clear() // Safe? Might wipe other meta. Let's be specific.
-                    // Actually, clear() destroys EVERYTHING including non-auth toggles if any. 
-                    // Better to remove specific keys to be safe, or just overwrite.
-                    // User says "clear url, username, token".
-                    .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_URL, authUrl)
-                    .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_PROJECT_ID, projectId)
-                    .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_PROJECT_NAME, projectSection.optString("name", ""))
-                    .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_QR_GENERAL_SETTINGS, general.toString())
-                    .putString(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_QR_ADMIN_SETTINGS, admin.toString())
-                    // EXPLICITLY REMOVE STALE SESSION DATA
-                    .remove(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_AUTH_TOKEN)
-                    .remove(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_USER_NAME)
-                    .remove(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_USER_ID)
-                    .remove(edu.aiims.medresodk.auth.utils.MedresConstants.KEY_PIN_HASH) // Force new PIN setup? Maybe.
-                    .apply()
-
-                if (authUrl.contains("/draft") || authUrl.contains("/test/")) {
-                    android.widget.Toast.makeText(
-                        this@MedresQrScannerActivity,
-                        "Demo Project Detected: " + projectId,
-                        android.widget.Toast.LENGTH_LONG
-                    ).show()
-                } else {
-                     android.widget.Toast.makeText(
-                        this@MedresQrScannerActivity,
-                        R.string.medres_settings_imported_successfully,
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
-                }
-
-                // Return to login screen
-                finish()
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to import QR code settings")
-                binding.progressBar.visibility = View.GONE
-                
-                // INTELLIGENT REJECTION
-                // If decompression failed or JSON was invalid, it's likely a raw text or incompatible QR
-                val errorMsg = if (qrData.startsWith("{")) { 
-                    // Uncompressed JSON but invalid for our schema?
-                    "Invalid Project Configuration (Raw JSON)"
-                } else {
-                    getString(R.string.medres_invalid_qr_code)
-                }
-
-                Toast.makeText(
-                    this@MedresQrScannerActivity,
-                    errorMsg,
-                    Toast.LENGTH_LONG
-                ).show()
-                isProcessing = false
             }
         }
+    }
+
+    /** Stage a MEDRES project QR and return to login (credentials required). */
+    private fun handleMedresProjectQr(qr: edu.aiims.medresodk.auth.qr.MedresProjectQr) {
+        Timber.i("MEDRES project QR detected — project ${qr.centralProjectId}")
+
+        val authPrefs = getSharedPreferences(
+            edu.aiims.medresodk.auth.utils.MedresConstants.MEDRES_PREFS_NAME,
+            Context.MODE_PRIVATE
+        )
+        val stagingStore = edu.aiims.medresodk.auth.qr.MedresQrStagingStore(authPrefs)
+
+        stagingStore.stageMedresProject(
+            edu.aiims.medresodk.auth.qr.StagedMedresProjectContext(
+                authBaseUrl = qr.authBaseUrl,
+                centralProjectId = qr.centralProjectId,
+                projectName = qr.projectName,
+                usernameHint = qr.usernameHint,
+                generalSettingsJson = qr.generalSettingsJson,
+                adminSettingsJson = qr.adminSettingsJson
+            )
+        )
+
+        binding.progressBar.visibility = View.GONE
+        Toast.makeText(
+            this@MedresQrScannerActivity,
+            R.string.medres_settings_imported_successfully,
+            Toast.LENGTH_SHORT
+        ).show()
+        routeAfterSuccessfulScan()
+    }
+
+    /** Stage a draft QR and return to login (no credentials required — demo path). */
+    private fun handleDraftFormQr(qr: edu.aiims.medresodk.auth.qr.DraftFormQr) {
+        Timber.i("Draft QR detected — project ${qr.centralProjectId} form ${qr.formId}")
+
+        val authPrefs = getSharedPreferences(
+            edu.aiims.medresodk.auth.utils.MedresConstants.MEDRES_PREFS_NAME,
+            Context.MODE_PRIVATE
+        )
+        val stagingStore = edu.aiims.medresodk.auth.qr.MedresQrStagingStore(authPrefs)
+
+        stagingStore.stageDraftForm(
+            edu.aiims.medresodk.auth.qr.StagedDraftFormContext(
+                originalDraftUrl = qr.originalDraftUrl,
+                centralProjectId = qr.centralProjectId,
+                formId = qr.formId,
+                displayName = qr.displayName,
+                displayIcon = qr.displayIcon,
+                generalSettingsJson = qr.generalSettingsJson
+            )
+        )
+
+        binding.progressBar.visibility = View.GONE
+        Toast.makeText(
+            this@MedresQrScannerActivity,
+            "Draft form detected. Tap 'Start Testing' to continue.",
+            Toast.LENGTH_LONG
+        ).show()
+        routeAfterSuccessfulScan()
+    }
+
+    /** After staging, return to the login screen (just finish — login is always our caller). */
+    private fun routeAfterSuccessfulScan() {
+        finish()
     }
 
     private fun setCurrentProject(projectId: String) {

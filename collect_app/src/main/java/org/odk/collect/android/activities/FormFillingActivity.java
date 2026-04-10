@@ -94,6 +94,7 @@ import org.odk.collect.android.exception.JavaRosaException;
 import org.odk.collect.android.external.InstancesContract;
 import org.odk.collect.android.formentry.BackgroundAudioPermissionDialogFragment;
 import org.odk.collect.android.formentry.BackgroundAudioViewModel;
+import org.odk.collect.android.formentry.CurrentFormIndex;
 import org.odk.collect.android.formentry.FormAnimation;
 import org.odk.collect.android.formentry.FormAnimationType;
 import org.odk.collect.android.formentry.FormEndView;
@@ -158,6 +159,8 @@ import org.odk.collect.android.utilities.InstancesRepositoryProvider;
 import org.odk.collect.android.utilities.MediaUtils;
 import org.odk.collect.android.utilities.SavepointsRepositoryProvider;
 import org.odk.collect.android.utilities.SoftKeyboardController;
+import org.odk.collect.android.widgets.GeoShapeWidget;
+import org.odk.collect.android.widgets.GeoTraceWidget;
 import org.odk.collect.android.widgets.QuestionWidget;
 import org.odk.collect.android.widgets.datetime.DateTimeWidget;
 import org.odk.collect.android.widgets.datetime.pickers.CustomDatePickerDialog;
@@ -410,7 +413,7 @@ public class FormFillingActivity extends LocalizedActivity implements CollectCom
             sessionId = savedInstanceState.getString(KEY_SESSION_ID);
         }
 
-        viewModelFactory = new FormEntryViewModelFactory(this,
+        viewModelFactory = new FormEntryViewModelFactory(
                 getIntent().getStringExtra(FormOpeningMode.FORM_MODE_KEY),
                 sessionId,
                 scheduler,
@@ -560,14 +563,9 @@ public class FormFillingActivity extends LocalizedActivity implements CollectCom
         formEntryViewModel = viewModelProvider.get(FormEntryViewModel.class);
         printerWidgetViewModel = viewModelProvider.get(PrinterWidgetViewModel.class);
 
-        formEntryViewModel.getCurrentIndex().observe(this, indexAndValidationResult -> {
-            if (indexAndValidationResult != null) {
-                FormIndex formIndex = indexAndValidationResult.component1();
-                FailedValidationResult validationResult = indexAndValidationResult.component2();
-                formIndexAnimationHandler.handle(formIndex);
-                if (validationResult != null) {
-                    handleValidationResult(validationResult);
-                }
+        formEntryViewModel.getCurrentIndex().observe(this, index -> {
+            if (index != null) {
+                formIndexAnimationHandler.handle(index.getScreenIndex());
             }
         });
 
@@ -580,15 +578,6 @@ public class FormFillingActivity extends LocalizedActivity implements CollectCom
                 createErrorDialog(error);
                 formEntryViewModel.errorDisplayed();
             }
-        });
-
-        formEntryViewModel.getValidationResult().observe(this, consumable -> {
-            if (consumable.isConsumed()) {
-                return;
-            }
-            ValidationResult validationResult = consumable.getValue();
-            handleValidationResult(validationResult);
-            consumable.consume();
         });
 
         formSaveViewModel = viewModelProvider.get(FormSaveViewModel.class);
@@ -635,13 +624,13 @@ public class FormFillingActivity extends LocalizedActivity implements CollectCom
         });
     }
 
-    private void handleValidationResult(ValidationResult validationResult) {
+    private void handleValidationResult(ODKView view, ValidationResult validationResult) {
         if (validationResult instanceof FailedValidationResult failedValidationResult) {
             String errorMessage = failedValidationResult.getCustomErrorMessage();
             if (errorMessage == null) {
                 errorMessage = getString(failedValidationResult.getDefaultErrorMessage());
             }
-            getCurrentViewIfODKView().setErrorForQuestionWithIndex(failedValidationResult.getIndex(), errorMessage);
+            view.setErrorForQuestionWithIndex(failedValidationResult.getIndex(), errorMessage);
             swipeHandler.setBeenSwiped(false);
         } else if (validationResult instanceof SuccessValidationResult) {
             SnackbarUtils.showSnackbar(
@@ -973,7 +962,9 @@ public class FormFillingActivity extends LocalizedActivity implements CollectCom
      * Clears the answer on the screen.
      */
     private void clearAnswer(QuestionWidget qw) {
-        if (qw.getAnswer() != null || qw instanceof DateTimeWidget) {
+        if (qw instanceof GeoTraceWidget || qw instanceof GeoShapeWidget) {
+            formEntryViewModel.answerQuestion(qw.getFormEntryPrompt().getIndex(), null);
+        } else if (qw.getAnswer() != null || qw instanceof DateTimeWidget) {
             qw.clearAnswer();
         }
     }
@@ -1816,9 +1807,19 @@ public class FormFillingActivity extends LocalizedActivity implements CollectCom
     private int animationCompletionSet;
 
     private void afterAllAnimations() {
-        if (getCurrentViewIfODKView() != null) {
-            getCurrentViewIfODKView().setFocus(this);
+        ODKView view = getCurrentViewIfODKView();
+        if (view != null) {
+            CurrentFormIndex index = formEntryViewModel.getCurrentIndex().getValue();
+            ValidationResult validationResult = index.getValidationResult();
+            if (validationResult != null) {
+                handleValidationResult(view, validationResult);
+            } else if (index.getQuestionIndex() != null) {
+                view.focusToTopOf(index.getQuestionIndex());
+            } else {
+                view.setFocus(this);
+            }
         }
+
         swipeHandler.setBeenSwiped(false);
     }
 
@@ -2260,7 +2261,7 @@ public class FormFillingActivity extends LocalizedActivity implements CollectCom
                         updateFieldListQuestions(changedWidget.getFormEntryPrompt().getIndex());
                         odkView.post(() -> {
                             if (odkView != null && !odkView.isDisplayed(changedWidget)) {
-                                odkView.scrollToTopOf(changedWidget);
+                                odkView.focusToTopOf(changedWidget);
                             }
                         });
                     } catch (RepeatsInFieldListException e) {
