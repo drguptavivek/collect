@@ -502,7 +502,7 @@
   <string name="collection_status_auto_minutes_accuracy">Vnesene točke: %1$d (snemanje vsakih %2$d min, natančnost %3$d m)</string>
   <string name="geopoint_no_draggable_instruction">Pritisni gumb za označevanje.</string>
   <string name="discard">Zavrzi</string>
-  <string name="select_item_count">%s: %d (%d prikazano na zemljevidu)</string>
+  <string name="select_item_count">%1$s: %2$d (%3$d prikazano na zemljevidu)</string>
   <string name="select_item">Izberi</string>
   <string name="new_item">Nov element</string>
   <!--Name of an action button-->
@@ -1056,7 +1056,7 @@
     <item quantity="other">%d osnutkov ima napake, ki jih je treba odpraviti pred zaključitvijo.</item>
   </plurals>
   <!--Message shown after bulk finalization when some drafts finalize successfully and others fail-->
-  <string name="bulk_finalize_partial_success">%d osnutkov je dokončanih. %d osnutkov ima napake, ki jih je treba odpraviti pred zaključitivijo.</string>
+  <string name="bulk_finalize_partial_success">%1$d osnutkov je dokončanih. %2$d osnutkov ima napake, ki jih je treba odpraviti pred zaključitivijo.</string>
   <!--Message shown when some drafts finalize successfully but others need to be finalized manually-->
   <string name="bulk_finalize_unsupported">%d osnutkov zaključenih. Preostale osnutke bo potrebno zaključiti ročno.</string>
   <!--Displayed above a draft that has constraints that aren't met or required questions that aren't answered or both. Should match the wording for the 'Check for errors' feature.-->

@@ -492,7 +492,7 @@
   <string name="collection_status_auto_minutes_accuracy">درج شدہ پوائنٹس: %1$d (ہر %2$d منٹ بعد ریکارڈنگ، درستگی %3$d میٹر)</string>
   <string name="geopoint_no_draggable_instruction"> مارکر بٹن پر کلک کریں.</string>
   <string name="discard">ختم کر دینا</string>
-  <string name="select_item_count">%s: %d (%d میپ پہ موجود)</string>
+  <string name="select_item_count">%1$s: %2$d (%3$d میپ پہ موجود)</string>
   <string name="select_item">منتخب کریں</string>
   <string name="new_item">نیا آئٹم</string>
   <!--Name of an action button-->
@@ -1047,7 +1047,7 @@ Constraint processing</string>
     <item quantity="other">%d ڈرافٹس میں کچھ غلطیاں ہیں، جو finalize کرنے سے پہلے دور کرنا ضروری ہیں</item>
   </plurals>
   <!--Message shown after bulk finalization when some drafts finalize successfully and others fail-->
-  <string name="bulk_finalize_partial_success">%d ڈرافٹس finalize ہو چکے ہیں۔ %d ڈرافٹس میں کچھ غلطیاں ہیں جن کو finalize کرنے سے پہلے درست کرنا ضروری ہے۔ </string>
+  <string name="bulk_finalize_partial_success">%1$d ڈرافٹس finalize ہو چکے ہیں۔ %2$d ڈرافٹس میں کچھ غلطیاں ہیں جن کو finalize کرنے سے پہلے درست کرنا ضروری ہے۔ </string>
   <!--Message shown when some drafts finalize successfully but others need to be finalized manually-->
   <string name="bulk_finalize_unsupported">%d ڈرافٹس finalize ہو گئے ہیں۔ باقی رہ جانے والے ڈرافٹس کو باری باری finalize کرنا ہوگا۔</string>
   <!--Displayed above a draft that has constraints that aren't met or required questions that aren't answered or both. Should match the wording for the 'Check for errors' feature.-->

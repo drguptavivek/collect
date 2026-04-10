@@ -544,7 +544,7 @@
   <string name="geopoint_instruction">长按以放置标记，或点击“添加标记”按钮</string>
   <string name="geopoint_no_draggable_instruction">点击添加标记按钮。</string>
   <string name="discard">丢弃</string>
-  <string name="select_item_count">%s: %d (%d 在图上)</string>
+  <string name="select_item_count">%1$s: %2$d (%3$d 在图上)</string>
   <string name="select_item">选择</string>
   <string name="new_item">新元素</string>
   <!--Name of an action button-->
@@ -1114,7 +1114,7 @@
     <item quantity="other">%d 个草稿有错误，必须在最终确定之前解决。</item>
   </plurals>
   <!--Message shown after bulk finalization when some drafts finalize successfully and others fail-->
-  <string name="bulk_finalize_partial_success">%d 份草稿已完成。%d 个草稿有错误，必须在最终确定之前解决。</string>
+  <string name="bulk_finalize_partial_success">%1$d 份草稿已完成。%2$d 个草稿有错误，必须在最终确定之前解决。</string>
   <!--Message shown when some drafts finalize successfully but others need to be finalized manually-->
   <string name="bulk_finalize_unsupported">%d 份草稿已完成。剩下的草稿需要手动完成。</string>
   <!--Displayed above a draft that has constraints that aren't met or required questions that aren't answered or both. Should match the wording for the 'Check for errors' feature.-->
@@ -1186,7 +1186,7 @@
   <!--Text for the dialog that is displayed while the form is being prepared for editing-->
   <string name="preparing_form_edit">正在准备编辑的表单…</string>
   <!--Instance name with a suffix indicating the edit number, if this is an edited instance-->
-  <string name="user_visible_instance_name">%s (设置%d)</string>
+  <string name="user_visible_instance_name">%1$s (设置 %2$d)</string>
   <!--Text for the dialog title displayed when a user attempts to edit a finalized form and a newer draft version exists-->
   <string name="newer_draft_edit_found_dialog_title">继续编辑草稿？</string>
   <!--Text for the dialog message displayed when a user attempts to edit a finalized form and a newer draft version exists. Please format date appropriately for your language: http://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html-->

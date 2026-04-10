@@ -19,6 +19,7 @@ import edu.aiims.medresodk.auth.databinding.ActivityMedresLoginBinding
 import edu.aiims.medresodk.auth.injection.MedresAuthDependencyComponentProvider
 import edu.aiims.medresodk.auth.managers.MedresAuthManager
 import edu.aiims.medresodk.auth.utils.MedresProjectUtils
+import edu.aiims.medresodk.auth.utils.MedresSettingsValidator
 import edu.aiims.medresodk.auth.utils.PinManager
 import edu.aiims.medresodk.auth.utils.TokenRevocationManager
 import edu.aiims.medresodk.auth.analytics.MedresAppAnalytics

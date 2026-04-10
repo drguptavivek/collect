@@ -486,7 +486,7 @@
   <string name="collection_status_auto_minutes_accuracy">Введено точек: %1$d (запись каждые %2$d мин, точность %3$d м)</string>
   <string name="geopoint_no_draggable_instruction">Нажмите кнопку \"добавить отметку\".</string>
   <string name="discard">Отменить</string>
-  <string name="select_item_count">%s: %d (%d показано на карте)</string>
+  <string name="select_item_count">%1$s: %2$d (%3$d показано на карте)</string>
   <string name="select_item">Выбрать</string>
   <string name="new_item">Новый элемент</string>
   <!--Name of an action button-->

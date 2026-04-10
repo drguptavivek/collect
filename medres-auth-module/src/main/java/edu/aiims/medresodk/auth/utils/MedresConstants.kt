@@ -38,6 +38,7 @@ object MedresConstants {
     const val KEY_AUTH_PROJECT_NAME = "auth_project_name"
     const val KEY_AUTH_USERNAME_HINT = "auth_username_hint"
     const val KEY_QR_GENERAL_SETTINGS = "qr_general_settings"
+    const val KEY_QR_ADMIN_SETTINGS = "qr_admin_settings"
 
     // Typed staged QR context discriminator
     const val KEY_STAGED_QR_TYPE = "staged_qr_type"

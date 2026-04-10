@@ -524,7 +524,7 @@
   <string name="collection_status_auto_minutes_accuracy">輸入的點數: %1$d (每隔 %2$d 分鐘記錄, 精度 %3$d m)</string>
   <string name="geopoint_no_draggable_instruction">點擊添加標記按鈕。</string>
   <string name="discard">放棄</string>
-  <string name="select_item_count">%s: %d (%d 在圖上)</string>
+  <string name="select_item_count">%1$s: %2$d (%3$d 在圖上)</string>
   <string name="select_item">選擇</string>
   <string name="new_item">新項目</string>
   <!--Name of an action button-->
@@ -1060,7 +1060,7 @@
     <item quantity="other">%d 份草稿有錯誤，必須在確認完成前解決。</item>
   </plurals>
   <!--Message shown after bulk finalization when some drafts finalize successfully and others fail-->
-  <string name="bulk_finalize_partial_success">%d 份草稿已完成。%d 份草稿有錯誤，必須在確認完成前解決。</string>
+  <string name="bulk_finalize_partial_success">%1$d 份草稿已完成。%2$d 份草稿有錯誤，必須在確認完成前解決。</string>
   <!--Message shown when some drafts finalize successfully but others need to be finalized manually-->
   <string name="bulk_finalize_unsupported">%d 份草稿已完成。剩下的草稿需要手動完成。</string>
   <!--Displayed above a draft that has constraints that aren't met or required questions that aren't answered or both. Should match the wording for the 'Check for errors' feature.-->

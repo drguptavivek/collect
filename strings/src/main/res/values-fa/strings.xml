@@ -458,7 +458,7 @@
   <string name="collection_status_auto_minutes_accuracy">امتیازهای وارد شده: %1$d (ثبت هر %2$d ثانیه، دقت %3$d متر)</string>
   <string name="geopoint_no_draggable_instruction">روی دکمه افزودن نشانگر انگشیتان را بکشید</string>
   <string name="discard">دور انداختن</string>
-  <string name="select_item_count">%s: %d (%d روی نقشه نشان داده شده است)</string>
+  <string name="select_item_count">%1$s: %2$d (%3$d روی نقشه نشان داده شده است)</string>
   <string name="select_item">برگزیدن</string>
   <string name="new_item">گزینه جدید</string>
   <!--Name of an action button-->
@@ -992,7 +992,7 @@
     <item quantity="other">1%d پیش نویس دارای خطاهایی است که باید قبل از نهایی شدن برطرف شوند.</item>
   </plurals>
   <!--Message shown after bulk finalization when some drafts finalize successfully and others fail-->
-  <string name="bulk_finalize_partial_success">1%d پیش‌نویس نهایی شد. 1%d پیش نویس دارای خطاهایی است که باید قبل از نهایی شدن برطرف شوند.</string>
+  <string name="bulk_finalize_partial_success">%1$d پیش‌نویس نهایی شد. %2$d پیش نویس دارای خطاهایی است که باید قبل از نهایی شدن برطرف شوند.</string>
   <!--Message shown when some drafts finalize successfully but others need to be finalized manually-->
   <string name="bulk_finalize_unsupported">1%d پیش‌نویس نهایی شد. پیش نویس هایی که باقی مانده اند باید به صورت دستی نهایی شوند.</string>
   <!--Displayed above a draft that has constraints that aren't met or required questions that aren't answered or both. Should match the wording for the 'Check for errors' feature.-->

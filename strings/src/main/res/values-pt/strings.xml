@@ -550,7 +550,7 @@
   <string name="geopoint_instruction">Pressione por mais tempo para colocar marcador ou selecione o botão Adicionar Marcador.</string>
   <string name="geopoint_no_draggable_instruction">Selecione o botão Adicionar Marcador.</string>
   <string name="discard">Descartar</string>
-  <string name="select_item_count">1 %s: 2 %d (2 %d mostrado no mapa)</string>
+  <string name="select_item_count">%1$s: %2$d (%3$d mostrado no mapa)</string>
   <string name="select_item">Selecionar</string>
   <string name="new_item">Novo item</string>
   <!--Name of an action button-->
@@ -1132,7 +1132,7 @@
     <item quantity="other">%d rascunhos contém erros que precisam ser corrigidos antes de finalizar.</item>
   </plurals>
   <!--Message shown after bulk finalization when some drafts finalize successfully and others fail-->
-  <string name="bulk_finalize_partial_success">%d rascunhos finalizados. %d rascunhos possuem erros que precisam ser corrigidos antes de finalizar.</string>
+  <string name="bulk_finalize_partial_success">%1$d rascunhos finalizados. %2$d rascunhos possuem erros que precisam ser corrigidos antes de finalizar.</string>
   <!--Message shown when some drafts finalize successfully but others need to be finalized manually-->
   <string name="bulk_finalize_unsupported">%d rascunhos finalizados. Os demais rascunhos precisam ser finalizados manualmente.</string>
   <!--Displayed above a draft that has constraints that aren't met or required questions that aren't answered or both. Should match the wording for the 'Check for errors' feature.-->
@@ -1204,7 +1204,7 @@
   <!--Text for the dialog that is displayed while the form is being prepared for editing-->
   <string name="preparing_form_edit">Preparando o formulário para edição…</string>
   <!--Instance name with a suffix indicating the edit number, if this is an edited instance-->
-  <string name="user_visible_instance_name">%s (Alteração %d )</string>
+  <string name="user_visible_instance_name">%1$s (Alteração %2$d)</string>
   <!--Text for the dialog title displayed when a user attempts to edit a finalized form and a newer draft version exists-->
   <string name="newer_draft_edit_found_dialog_title">Continuar editando o rascunho?</string>
   <!--Text for the dialog message displayed when a user attempts to edit a finalized form and a newer draft version exists. Please format date appropriately for your language: http://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html-->

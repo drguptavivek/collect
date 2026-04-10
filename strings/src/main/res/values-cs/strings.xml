@@ -548,7 +548,7 @@
   <string name="geopoint_instruction">Dlouhým stisknutím umístíte značku nebo klepnutím přidáte značku.</string>
   <string name="geopoint_no_draggable_instruction">Klepnutím na tlačítko přidat značku.</string>
   <string name="discard">Vyřadit</string>
-  <string name="select_item_count">%s: %d (%d zobrazeno na mapě)</string>
+  <string name="select_item_count">%1$s: %2$d (%3$d zobrazeno na mapě)</string>
   <string name="select_item">Vybrat</string>
   <string name="new_item">Nová položka</string>
   <!--Name of an action button-->
@@ -1080,7 +1080,7 @@
   <!--Message shown after bulk finalization when finalizing all drafts has succeeded-->
   <!--Message shown after bulk finalization when no drafts finalized successfully-->
   <!--Message shown after bulk finalization when some drafts finalize successfully and others fail-->
-  <string name="bulk_finalize_partial_success">%d návrhy byly dokončeny. %d návrhy obsahují chyby, které je třeba před dokončením odstranit.</string>
+  <string name="bulk_finalize_partial_success">%1$d návrhy byly dokončeny. %2$d návrhy obsahují chyby, které je třeba před dokončením odstranit.</string>
   <!--Message shown when some drafts finalize successfully but others need to be finalized manually-->
   <string name="bulk_finalize_unsupported">%d  dokončené návrhy. Zbývající návrhy je třeba dokončit ručně.</string>
   <!--Displayed above a draft that has constraints that aren't met or required questions that aren't answered or both. Should match the wording for the 'Check for errors' feature.-->

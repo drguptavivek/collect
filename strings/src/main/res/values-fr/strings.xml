@@ -549,7 +549,7 @@
   <string name="geopoint_instruction">Appuyez longuement pour placer un marqueur ou utilisez le bouton d\'ajout de marqueur</string>
   <string name="geopoint_no_draggable_instruction">Appuyez sur le bouton \"ajouter un marqueur\".</string>
   <string name="discard">Abandoner changements</string>
-  <string name="select_item_count">%s: %d (%d affichés sur la carte)</string>
+  <string name="select_item_count">%1$s: %2$d (%3$d affichés sur la carte)</string>
   <string name="select_item">Sélectionner</string>
   <string name="new_item">Nouvel item</string>
   <!--Name of an action button-->
@@ -1132,7 +1132,7 @@
     <item quantity="other">%d brouillons contiennent des erreurs qui doivent être corrigées avant de finalisation.</item>
   </plurals>
   <!--Message shown after bulk finalization when some drafts finalize successfully and others fail-->
-  <string name="bulk_finalize_partial_success">%d brouillons finalisés. %d brouillons contiennent des erreurs qui doivent être corrigées avant de finaliser.</string>
+  <string name="bulk_finalize_partial_success">%1$d brouillons finalisés. %2$d brouillons contiennent des erreurs qui doivent être corrigées avant de finaliser.</string>
   <!--Message shown when some drafts finalize successfully but others need to be finalized manually-->
   <string name="bulk_finalize_unsupported">%d brouillons finalisés. Les brouillons restants doivent être finalisés manuellement.</string>
   <!--Displayed above a draft that has constraints that aren't met or required questions that aren't answered or both. Should match the wording for the 'Check for errors' feature.-->
@@ -1204,7 +1204,7 @@
   <!--Text for the dialog that is displayed while the form is being prepared for editing-->
   <string name="preparing_form_edit">Préparation du formulaire pour édition…</string>
   <!--Instance name with a suffix indicating the edit number, if this is an edited instance-->
-  <string name="user_visible_instance_name">%s (modification %d)</string>
+  <string name="user_visible_instance_name">%1$s (modification %2$d)</string>
   <!--Text for the dialog title displayed when a user attempts to edit a finalized form and a newer draft version exists-->
   <string name="newer_draft_edit_found_dialog_title">Continuer d\'éditer le brouillon ?</string>
   <!--Text for the dialog message displayed when a user attempts to edit a finalized form and a newer draft version exists. Please format date appropriately for your language: http://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html-->
