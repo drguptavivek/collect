@@ -23,6 +23,7 @@ import edu.aiims.medresodk.auth.utils.MedresSettingsValidator
 import edu.aiims.medresodk.auth.utils.PinManager
 import edu.aiims.medresodk.auth.utils.TokenRevocationManager
 import edu.aiims.medresodk.auth.analytics.MedresAppAnalytics
+import java.net.URI
 import javax.inject.Inject
 
 /**
@@ -289,6 +290,7 @@ class MedresLoginActivity : MedresBaseActivity() {
     private fun ensureDraftProjectConfigured(
         staged: edu.aiims.medresodk.auth.qr.StagedDraftFormContext
     ) {
+        val stagedDraftIdentity = extractDraftProjectIdentity(staged.originalDraftUrl)
         val uuidGenerator = org.odk.collect.shared.strings.UUIDGenerator()
         val gson = com.google.gson.Gson()
         val metaPrefs = getSharedPreferences("meta", Context.MODE_PRIVATE)
@@ -304,7 +306,8 @@ class MedresLoginActivity : MedresBaseActivity() {
         for (proj in projectsRepo.getAll()) {
             val projPrefs = getSharedPreferences("general_prefs${proj.uuid}", Context.MODE_PRIVATE)
             val projUrl = projPrefs.getString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, null)
-            if (projUrl == staged.originalDraftUrl) {
+            val existingDraftIdentity = projUrl?.let { extractDraftProjectIdentity(it) }
+            if (stagedDraftIdentity != null && stagedDraftIdentity == existingDraftIdentity) {
                 targetUuid = proj.uuid
                 val displayName = staged.displayName ?: ""
                 if (displayName.isNotEmpty() && proj.name != displayName) {
@@ -375,6 +378,30 @@ class MedresLoginActivity : MedresBaseActivity() {
 
         authManager.setActiveProject(staged.centralProjectId)
         authManager.setProjectMapping(staged.centralProjectId, targetUuid)
+    }
+
+    private fun extractDraftProjectIdentity(url: String): String? {
+        return try {
+            val uri = URI(url)
+            val pathSegments = uri.path.orEmpty()
+                .trimEnd('/')
+                .split("/")
+                .filter { it.isNotEmpty() }
+
+            val projectIdx = pathSegments.indexOf("projects")
+            val formIdx = pathSegments.indexOf("forms")
+            if (projectIdx < 0 || formIdx < 0 || projectIdx + 1 >= pathSegments.size || formIdx + 1 >= pathSegments.size) {
+                return null
+            }
+
+            val projectId = pathSegments[projectIdx + 1]
+            val formId = pathSegments[formIdx + 1]
+            val authority = uri.authority ?: return null
+            val scheme = uri.scheme ?: "https"
+            "$scheme://$authority|$projectId|$formId"
+        } catch (_: Exception) {
+            null
+        }
     }
 
 
