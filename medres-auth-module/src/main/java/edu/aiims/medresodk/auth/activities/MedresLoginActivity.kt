@@ -332,13 +332,41 @@ class MedresLoginActivity : MedresBaseActivity() {
         }
 
         val projPrefs = getSharedPreferences("general_prefs$targetUuid", Context.MODE_PRIVATE)
-        projPrefs.edit()
-            .putString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, staged.originalDraftUrl)
-            .putString(
+        val generalJson = org.json.JSONObject(staged.generalSettingsJson)
+        projPrefs.edit().apply {
+            putString(org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL, staged.originalDraftUrl)
+            putString(
                 org.odk.collect.settings.keys.ProjectKeys.KEY_PROTOCOL,
                 org.odk.collect.settings.keys.ProjectKeys.PROTOCOL_SERVER
             )
-            .commit()
+
+            val keysIterator = generalJson.keys()
+            while (keysIterator.hasNext()) {
+                val key = keysIterator.next()
+                if (!MedresSettingsValidator.isValidGeneralKey(key)) {
+                    android.util.Log.w("MedresLogin", "Ignoring invalid draft general key from QR: $key")
+                    continue
+                }
+
+                if (key == org.odk.collect.settings.keys.ProjectKeys.KEY_SERVER_URL ||
+                    key == org.odk.collect.settings.keys.ProjectKeys.KEY_PROTOCOL ||
+                    key == org.odk.collect.settings.keys.ProjectKeys.KEY_USERNAME ||
+                    key == org.odk.collect.settings.keys.ProjectKeys.KEY_PASSWORD) {
+                    continue
+                }
+
+                val value = generalJson.get(key)
+                when (value) {
+                    is Boolean -> putBoolean(key, value)
+                    is String -> putString(key, value)
+                    is Int -> putInt(key, value)
+                    is Long -> putLong(key, value)
+                    is Double -> putFloat(key, value.toFloat())
+                    else -> putString(key, value.toString())
+                }
+            }
+            commit()
+        }
 
         metaSettings.save(org.odk.collect.settings.keys.MetaKeys.CURRENT_PROJECT_ID, targetUuid)
         currentSystemProjectId = targetUuid
