@@ -26,12 +26,15 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import edu.aiims.medresodk.auth.R
 import edu.aiims.medresodk.auth.databinding.ActivityMedresQrScannerBinding
+import edu.aiims.medresodk.auth.injection.MedresAuthDependencyComponentProvider
+import edu.aiims.medresodk.auth.managers.MedresAuthManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.odk.collect.projects.ProjectsRepository
 import org.odk.collect.settings.keys.MetaKeys
 import org.odk.collect.shared.strings.UUIDGenerator
 import timber.log.Timber
+import javax.inject.Inject
 
 
 /**
@@ -45,6 +48,9 @@ import timber.log.Timber
  * - Import from gallery photos
  */
 class MedresQrScannerActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var authManager: MedresAuthManager
 
     private lateinit var binding: ActivityMedresQrScannerBinding
     private lateinit var cameraProvider: ProcessCameraProvider
@@ -74,6 +80,8 @@ class MedresQrScannerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        (application as MedresAuthDependencyComponentProvider).medresAuthDependencyComponent.inject(this)
 
         try {
             // Initialize dependencies manually without Dagger
@@ -295,9 +303,7 @@ class MedresQrScannerActivity : AppCompatActivity() {
             R.string.medres_settings_imported_successfully,
             Toast.LENGTH_SHORT
         ).show()
-
-        // Return to login screen — credentials will be required there
-        finish()
+        routeAfterSuccessfulScan()
     }
 
     /** Stage a draft QR and return to login (no credentials required — demo path). */
@@ -327,8 +333,11 @@ class MedresQrScannerActivity : AppCompatActivity() {
             "Draft form detected. Tap 'Start Testing' to continue.",
             Toast.LENGTH_LONG
         ).show()
+        routeAfterSuccessfulScan()
+    }
 
-        // Return to login screen — demo mode path will be activated there
+    /** After staging, return to the login screen (just finish — login is always our caller). */
+    private fun routeAfterSuccessfulScan() {
         finish()
     }
 
