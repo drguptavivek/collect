@@ -1,5 +1,30 @@
 # Changelog
 
+## [v2026.1.2-MEDRES-RC2] - 2026-04-10
+### Added
+- **Finalized QR Flow Rewrite**: Full integration of the type-safe QR architecture with the v2026.1.2 upstream base.
+- **Race Condition Resolution**: Removed the "Scan New QR" button from Auth Settings (Option B) to eliminate complex mode-transition bugs and intercepting PIN screens.
+- **Project Isolation**: Strict guards to prevent Draft Testing Mode data (forms/submissions) from leaking into the main production project.
+- **Improved Materialization**: Separated username hint storage from session user_name to allow better credential pre-filling without logic loops.
+
+### Technical Details
+- **Version Code**: 5117
+- **Base Version**: Upstream ODK Collect v2026.1.2
+- **Test Coverage**: 181 unit tests (including 30+ new QR parser and flow contract tests).
+
+## [v2026.1.2-MEDRES-RC1] - 2026-03-29
+### Added
+- **Upstream Migration**: Successfully merged ODK Collect v2026.1.2 (from v2025.3.3).
+- **QR Flow Rewrite (Initial)**: Introduced `MedresQrParser` and `MedresQrStagingStore` to replace ad-hoc URL substring checks.
+- **Security Guardrails**: Added 5-layer validation for QR payloads including size limits and compression ratio checks.
+- **Intelligent QR Detection**: Automatic branching between Production Project QRs and Draft Testing QRs.
+
+### Technical Details
+- **Version Code**: 5116
+- **Base Version**: Upstream ODK Collect v2026.1.2
+
+---
+
 ## [v2025.3.3-MEDRES-RC4] - 2026-01-28
 ### Added
 - **Automated Project Details Update**: Project details (name, etc.) are now automatically fetched and updated from the server upon successful PIN entry/setup.
